@@ -329,7 +329,7 @@ class StudentsAdminController extends Controller
     public function store(Request $request)
     {
         $validPrograms = StudyProgram::where('is_active', true)->pluck('name')->toArray();
-        
+    
         $validator = Validator::make($request->all(), [
             'full_name' => 'required|string|max:100',
             'nim'       => 'required|string|unique:students,nim|max:12',
@@ -374,6 +374,7 @@ class StudentsAdminController extends Controller
             'notes'            => $request->notes,
             'jenis_kelamin'    => $request->gender,
             'alamat'           => $request->address,
+            'is_edited'        => 1,
             'status_mahasiswa' => 'Aktif',
             'tanggal_masuk'    => now(),
         ];

@@ -112,6 +112,24 @@
                                 @enderror
                             </div>
 
+
+                            <div class="mb-3">
+                                <label for="program_studi" class="form-label">Program Studi <span
+                                        class="text-danger">*</span></label>
+                                <select name="program_studi" id="program_studi" class="form-control form-control-lg"
+                                    required>
+                                    <option value="" disabled selected>Pilih Program Studi</option>
+                                    @foreach ($studyPrograms as $program)
+                                        <option value="{{ $program->name }}"
+                                            {{ old('program_studi') == $program->name ? 'selected' : '' }}>
+                                            {{ $program->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('program_studi')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <div class="mb-3">
                                 <label for="gender" class="form-label">Jenis Kelamin <span
                                         class="text-danger">*</span></label>

@@ -28,7 +28,9 @@ class UserManageController extends Controller
      */
     public function indexMain()
     {
-        $users = User::all();
+ 
+        $users = User::where('program_studi', Auth::user()->program_studi)->get();
+        
         return view('admin.user.main', compact('users'));
     }
 

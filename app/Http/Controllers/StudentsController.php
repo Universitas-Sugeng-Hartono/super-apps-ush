@@ -289,9 +289,16 @@ class StudentsController extends Controller
             }
         });
 
-        return redirect()
+    if ($student->foto && $student->ttd) {
+            return redirect()
+                ->route('student.counseling.show', encrypt(session('student_id')))
+                ->with('success', 'Data berhasil disimpan! Perubahan Anda telah tersimpan dengan baik. Anda sekarang dapat mengakses layanan bimbingan akademik.');
+        }else{
+             return redirect()
             ->route('student.personal.editDataIndex', ['id' => $student->id])
             ->with('success', 'Data berhasil disimpan! Perubahan Anda telah tersimpan dengan baik.');
+        }
+        
 
     } catch (\Exception $e) {
         \Log::error("Failed to update student data: " . $e->getMessage());
