@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\DB;
 class CardCounselingController extends Controller
 {
     public function show()
-    {
-        $courses = Course::where('program_study', auth()->user()->program_studi)->get();
+    { 
+        $courses = Course::where('program_study', session('student_prodi'))->get();
         $student = Student::with('dosenPA')->findOrFail(decrypt(session('student_id')));
 
         if ($student->id !== decrypt(session('student_id'))) {
