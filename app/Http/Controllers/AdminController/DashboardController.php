@@ -23,7 +23,7 @@ class DashboardController extends Controller
         return view('admin/dashboard/index', [
            
             'menu'=>'Dashboard',
-            'students' => Student::count(),
+            'students' => Student::where('program_studi', auth()->user()->program_studi)->count(),
         ]);
     }
 

@@ -12,7 +12,7 @@ class CardCounselingController extends Controller
 {
     public function show()
     {
-        $courses = Course::all();
+        $courses = Course::where('program_study', auth()->user()->program_studi)->get();
         $student = Student::with('dosenPA')->findOrFail(decrypt(session('student_id')));
 
         if ($student->id !== decrypt(session('student_id'))) {
