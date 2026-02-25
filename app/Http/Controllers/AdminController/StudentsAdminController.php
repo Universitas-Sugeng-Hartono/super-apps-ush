@@ -38,7 +38,15 @@ class StudentsAdminController extends Controller
 
         return view('admin.students.index', compact('students', 'search'));
     }
-
+    public function unlock()
+    {
+        Student::where('id_lecturer', Auth::id())->where('is_counseling', 0)->update(['is_counseling' => 1]);
+        return back()->with('success', 'Semua kartu konseling telah dibuka.');
+    }
+    public function lock(){
+        Student::where('id_lecturer', Auth::id())->where('is_counseling', 1)->update(['is_counseling' => 0]);
+        return back()->with('success', 'Semua kartu konseling telah dikunci.');
+    }
     /**
      * Management Index - List semua mahasiswa untuk superadmin/masteradmin
      */

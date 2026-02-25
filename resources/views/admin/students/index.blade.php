@@ -143,6 +143,14 @@
                 <i class="fas fa-plus-circle me-2"></i> Add New Student
             </a>
         </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="{{ route('admin.students.unlockAllCounseling') }}" class="btn btn-primary btn-lg shadow">
+                <i class="fas fa-unlock me-2"></i> Unlock All Students Counseling
+            </a>
+            <a href="{{ route('admin.students.lockAllCounseling') }}" class="btn btn-danger btn-lg shadow">
+                <i class="fas fa-lock me-2"></i> Lock All Students Counseling
+            </a>
+        </div>
 
         @if (request()->is('admin/counseling/get-students/*'))
             <div class="alert alert-info">

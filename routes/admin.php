@@ -133,6 +133,8 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
             Route::delete('/{id}', 'destroy')->name('destroy');
             Route::delete('/{id}/deletecard', 'destroycard')->name('deletecard');
             Route::get('/{id}/resetpassword', 'resetpassword')->name('resetpassword');
+            Route::get('/unclock/all', 'unlock')->name('unlockAllCounseling');
+            Route::get('/lock/all', 'lock')->name('lockAllCounseling');
             // Tambahan spesifik
             Route::get('/CheckStudentByLecturer/{id}', 'CheckStudentByLecturer')->name('CheckStudentByLecturer');
             Route::get('/showCardByLecture/{id}', 'showCardByLecture')->name('showCardByLecture');
