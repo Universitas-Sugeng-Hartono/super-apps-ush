@@ -135,6 +135,10 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
             Route::get('/{id}/resetpassword', 'resetpassword')->name('resetpassword');
             Route::get('/unclock/all', 'unlock')->name('unlockAllCounseling');
             Route::get('/lock/all', 'lock')->name('lockAllCounseling');
+            Route::get('/change-advisor/', 'changeAdvisor')->name('changeAdvisor');
+            Route::get('/change-advisor-byid/{id}', 'changeAdvisorById')->name('changeAdvisorById');
+            Route::post('/change-advisor/all', 'changeAdvisorAll')->name('changeAdvisorAll');
+            Route::post('/students/bulk-change-advisor', 'bulkChangeAdvisor')->name('bulkChangeAdvisor');
             // Tambahan spesifik
             Route::get('/CheckStudentByLecturer/{id}', 'CheckStudentByLecturer')->name('CheckStudentByLecturer');
             Route::get('/showCardByLecture/{id}', 'showCardByLecture')->name('showCardByLecture');

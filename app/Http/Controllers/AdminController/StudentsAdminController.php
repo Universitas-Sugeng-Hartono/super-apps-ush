@@ -47,6 +47,50 @@ class StudentsAdminController extends Controller
         Student::where('id_lecturer', Auth::id())->where('is_counseling', 1)->update(['is_counseling' => 0]);
         return back()->with('success', 'Semua kartu konseling telah dikunci.');
     }
+
+    public function changeAdvisor(Request $request)
+    {
+    $users = User::where('program_studi', auth()->user()->program_studi)->get();
+    $search = $request->input('search');
+
+        $students = Student::withCount('counselings')
+            ->where('id_lecturer', Auth::id())
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('nim', 'like', "%{$search}%")
+                        ->orWhere('angkatan', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(10)
+            ->appends(['search' => $search]);
+    return view('admin.students.advisor', compact('users', 'students', 'search'));
+    }
+
+    public function changeAdvisorById($id)
+    {
+        $student = Student::where('id_lecturer', $id)->get();
+        $users = User::where('program_studi', auth()->user()->program_studi)->where('id', '!=', auth()->user()->id)->get();
+        return view('admin.students.change_advisor', compact('student', 'users'));
+    }
+
+    public function bulkChangeAdvisor(Request $request)
+        {
+         
+            $request->validate([
+                'advisor_id' => 'required|exists:users,id',
+                'student_ids' => 'required|array|min:1',
+                'student_ids.*' => 'exists:students,id'
+            ]);
+
+            Student::whereIn('id', $request->student_ids)
+                ->update([
+                    'id_lecturer' => $request->advisor_id
+                ]);
+
+            return back()->with('success', 'Advisor updated successfully.');
+        }
     /**
      * Management Index - List semua mahasiswa untuk superadmin/masteradmin
      */
@@ -252,6 +296,7 @@ class StudentsAdminController extends Controller
     public function showCardByLecture($student_id)
     {
         $student = Student::with(['dosenPA', 'counselings'])->findOrFail($student_id);
+       
 
         $history = $student->counselings()
             ->orderBy('created_at', 'asc')

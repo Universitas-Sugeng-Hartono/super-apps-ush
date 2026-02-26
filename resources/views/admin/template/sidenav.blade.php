@@ -35,6 +35,14 @@
                         Lecturers
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a href="{{ route('admin.students.changeAdvisor') }}"
+                        class="nav-link {{ request()->is('admin/students/change-advisor') ? 'active' : '' }}">
+                        <i class="fa-solid fa-user-edit nav-icon"></i>
+                        Change of Academic Advisor
+                    </a>
+                </li>
             @endif
 
             <li class="nav-item">
