@@ -5,23 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>{{ $pageTitle ?? 'USH SuperApps' }} - Universitas Sugeng Hartono</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('public/icon.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('public/icon.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('public/icon.png') }}">
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     @stack('css')
-    
+
     <!-- Custom CSS -->
     <style>
         /* ========================================
@@ -400,13 +400,17 @@
             top: -5px;
             right: -8px;
             background: #FF5252;
-            color: white;
+            color: white !important;
             font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 18px;
+            font-weight: 600;
+            padding: 1px 4px;
+            border-radius: 999px;
+            min-width: 16px;
+            height: 16px;
             text-align: center;
+            justify-content: center;
+            display: flex;
+            line-height: 1;
             box-shadow: 0 2px 8px rgba(255, 82, 82, 0.4);
         }
 
@@ -438,54 +442,54 @@
                 padding: 20px 20px 10px !important;
                 border-radius: 0 0 30px 30px !important;
             }
-            
+
             .header-content {
                 display: flex;
                 flex-direction: column;
             }
-            
+
             .user-info {
                 order: 1;
                 width: 100%;
                 flex-direction: row-reverse;
                 display: block !important;
             }
-            
+
             .user-details {
                 text-align: left !important;
             }
-            
+
             .user-profile {
                 position: relative;
             }
-            
+
             .user-avatar {
                 position: absolute !important;
                 right: 0 !important;
                 top: 0 !important;
             }
-            
+
             .logo-section {
                 order: 2;
             }
-            
+
             .user-dropdown {
                 display: none !important;
             }
-            
+
             .desktop-only {
                 display: none !important;
             }
-            
+
             .burger-menu-btn {
                 display: none !important;
             }
-            
+
             .sidebar-nav {
                 top: 0;
                 height: 100vh;
             }
-            
+
             .bottom-nav {
                 display: flex;
             }
@@ -501,11 +505,11 @@
             .desktop-only {
                 display: flex;
             }
-            
+
             .bottom-nav {
                 display: none;
             }
-            
+
             body {
                 padding-bottom: 0;
             }
@@ -520,6 +524,7 @@
             margin-left: 280px;
             transition: margin-left var(--transition-normal);
         }
+
     </style>
 </head>
 <body>
@@ -536,7 +541,7 @@
                 <img src="{{ asset('ush.png') }}" alt="USH Logo" class="header-logo">
                 <h4 class="app-title">Universitas Sugeng Hartono</h4>
             </a>
-            
+
             <!-- User Info -->
             <div class="user-info">
                 <div class="user-profile" id="userProfile">
@@ -551,7 +556,7 @@
                             <i class="bi bi-person-circle" style="font-size: 35px; color: var(--primary-orange);"></i>
                         @endif
                     </div>
-                    
+
                     <!-- Dropdown Menu -->
                     <div class="user-dropdown" id="userDropdown">
                         <a href="{{ route('student.dashboard') }}" class="dropdown-item">
@@ -595,6 +600,9 @@
             <a href="{{ route('notifications.index') }}" class="nav-item {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
                 <div class="nav-icon">
                     <i class="bi bi-bell-fill"></i>
+                    @if(!empty($globalUnreadCount) && $globalUnreadCount > 0)
+                        <span class="nav-badge">{{ $globalUnreadCount > 99 ? '99+' : $globalUnreadCount }}</span>
+                    @endif
                 </div>
                 <span>Notification</span>
             </a>
@@ -624,6 +632,9 @@
         <a href="{{ route('notifications.index') }}" class="nav-item {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
             <div class="nav-icon">
                 <i class="bi bi-bell-fill"></i>
+                @if(!empty($globalUnreadCount) && $globalUnreadCount > 0)
+                    <span class="nav-badge">{{ $globalUnreadCount > 99 ? '99+' : $globalUnreadCount }}</span>
+                @endif
             </div>
             <span>Notification</span>
         </a>
@@ -642,9 +653,9 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     @stack('scripts')
-    
+
     <!-- Custom JavaScript -->
     <script>
         // Sidebar Toggle
@@ -704,7 +715,7 @@
                 e.stopPropagation();
                 toggleUserDropdown();
             });
-            
+
             document.addEventListener('click', function(e) {
                 if (!userProfile.contains(e.target)) {
                     closeUserDropdown();

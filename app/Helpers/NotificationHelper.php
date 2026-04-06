@@ -17,7 +17,7 @@ class NotificationHelper
             'title' => $title,
             'body' => $body,
             'url' => $url,
-            'data' => $data ?: null,
+            'data' => !empty($data) ? json_encode($data) : null,
         ]);
     }
 
@@ -38,7 +38,7 @@ class NotificationHelper
                 'title' => $title,
                 'body' => $body,
                 'url' => $url,
-                'data' => $data ?: null,
+                'data' => !empty($data) ? json_encode($data) : null,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

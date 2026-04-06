@@ -60,7 +60,7 @@
         <div class="progress-bar">
             <div class="progress-fill" style="width: {{ $finalProject->progress_percentage }}%;"></div>
         </div>
-        
+
         <div class="stats-content" style="margin-top: 20px;">
             <div class="stat-item">
                 <div class="stat-icon" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
@@ -111,7 +111,7 @@
                 <p>Belum ditentukan</p>
             </div>
             @endif
-            
+
             @if($finalProject->supervisor2)
             <div class="supervisor-card">
                 <i class="bi bi-person-badge"></i>
@@ -133,7 +133,7 @@
         <div class="section-header">
             <h3>Menu Utama</h3>
         </div>
-        
+
         <div class="menu-grid">
             <!-- Ajukan Judul -->
             @if(!$finalProject->title || !$finalProject->title_approved_at)
@@ -152,7 +152,7 @@
             @endif
 
             <!-- Daftar Sempro -->
-            <a href="{{ route('student.final-project.proposal.create') }}" class="menu-card" 
+            {{-- <a href="{{ route('student.final-project.proposal.create') }}" class="menu-card"
                @if(!$finalProject->title_approved_at || !$finalProject->supervisor_1_id) style="opacity: 0.5; pointer-events: none;" @endif>
                 <div class="menu-icon" style="background: linear-gradient(135deg, #9C27B0, #BA68C8);">
                     <i class="bi bi-calendar-check"></i>
@@ -170,9 +170,62 @@
                 @else
                     <span class="status-badge info">Belum Daftar</span>
                 @endif
+            </a> --}}
+            @php
+                $proposal        = $finalProject->proposal;
+                $proposalRejected = $proposal && $proposal->status === 'rejected';
+                $proposalApproved = $proposal && $proposal->status === 'approved';
+                $canAccessSempro  = $finalProject->title_approved_at && $finalProject->supervisor_1_id;
+
+                $hasNeedsRevision = $proposal
+                    ? $finalProject->documents
+                        ->where('document_type', 'proposal')
+                        ->where('review_status', 'needs_revision')
+                        ->count() > 0
+                    : false;
+            @endphp
+
+            <a href="{{
+                    $proposalRejected || $hasNeedsRevision
+                        ? route('student.final-project.proposal.edit', $proposal->id)
+                        : ($proposal
+                            ? route('student.final-project.proposal.show', $proposal->id)
+                            : route('student.final-project.proposal.create'))
+                }}"
+            class="menu-card"
+            @if(!$canAccessSempro && !$proposal) style="opacity: 0.5; pointer-events: none;" @endif>
+
+                <div class="menu-icon" style="background: linear-gradient(135deg, #9C27B0, #BA68C8);">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+
+                <h5>
+                    @if($proposalRejected) Edit Sempro
+                    @elseif($hasNeedsRevision) Revisi Sempro
+                    @elseif($proposal) Lihat Sempro
+                    @else Daftar Sempro
+                    @endif
+                </h5>
+                <p>Pendaftaran Seminar Proposal</p>
+
+                @if(!$finalProject->title_approved_at)
+                    <span class="status-badge warning">Judul Belum Disetujui</span>
+                @elseif(!$finalProject->supervisor_1_id)
+                    <span class="status-badge warning">Pembimbing Belum Ditentukan</span>
+                @elseif($proposalRejected)
+                    <span class="status-badge danger">Ditolak — Klik untuk Edit</span>
+                @elseif($hasNeedsRevision)
+                    <span class="status-badge revision">Ada Dokumen Perlu Revisi</span>
+                @elseif($proposalApproved)
+                    <span class="status-badge active">Approved</span>
+                @elseif($proposal)
+                    <span class="status-badge warning">Menunggu Review</span>
+                @else
+                    <span class="status-badge info">Belum Daftar</span>
+                @endif
             </a>
 
-            <!-- Daftar Sidang -->
+            {{-- <!-- Daftar Sidang -->
             <a href="{{ route('student.final-project.defense.create') }}" class="menu-card"
                @if(!$finalProject->proposal || $finalProject->proposal->status !== 'approved') style="opacity: 0.5; pointer-events: none;" @endif>
                 <div class="menu-icon" style="background: linear-gradient(135deg, #FF5252, #FF8A80);">
@@ -186,6 +239,58 @@
                     <span class="status-badge {{ $finalProject->defense->status === 'approved' ? 'active' : 'warning' }}">
                         {{ ucfirst($finalProject->defense->status) }}
                     </span>
+                @else
+                    <span class="status-badge info">Belum Daftar</span>
+                @endif
+            </a> --}}
+
+            @php
+                $defense = $finalProject->defense;
+                $defenseRejected = $defense && $defense->status === 'rejected';
+                $defenseApproved = $defense && $defense->status === 'approved';
+
+                $defenseHasNeedsRevision = $defense
+                    ? $finalProject->documents
+                        ->where('document_type', 'final')
+                        ->where('title', 'Draft Final TA')
+                        ->where('review_status', 'needs_revision')
+                        ->count() > 0
+                    : false;
+            @endphp
+
+            <a href="{{
+                    $defenseRejected || $defenseHasNeedsRevision
+                        ? route('student.final-project.defense.edit', $defense->id)
+                        : ($defense
+                            ? route('student.final-project.defense.show', $defense->id)
+                            : route('student.final-project.defense.create'))
+                }}"
+            class="menu-card"
+            @if(!$finalProject->proposal || $finalProject->proposal->status !== 'approved') style="opacity: 0.5; pointer-events: none;" @endif>
+
+                <div class="menu-icon" style="background: linear-gradient(135deg, #FF5252, #FF8A80);">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+
+                <h5>
+                    @if($defenseRejected)         Edit Sidang
+                    @elseif($defenseHasNeedsRevision) Revisi Sidang
+                    @elseif($defense)             Lihat Sidang
+                    @else                         Daftar Sidang
+                    @endif
+                </h5>
+                <p>Pendaftaran Sidang TA</p>
+
+                @if(!$finalProject->proposal || $finalProject->proposal->status !== 'approved')
+                    <span class="status-badge warning">Sempro Belum Disetujui</span>
+                @elseif($defenseRejected)
+                    <span class="status-badge danger">Ditolak — Klik untuk Edit</span>
+                @elseif($defenseHasNeedsRevision)
+                    <span class="status-badge revision">Dokumen Perlu Revisi</span>
+                @elseif($defenseApproved)
+                    <span class="status-badge active">Approved</span>
+                @elseif($defense)
+                    <span class="status-badge warning">Menunggu Review</span>
                 @else
                     <span class="status-badge info">Belum Daftar</span>
                 @endif
@@ -528,6 +633,24 @@
         background: #E3F2FD;
         color: #2196F3;
     }
+
+    /* tambahan */
+    .btn-edit {
+        background: linear-gradient(135deg, #E53935, #EF5350);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 900;
+        box-shadow: 0 10px 26px rgba(198,40,40,0.22);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-badge.danger   { background: #FFEBEE; color: #C62828; }
+    .status-badge.revision { background: #FFF8E1; color: #E65100; }
+
 
     @media (min-width: 769px) {
         .menu-grid {

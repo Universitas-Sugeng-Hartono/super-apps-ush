@@ -25,7 +25,7 @@ Route::middleware(['student'])->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/edit', 'editDataIndex')->name('editDataIndex');
             Route::put('/update', 'updateData')->name('updateData');
-            
+
             // Achievements
             Route::post('/achievement/store', 'storeAchievement')->name('achievement.store');
             Route::put('/achievement/update/{id}', 'updateAchievement')->name('achievement.update');
@@ -36,7 +36,7 @@ Route::middleware(['student'])->group(function () {
     Route::prefix('student/final-project')->name('student.final-project.')->group(function () {
         // Dashboard
         Route::get('/', [\App\Http\Controllers\Student\FinalProjectController::class, 'index'])->name('index');
-        
+
         // Title Request
         Route::prefix('title')->name('title.')->controller(\App\Http\Controllers\Student\TitleRequestController::class)->group(function () {
             Route::get('/create', 'create')->name('create');
@@ -44,12 +44,15 @@ Route::middleware(['student'])->group(function () {
             Route::get('/edit', 'edit')->name('edit');
             Route::put('/', 'update')->name('update');
         });
-        
+
+        // Proposal Registration
         // Proposal Registration
         Route::prefix('proposal')->name('proposal.')->group(function () {
-            Route::get('/create', [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'create'])->name('create');
-            Route::post('/', [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'store'])->name('store');
-            Route::get('/{id}', [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'show'])->name('show');
+            Route::get('/create',    [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'create'])->name('create');
+            Route::post('/',         [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'store'])->name('store');
+            Route::get('/{id}',      [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'edit'])->name('edit');   // ← fix
+            Route::put('/{id}',      [\App\Http\Controllers\Student\ProposalRegistrationController::class, 'update'])->name('update'); // ← fix
         });
 
         // Defense Registration
@@ -57,6 +60,8 @@ Route::middleware(['student'])->group(function () {
             Route::get('/create', [\App\Http\Controllers\Student\DefenseRegistrationController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Student\DefenseRegistrationController::class, 'store'])->name('store');
             Route::get('/{id}', [\App\Http\Controllers\Student\DefenseRegistrationController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [\App\Http\Controllers\Student\DefenseRegistrationController::class, 'edit'])->name('edit');   // ← tambah
+            Route::put('/{id}',      [\App\Http\Controllers\Student\DefenseRegistrationController::class, 'update'])->name('update'); // ← tambah
         });
 
         // Guidance Logs

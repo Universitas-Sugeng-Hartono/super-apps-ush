@@ -19,7 +19,7 @@ class DocumentReviewController extends Controller
     public function index()
     {
         $lecturerId = auth()->id();
-        
+
         $documents = FinalProjectDocument::with(['finalProject.student', 'uploader'])
             ->when(!$this->canManageAll(), function ($q) use ($lecturerId) {
                 $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
@@ -40,7 +40,7 @@ class DocumentReviewController extends Controller
     public function show($id)
     {
         $lecturerId = auth()->id();
-        
+
         $document = FinalProjectDocument::with(['finalProject.student', 'uploader', 'reviewer'])
             ->when(!$this->canManageAll(), function ($q) use ($lecturerId) {
                 $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
@@ -55,7 +55,7 @@ class DocumentReviewController extends Controller
     public function download($id)
     {
         $lecturerId = auth()->id();
-        
+
         $document = FinalProjectDocument::when(!$this->canManageAll(), function ($q) use ($lecturerId) {
             $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
                 $qq->bySupervisor($lecturerId);
@@ -72,7 +72,7 @@ class DocumentReviewController extends Controller
     public function approve(Request $request, $id)
     {
         $lecturerId = auth()->id();
-        
+
         $document = FinalProjectDocument::when(!$this->canManageAll(), function ($q) use ($lecturerId) {
             $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
                 $qq->bySupervisor($lecturerId);
@@ -97,7 +97,7 @@ class DocumentReviewController extends Controller
     public function revision(Request $request, $id)
     {
         $lecturerId = auth()->id();
-        
+
         $document = FinalProjectDocument::when(!$this->canManageAll(), function ($q) use ($lecturerId) {
             $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
                 $qq->bySupervisor($lecturerId);
@@ -122,7 +122,7 @@ class DocumentReviewController extends Controller
     public function reject(Request $request, $id)
     {
         $lecturerId = auth()->id();
-        
+
         $document = FinalProjectDocument::when(!$this->canManageAll(), function ($q) use ($lecturerId) {
             $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
                 $qq->bySupervisor($lecturerId);
