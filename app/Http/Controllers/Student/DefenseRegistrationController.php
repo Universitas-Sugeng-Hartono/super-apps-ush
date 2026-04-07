@@ -33,7 +33,7 @@ class DefenseRegistrationController extends Controller
             $hasNeedsRevision = $finalProject->documents()
                 ->where('document_type', 'final')
                 ->where('title', 'Draft Final TA')
-                ->where('review_status', 'needs_revision')
+                ->whereIn('review_status', ['needs_revision', 'rejected'])
                 ->exists();
 
             if ($hasNeedsRevision) {
@@ -135,7 +135,7 @@ class DefenseRegistrationController extends Controller
         $hasNeedsRevision = $finalProject->documents()
             ->where('document_type', 'final')
             ->where('title', 'Draft Final TA')
-            ->where('review_status', 'needs_revision')
+            ->whereIn('review_status', ['needs_revision', 'rejected'])
             ->exists();
 
         // Boleh edit jika rejected ATAU dokumen needs_revision
@@ -167,7 +167,7 @@ class DefenseRegistrationController extends Controller
         $hasNeedsRevision = $finalProject->documents()
             ->where('document_type', 'final')
             ->where('title', 'Draft Final TA')
-            ->where('review_status', 'needs_revision')
+            ->whereIn('review_status', ['needs_revision', 'rejected'])
             ->exists();
 
         if ($defense->status !== 'rejected' && !$hasNeedsRevision) {

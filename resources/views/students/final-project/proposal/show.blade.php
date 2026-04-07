@@ -26,11 +26,11 @@
         $docs = $proposal->finalProject?->documents
             ? $proposal->finalProject->documents->where('document_type', 'proposal')->values()
             : collect();
-        $hasNeedsRevision = $docs->where('review_status', 'needs_revision')->count() > 0;
+        $hasEditableDocs = $docs->whereIn('review_status', ['needs_revision', 'rejected'])->count() > 0;
     @endphp
 
     {{-- Banner needs_revision --}}
-    @if($hasNeedsRevision)
+    @if($hasEditableDocs)
         <div class="alert-revision">
             <i class="bi bi-exclamation-triangle-fill"></i>
             <div>
@@ -87,7 +87,10 @@
         @if($docs->count() > 0)
             <div class="doc-list">
                 @foreach($docs as $d)
-                    @php $needsRevision = $d->review_status === 'needs_revision'; @endphp
+                    @php
+                        $needsRevision = in_array($d->review_status, ['needs_revision', 'rejected'], true);
+                        $isRejectedDoc = $d->review_status === 'rejected';
+                    @endphp
                     <div class="doc-item {{ $needsRevision ? 'doc-item-revision' : '' }}">
                         <div class="doc-left">
                             <div class="doc-icon {{ $needsRevision ? 'doc-icon-revision' : '' }}">
@@ -97,7 +100,7 @@
                                 <div class="doc-title">
                                     {{ $d->title }}
                                     @if($needsRevision)
-                                        <span class="badge-revision">Perlu Revisi</span>
+                                        <span class="badge-revision">{{ $isRejectedDoc ? 'Ditolak' : 'Perlu Revisi' }}</span>
                                     @elseif($d->review_status === 'approved')
                                         <span class="badge-approved">Disetujui</span>
                                     @endif
@@ -132,9 +135,9 @@
             <a href="{{ route('student.final-project.proposal.edit', $proposal->id) }}" class="btn-edit">
                 <i class="bi bi-pencil-square"></i> Edit & Ajukan Ulang
             </a>
-        @elseif($hasNeedsRevision)
+        @elseif($hasEditableDocs)
             <a href="{{ route('student.final-project.proposal.edit', $proposal->id) }}" class="btn-revision">
-                <i class="bi bi-pencil-square"></i> Revisi Dokumen
+                <i class="bi bi-pencil-square"></i> Edit Dokumen
             </a>
         @elseif($proposal->status === 'approved')
             <a href="{{ route('calendar.index') }}" class="btn-primary-soft">Buka Calendar</a>

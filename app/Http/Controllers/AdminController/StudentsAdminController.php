@@ -77,7 +77,7 @@ class StudentsAdminController extends Controller
 
     public function bulkChangeAdvisor(Request $request)
         {
-         
+
             $request->validate([
                 'advisor_id' => 'required|exists:users,id',
                 'student_ids' => 'required|array|min:1',
@@ -296,7 +296,7 @@ class StudentsAdminController extends Controller
     public function showCardByLecture($student_id)
     {
         $student = Student::with(['dosenPA', 'counselings'])->findOrFail($student_id);
-       
+
 
         $history = $student->counselings()
             ->orderBy('created_at', 'asc')
@@ -341,7 +341,7 @@ class StudentsAdminController extends Controller
         $dosen = User::findOrFail($id);
         $search = $request->input('search');
 
-      
+
        $students = Student::withCount('counselings')
             ->where('id_lecturer', $dosen->id)
             ->where('angkatan', $batch)
@@ -366,13 +366,13 @@ class StudentsAdminController extends Controller
     {
         $menu = 'Add Student';
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
-        
+
         // Tentukan view berdasarkan route
         if (request()->routeIs('admin.management.students.*')) {
             $lecturers = User::whereIn('role', ['admin', 'superadmin', 'masteradmin'])->orderBy('name', 'asc')->get();
             return view('admin.management.students.create', compact('lecturers', 'studyPrograms'));
         }
-        
+
         return view('admin.students.create', compact('menu', 'studyPrograms'));
     }
 
@@ -382,7 +382,7 @@ class StudentsAdminController extends Controller
     public function store(Request $request)
     {
         $validPrograms = StudyProgram::where('is_active', true)->pluck('name')->toArray();
-    
+
         $validator = Validator::make($request->all(), [
             'full_name' => 'required|string|max:100',
             'nim'       => 'required|string|unique:students,nim|max:12',
@@ -414,7 +414,7 @@ class StudentsAdminController extends Controller
 
         // Default program studi dari master
         $defaultProdi = StudyProgram::where('is_active', true)->orderBy('order')->first();
-        
+
         $studentData = [
             'id_lecturer'      => $lecturerId,
             'nama_lengkap'     => $request->full_name,
@@ -438,7 +438,7 @@ class StudentsAdminController extends Controller
         if (request()->routeIs('admin.management.students.*')) {
             return redirect()->route('admin.management.students.index')->with('success', 'Mahasiswa berhasil ditambahkan.');
         }
-        
+
         return redirect()->route('admin.students.index')
             ->with('success', 'Mahasiswa berhasil ditambahkan.');
     }
@@ -446,10 +446,17 @@ class StudentsAdminController extends Controller
     /**
      * Show a specific student.
      */
-    public function show(Student $student)
+    public function show($id)
     {
+        $student = Student::with('dosenPA')->findOrFail($id);
+
+        if (request()->routeIs('admin.management.students.*')) {
+            return view('admin.management.students.show', compact('student'));
+        }
+
         return view('admin.students.show', compact('student'));
     }
+
 
     /**
      * Show edit form.
@@ -519,14 +526,14 @@ class StudentsAdminController extends Controller
         $row = CardCounseling::findOrFail($id);
         $student = $row->student;
         $allCourses = Course::orderBy('code_prefix')->orderBy('code_number')->get();
-        
+
         return view('admin.counseling.card_counseling_edit', compact('row', 'student', 'allCourses'));
     }
     // Update counseling card
     public function updatecard(Request $request, $id)
     {
         $row = CardCounseling::findOrFail($id);
-      
+
        $validator = Validator::make(
         $request->all(),
         [
@@ -543,7 +550,7 @@ class StudentsAdminController extends Controller
         [
             'semester.required'  => 'Semester wajib diisi.',
             'semester.max'       => 'Semester maksimal 20 karakter.',
-            
+
             'sks.required'       => 'Jumlah SKS tidak boleh kosong.',
             'sks.integer'        => 'SKS harus berupa angka bulat.',
             'sks.min'            => 'SKS minimal 0.',
@@ -608,14 +615,14 @@ class StudentsAdminController extends Controller
     public function toggleEdit(Request $request, $id)
     {
         $student = Student::findOrFail($id);
-        
+
         // Jika request body ada is_edited, gunakan itu, jika tidak toggle
         if ($request->has('is_edited')) {
             $student->is_edited = $request->is_edited ? 1 : 0;
         } else {
             $student->is_edited = $student->is_edited ? 0 : 1;
         }
-        
+
         $student->save();
 
         $status = $student->is_edited ? 'dibuka' : 'dikunci';
@@ -656,7 +663,7 @@ class StudentsAdminController extends Controller
         if (request()->routeIs('admin.management.students.*')) {
             return redirect()->route('admin.management.students.index')->with('success', 'Mahasiswa berhasil dihapus!');
         }
-        
+
         return redirect()->route('admin.students.index')
             ->with('success', 'Mahasiswa berhasil dihapus!');
     }

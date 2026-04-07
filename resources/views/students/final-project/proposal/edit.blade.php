@@ -142,37 +142,46 @@
                 'transcript_file'              => 'Transkrip Nilai',
             ] as $field => $label)
                 @php
-                    $oldDoc        = $existingDocs[$field] ?? null;
+                    $oldDoc = $existingDocs[$field] ?? null;
                     $needsRevision = $oldDoc && $oldDoc->review_status === 'needs_revision';
-                    $isApproved    = $oldDoc && $oldDoc->review_status === 'approved';
-                    $isRejected    = $proposal->status === 'rejected';
-                    $required      = $needsRevision || ($isRejected && !$isApproved);
+                    $isRejectedDoc = $oldDoc && $oldDoc->review_status === 'rejected';
+                    $isApproved = $oldDoc && $oldDoc->review_status === 'approved';
+                    $isRejectedProposal = $proposal->status === 'rejected';
+                    $needsAttention = $needsRevision || $isRejectedDoc;
+                    $required = $needsAttention || ($isRejectedProposal && !$isApproved);
                 @endphp
 
-                <div class="form-group {{ $needsRevision ? 'group-revision' : ($isApproved ? 'group-approved' : '') }}">
+
+                <div class="form-group {{ $needsAttention ? 'group-revision' : ($isApproved ? 'group-approved' : '') }}">
+
                     <label>
                         {{ $label }}
                         @if($isApproved)
-                            <span class="badge-approved">✓ Disetujui</span>
+                            <span class="badge-approved">Disetujui</span>
+                        @elseif($isRejectedDoc)
+                            <span class="badge-revision badge-rejected">Ditolak</span>
                         @elseif($needsRevision)
                             <span class="badge-revision">Perlu Revisi</span>
                         @endif
                     </label>
 
+
+
                     {{-- Catatan revisi dari dosen --}}
-                    @if($needsRevision && $oldDoc->review_notes)
-                        <div class="revision-note">
+                   @if($needsAttention && $oldDoc->review_notes)
+                        <div class="revision-note {{ $isRejectedDoc ? 'revision-note-rejected' : '' }}">
                             <i class="bi bi-chat-left-text-fill"></i>
                             <span>{{ $oldDoc->review_notes }}</span>
                         </div>
                     @endif
 
+
                     {{-- File lama --}}
                     @if($oldDoc)
                         <div class="existing-file
-                            {{ $needsRevision ? 'existing-file-revision' : '' }}
+                            {{ $needsAttention ? 'existing-file-revision' : '' }}
                             {{ $isApproved ? 'existing-file-approved' : '' }}">
-                            <i class="bi bi-file-earmark-{{ $isApproved ? 'check' : ($needsRevision ? 'x' : 'text') }}"></i>
+                            <i class="bi bi-file-earmark-{{ $isApproved ? 'check' : ($needsAttention ? 'x' : 'text') }}"></i>
                             <span>File tersimpan —</span>
                             <a href="{{ asset('storage/' . ltrim($oldDoc->file_path, '/')) }}"
                                target="_blank">Lihat File</a>
@@ -186,7 +195,11 @@
                                accept=".pdf,.jpg,.jpeg,.png"
                                {{ $required ? 'required' : '' }}>
                         <small>
-                            @if($needsRevision)
+                            @if($isRejectedDoc)
+                                <span style="color: #C62828; font-weight: 700;">
+                                    <i class="bi bi-x-circle"></i> Dokumen ditolak, wajib upload ulang
+                                </span>
+                            @elseif($needsRevision)
                                 <span style="color: #E65100; font-weight: 700;">
                                     <i class="bi bi-exclamation-circle"></i> Wajib upload ulang
                                 </span>
@@ -440,5 +453,16 @@
     }
     .btn-secondary { background: #E0E0E0; color: #666; }
     .btn-secondary:hover { background: #D0D0D0; }
+
+     .badge-rejected {
+        background: #FFEBEE;
+        color: #C62828;
+    }
+
+    .revision-note-rejected {
+        background: #FFEBEE;
+        border: 1px solid #FFCDD2;
+        color: #C62828;
+    }
 </style>
 @endpush

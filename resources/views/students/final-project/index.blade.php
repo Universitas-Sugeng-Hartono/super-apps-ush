@@ -177,16 +177,16 @@
                 $proposalApproved = $proposal && $proposal->status === 'approved';
                 $canAccessSempro  = $finalProject->title_approved_at && $finalProject->supervisor_1_id;
 
-                $hasNeedsRevision = $proposal
+                $hasEditableProposalDocs = $proposal
                     ? $finalProject->documents
                         ->where('document_type', 'proposal')
-                        ->where('review_status', 'needs_revision')
+                        ->whereIn('review_status', ['needs_revision', 'rejected'])
                         ->count() > 0
                     : false;
             @endphp
 
             <a href="{{
-                    $proposalRejected || $hasNeedsRevision
+                    $proposalRejected || $hasEditableProposalDocs
                         ? route('student.final-project.proposal.edit', $proposal->id)
                         : ($proposal
                             ? route('student.final-project.proposal.show', $proposal->id)
@@ -201,7 +201,7 @@
 
                 <h5>
                     @if($proposalRejected) Edit Sempro
-                    @elseif($hasNeedsRevision) Revisi Sempro
+                    @elseif($hasEditableProposalDocs) Edit Dokumen Sempro
                     @elseif($proposal) Lihat Sempro
                     @else Daftar Sempro
                     @endif
@@ -214,8 +214,8 @@
                     <span class="status-badge warning">Pembimbing Belum Ditentukan</span>
                 @elseif($proposalRejected)
                     <span class="status-badge danger">Ditolak — Klik untuk Edit</span>
-                @elseif($hasNeedsRevision)
-                    <span class="status-badge revision">Ada Dokumen Perlu Revisi</span>
+                @elseif($hasEditableProposalDocs)
+                    <span class="status-badge revision">Edit Dokumen</span>
                 @elseif($proposalApproved)
                     <span class="status-badge active">Approved</span>
                 @elseif($proposal)
@@ -249,17 +249,17 @@
                 $defenseRejected = $defense && $defense->status === 'rejected';
                 $defenseApproved = $defense && $defense->status === 'approved';
 
-                $defenseHasNeedsRevision = $defense
+                $defenseHasEditableDocs = $defense
                     ? $finalProject->documents
                         ->where('document_type', 'final')
                         ->where('title', 'Draft Final TA')
-                        ->where('review_status', 'needs_revision')
+                        ->whereIn('review_status', ['needs_revision', 'rejected'])
                         ->count() > 0
                     : false;
             @endphp
 
             <a href="{{
-                    $defenseRejected || $defenseHasNeedsRevision
+                    $defenseRejected || $defenseHasEditableDocs
                         ? route('student.final-project.defense.edit', $defense->id)
                         : ($defense
                             ? route('student.final-project.defense.show', $defense->id)
@@ -275,7 +275,7 @@
               <h5>
                 @if($defenseRejected)
                     Edit Sidang
-                @elseif($defenseHasNeedsRevision)
+                @elseif($defenseHasEditableDocs)
                     Edit Dokumen Sidang
                 @elseif($defense)
                     Lihat Sidang
@@ -285,7 +285,7 @@
             </h5>
 
             <p>
-                @if($defenseHasNeedsRevision)
+                @if($defenseHasEditableDocs)
                     Revisi dokumen pendaftaran sidang TA
                 @else
                     Pendaftaran Sidang TA
@@ -296,7 +296,7 @@
                 <span class="status-badge warning">Sempro Belum Disetujui</span>
             @elseif($defenseRejected)
                 <span class="status-badge danger">Ditolak - Klik untuk Edit</span>
-            @elseif($defenseHasNeedsRevision)
+            @elseif($defenseHasEditableDocs)
                 <span class="status-badge revision">Edit Dokumen</span>
             @elseif($defenseApproved)
                 <span class="status-badge active">Approved</span>

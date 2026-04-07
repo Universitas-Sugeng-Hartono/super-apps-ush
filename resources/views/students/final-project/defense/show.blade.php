@@ -73,6 +73,7 @@
             ->where('title', 'Draft Final TA')
             ->sortByDesc('version')
             ->first();
+        $canEditDocument = $draftDoc && in_array($draftDoc->review_status, ['needs_revision', 'rejected'], true);
     @endphp
 
     @if($draftDoc)
@@ -101,9 +102,9 @@
 
         <a href="{{ route('student.final-project.index') }}" class="btn-secondary">Kembali</a>
 
-        @if($defense->status === 'rejected')
+        @if($defense->status === 'rejected' || $canEditDocument)
             <a href="{{ route('student.final-project.defense.edit', $defense->id) }}" class="btn-edit">
-                <i class="bi bi-pencil-square"></i> Edit & Ajukan Ulang
+                <i class="bi bi-pencil-square"></i> {{ $defense->status === 'rejected' ? 'Edit & Ajukan Ulang' : 'Edit Dokumen' }}
             </a>
          @elseif($defense->status === 'approved')
             <a href="{{ route('calendar.index') }}" class="btn-calendar">

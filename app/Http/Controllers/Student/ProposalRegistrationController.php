@@ -38,7 +38,7 @@ class ProposalRegistrationController extends Controller
             // Jika ada dokumen needs_revision → ke edit
             $hasNeedsRevision = $finalProject->documents
                 ->where('document_type', 'proposal')
-                ->where('review_status', 'needs_revision')
+                ->whereIn('review_status', ['needs_revision', 'rejected'])
                 ->count() > 0;
 
             if ($hasNeedsRevision) {
@@ -143,7 +143,7 @@ class ProposalRegistrationController extends Controller
 
         $hasNeedsRevision = $finalProject->documents
             ->where('document_type', 'proposal')
-            ->where('review_status', 'needs_revision')
+            ->whereIn('review_status', ['needs_revision', 'rejected'])
             ->count() > 0;
 
         // Boleh edit jika rejected ATAU ada dokumen needs_revision
@@ -177,7 +177,7 @@ public function update(Request $request, $id)
 
     $hasNeedsRevision = $finalProject->documents()
         ->where('document_type', 'proposal')
-        ->where('review_status', 'needs_revision')
+        ->whereIn('review_status', ['needs_revision', 'rejected'])
         ->exists();
 
     if ($proposal->status !== 'rejected' && !$hasNeedsRevision) {
