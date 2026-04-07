@@ -3,10 +3,16 @@
 @section('content')
     <div class="content-card">
         <div class="card-header">
-            <h3>Review Dokumen Mahasiswa</h3>
+            <div>
+                <h3>{{ $canManageAll ? 'Review Dokumen Mahasiswa' : 'Log Dokumen Mahasiswa' }}</h3>
+                <p class="card-subtitle">
+                    {{ $canManageAll ? 'Tinjau dokumen yang masih menunggu keputusan review.' : 'Halaman ini hanya menampilkan status dokumen mahasiswa bimbingan tanpa aksi review.' }}
+                </p>
+            </div>
             <div class="filters">
                 <select onchange="window.location.href='?status='+this.value" class="filter-select">
-                    <option value="">Pending Review</option>
+                    <option value="">{{ $canManageAll ? 'Pending Review' : 'Semua Status' }}</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
                     <option value="needs_revision" {{ request('status') == 'needs_revision' ? 'selected' : '' }}>Need Revision</option>
                     <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
@@ -41,7 +47,7 @@
                                 </p>
                             </div>
                         </div>
-                        @if($doc->review_status === 'pending')
+                        @if($canManageAll && $doc->review_status === 'pending')
                             <div class="action-buttons">
                                 <button type="button" class="btn-download" onclick="downloadDoc({{ $doc->id }})">
                                     <i class="bi bi-download"></i>
@@ -62,7 +68,7 @@
                         </div>
                     @endif
 
-                    @if($doc->review_status === 'pending')
+                    @if($canManageAll && $doc->review_status === 'pending')
                         <div class="review-actions">
                             <button type="button" class="btn-approve" onclick="showApproveModal({{ $doc->id }})">
                                 <i class="bi bi-check-circle"></i> Approve
@@ -84,83 +90,85 @@
         @else
             <div class="empty-state">
                 <i class="bi bi-inbox"></i>
-                <h4>Tidak ada dokumen untuk direview</h4>
-                <p>Semua dokumen sudah direview atau belum ada dokumen baru</p>
+                <h4>{{ $canManageAll ? 'Tidak ada dokumen untuk direview' : 'Belum ada dokumen untuk ditampilkan' }}</h4>
+                <p>{{ $canManageAll ? 'Semua dokumen sudah direview atau belum ada dokumen baru' : 'Dokumen mahasiswa bimbingan akan muncul di halaman ini beserta statusnya.' }}</p>
             </div>
         @endif
     </div>
 
-    <!-- Approve Modal -->
-    <div id="approveModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header success">
-                <i class="bi bi-check-circle-fill"></i>
-                <h4>Approve Dokumen</h4>
+    @if($canManageAll)
+        <!-- Approve Modal -->
+        <div id="approveModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <h4>Approve Dokumen</h4>
+                </div>
+                <form id="approveForm" method="POST">
+                    @csrf
+                    <p class="modal-desc">Dokumen akan ditandai sebagai <strong>Approved</strong>. Mahasiswa akan menerima notifikasi.</p>
+                    <div class="form-group">
+                        <label>Catatan Review (Opsional)</label>
+                        <textarea name="review_notes" class="form-control" rows="3" placeholder="Berikan catatan atau feedback positif..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
+                        <button type="submit" class="btn-approve-confirm">
+                            <i class="bi bi-check-circle"></i> Approve
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form id="approveForm" method="POST">
-                @csrf
-                <p class="modal-desc">Dokumen akan ditandai sebagai <strong>Approved</strong>. Mahasiswa akan menerima notifikasi.</p>
-                <div class="form-group">
-                    <label>Catatan Review (Opsional)</label>
-                    <textarea name="review_notes" class="form-control" rows="3" placeholder="Berikan catatan atau feedback positif..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
-                    <button type="submit" class="btn-approve-confirm">
-                        <i class="bi bi-check-circle"></i> Approve
-                    </button>
-                </div>
-            </form>
         </div>
-    </div>
 
-    <!-- Revision Modal -->
-    <div id="revisionModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header warning">
-                <i class="bi bi-arrow-repeat"></i>
-                <h4>Request Revision</h4>
+        <!-- Revision Modal -->
+        <div id="revisionModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header warning">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <h4>Request Revision</h4>
+                </div>
+                <form id="revisionForm" method="POST">
+                    @csrf
+                    <p class="modal-desc">Dokumen memerlukan <strong>revisi</strong>. Mohon berikan feedback yang jelas.</p>
+                    <div class="form-group">
+                        <label>Catatan Revisi *</label>
+                        <textarea name="review_notes" class="form-control" rows="4" required placeholder="Jelaskan bagian mana yang perlu direvisi dan alasannya..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
+                        <button type="submit" class="btn-revision-confirm">
+                            <i class="bi bi-arrow-repeat"></i> Request Revision
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form id="revisionForm" method="POST">
-                @csrf
-                <p class="modal-desc">Dokumen memerlukan <strong>revisi</strong>. Mohon berikan feedback yang jelas.</p>
-                <div class="form-group">
-                    <label>Catatan Revisi *</label>
-                    <textarea name="review_notes" class="form-control" rows="4" required placeholder="Jelaskan bagian mana yang perlu direvisi dan alasannya..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
-                    <button type="submit" class="btn-revision-confirm">
-                        <i class="bi bi-arrow-repeat"></i> Request Revision
-                    </button>
-                </div>
-            </form>
         </div>
-    </div>
 
-    <!-- Reject Modal -->
-    <div id="rejectModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header danger">
-                <i class="bi bi-x-circle-fill"></i>
-                <h4>Reject Dokumen</h4>
+        <!-- Reject Modal -->
+        <div id="rejectModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header danger">
+                    <i class="bi bi-x-circle-fill"></i>
+                    <h4>Reject Dokumen</h4>
+                </div>
+                <form id="rejectForm" method="POST">
+                    @csrf
+                    <p class="modal-desc">Dokumen akan <strong>ditolak</strong>. Action ini menandakan dokumen tidak dapat diterima.</p>
+                    <div class="form-group">
+                        <label>Alasan Penolakan *</label>
+                        <textarea name="review_notes" class="form-control" rows="4" required placeholder="Berikan alasan yang jelas mengapa dokumen ditolak..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
+                        <button type="submit" class="btn-reject-confirm">
+                            <i class="bi bi-x-circle"></i> Reject
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form id="rejectForm" method="POST">
-                @csrf
-                <p class="modal-desc">Dokumen akan <strong>ditolak</strong>. Action ini menandakan dokumen tidak dapat diterima.</p>
-                <div class="form-group">
-                    <label>Alasan Penolakan *</label>
-                    <textarea name="review_notes" class="form-control" rows="4" required placeholder="Berikan alasan yang jelas mengapa dokumen ditolak..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
-                    <button type="submit" class="btn-reject-confirm">
-                        <i class="bi bi-x-circle"></i> Reject
-                    </button>
-                </div>
-            </form>
         </div>
-    </div>
+    @endif
 @endsection
 
 @push('css')
@@ -186,6 +194,12 @@
         font-weight: 600;
         margin: 0;
         color: #333;
+    }
+
+    .card-subtitle {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: #777;
     }
 
     .filter-select {
@@ -720,54 +734,59 @@
         overflow: visible !important;
         position: relative !important;
     }
+    .status-badge.status-pending {
+    background: linear-gradient(135deg, #FF9800, #FFB347);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
 </style>
 @endpush
 
 @push('scripts')
-<script>
-function downloadDoc(docId) {
-    window.location.href = `/admin/final-project/documents/${docId}/download`;
-}
-
-function showApproveModal(docId) {
-    const modal = document.getElementById('approveModal');
-    const form = document.getElementById('approveForm');
-    form.action = `/admin/final-project/documents/${docId}/approve`;
-    modal.style.display = 'flex';
-}
-
-function showRevisionModal(docId) {
-    const modal = document.getElementById('revisionModal');
-    const form = document.getElementById('revisionForm');
-    form.action = `/admin/final-project/documents/${docId}/revision`;
-    modal.style.display = 'flex';
-}
-
-function showRejectModal(docId) {
-    const modal = document.getElementById('rejectModal');
-    const form = document.getElementById('rejectForm');
-    form.action = `/admin/final-project/documents/${docId}/reject`;
-    modal.style.display = 'flex';
-}
-
-function closeModal() {
-    document.getElementById('approveModal').style.display = 'none';
-    document.getElementById('revisionModal').style.display = 'none';
-    document.getElementById('rejectModal').style.display = 'none';
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        closeModal();
+@if($canManageAll)
+    <script>
+    function downloadDoc(docId) {
+        window.location.href = `/admin/final-project/documents/${docId}/download`;
     }
-}
 
-// Close modal with ESC key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeModal();
+    function showApproveModal(docId) {
+        const modal = document.getElementById('approveModal');
+        const form = document.getElementById('approveForm');
+        form.action = `/admin/final-project/documents/${docId}/approve`;
+        modal.style.display = 'flex';
     }
-});
-</script>
+
+    function showRevisionModal(docId) {
+        const modal = document.getElementById('revisionModal');
+        const form = document.getElementById('revisionForm');
+        form.action = `/admin/final-project/documents/${docId}/revision`;
+        modal.style.display = 'flex';
+    }
+
+    function showRejectModal(docId) {
+        const modal = document.getElementById('rejectModal');
+        const form = document.getElementById('rejectForm');
+        form.action = `/admin/final-project/documents/${docId}/reject`;
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('approveModal').style.display = 'none';
+        document.getElementById('revisionModal').style.display = 'none';
+        document.getElementById('rejectModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            closeModal();
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+    </script>
+@endif
 @endpush

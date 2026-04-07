@@ -639,18 +639,7 @@
             </div>
             <span>Pengumuman</span>
         </a>
-        <a href="{{ route('admin.counseling.index') }}" class="nav-item {{ request()->routeIs('admin.counseling.*') ? 'active' : '' }}">
-            <div class="nav-icon">
-                <i class="bi bi-people-fill"></i>
-            </div>
-            <span>Bimbingan</span>
-        </a>
-        <a href="{{ route('admin.final-project.index') }}" class="nav-item {{ request()->routeIs('admin.final-project.*') ? 'active' : '' }}">
-            <div class="nav-icon">
-                <i class="bi bi-mortarboard"></i>
-            </div>
-            <span>Tugas Akhir</span>
-        </a>
+
         @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'masteradmin')
         <a href="{{ route('user.admin.main') }}" class="nav-item {{ request()->routeIs('user.admin.main') ? 'active' : '' }}">
             <div class="nav-icon">
@@ -748,4 +737,3 @@
     @stack('scripts')
 </body>
 </html>
-

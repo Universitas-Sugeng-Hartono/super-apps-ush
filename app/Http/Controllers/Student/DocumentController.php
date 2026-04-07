@@ -14,7 +14,7 @@ class DocumentController extends Controller
     {
         $studentId = decrypt(session('student_id'));
         $finalProject = FinalProject::where('student_id', $studentId)->firstOrFail();
-        
+
         $documents = FinalProjectDocument::where('final_project_id', $finalProject->id)
             ->with('reviewer')
             ->orderBy('created_at', 'desc')
@@ -28,7 +28,7 @@ class DocumentController extends Controller
     {
         $studentId = decrypt(session('student_id'));
         $finalProject = FinalProject::where('student_id', $studentId)->firstOrFail();
-        
+
         return view('students.final-project.documents.create', compact('finalProject'));
     }
 
@@ -66,7 +66,7 @@ class DocumentController extends Controller
                 'review_status' => 'pending',
             ]);
 
-            return redirect()->route('student.documents.index')
+            return redirect()->route('student.final-project.documents.index')
                 ->with('success', 'Dokumen berhasil diupload.');
 
         } catch (\Exception $e) {
@@ -102,7 +102,7 @@ class DocumentController extends Controller
             }
             $document->delete();
 
-            return redirect()->route('student.documents.index')
+            return redirect()->route('student.final-project.documents.index')
                 ->with('success', 'Dokumen berhasil dihapus.');
 
         } catch (\Exception $e) {

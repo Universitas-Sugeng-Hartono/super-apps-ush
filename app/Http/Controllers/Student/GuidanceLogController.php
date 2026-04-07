@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Storage;
 
 class GuidanceLogController extends Controller
 {
+    private function allowedSupervisorIds(FinalProject $finalProject): array
+    {
+        return collect([$finalProject->supervisor_1_id, $finalProject->supervisor_2_id])
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
     public function index()
     {
         $studentId = decrypt(session('student_id'));
@@ -35,6 +44,7 @@ class GuidanceLogController extends Controller
     {
         $studentId = decrypt(session('student_id'));
         $finalProject = FinalProject::where('student_id', $studentId)->firstOrFail();
+        $allowedSupervisorIds = $this->allowedSupervisorIds($finalProject);
 
         $request->validate([
             'supervisor_id' => 'required|exists:users,id',
@@ -43,6 +53,12 @@ class GuidanceLogController extends Controller
             'student_notes' => 'nullable|string',
             'file' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
+
+        if (!in_array((int) $request->supervisor_id, $allowedSupervisorIds, true)) {
+            return back()
+                ->withInput()
+                ->withErrors(['supervisor_id' => 'Dosen pembimbing yang dipilih tidak sesuai dengan pembimbing Tugas Akhir Anda.']);
+        }
 
         try {
             $data = $request->only(['supervisor_id', 'guidance_date', 'materials_discussed', 'student_notes']);
@@ -55,7 +71,7 @@ class GuidanceLogController extends Controller
 
             FinalProjectGuidanceLog::create($data);
 
-            return redirect()->route('student.guidance.index')
+            return redirect()->route('student.final-project.guidance.index')
                 ->with('success', 'Log bimbingan berhasil ditambahkan. Menunggu persetujuan dosen.');
 
         } catch (\Exception $e) {
@@ -82,6 +98,7 @@ class GuidanceLogController extends Controller
         $log = FinalProjectGuidanceLog::whereHas('finalProject', function($q) use ($studentId) {
             $q->where('student_id', $studentId);
         })->where('status', 'pending')->findOrFail($id);
+        $allowedSupervisorIds = $this->allowedSupervisorIds($log->finalProject);
 
         $request->validate([
             'supervisor_id' => 'required|exists:users,id',
@@ -90,6 +107,12 @@ class GuidanceLogController extends Controller
             'student_notes' => 'nullable|string',
             'file' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
+
+        if (!in_array((int) $request->supervisor_id, $allowedSupervisorIds, true)) {
+            return back()
+                ->withInput()
+                ->withErrors(['supervisor_id' => 'Dosen pembimbing yang dipilih tidak sesuai dengan pembimbing Tugas Akhir Anda.']);
+        }
 
         try {
             $log->fill($request->only(['supervisor_id', 'guidance_date', 'materials_discussed', 'student_notes']));
@@ -103,7 +126,7 @@ class GuidanceLogController extends Controller
 
             $log->save();
 
-            return redirect()->route('student.guidance.index')
+            return redirect()->route('student.final-project.guidance.index')
                 ->with('success', 'Log bimbingan berhasil diperbarui.');
 
         } catch (\Exception $e) {
@@ -125,12 +148,27 @@ class GuidanceLogController extends Controller
             }
             $log->delete();
 
-            return redirect()->route('student.guidance.index')
+            return redirect()->route('student.final-project.guidance.index')
                 ->with('success', 'Log bimbingan berhasil dihapus.');
 
         } catch (\Exception $e) {
             \Log::error('Guidance log deletion failed: '.$e->getMessage());
             return back()->with('error', 'Terjadi kesalahan saat menghapus log bimbingan.');
         }
+    }
+
+    public function download($id)
+    {
+        $studentId = decrypt(session('student_id'));
+
+        $log = FinalProjectGuidanceLog::whereHas('finalProject', function ($q) use ($studentId) {
+            $q->where('student_id', $studentId);
+        })->findOrFail($id);
+
+        if (!$log->file_path || !Storage::disk('public')->exists($log->file_path)) {
+            return back()->with('error', 'File lampiran tidak ditemukan.');
+        }
+
+        return Storage::disk('public')->download($log->file_path);
     }
 }

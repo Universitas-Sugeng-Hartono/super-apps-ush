@@ -19,37 +19,29 @@ class GuidanceReviewController extends Controller
     public function index()
     {
         $lecturerId = auth()->id();
+        $canManageAll = $this->canManageAll();
         
         $logs = FinalProjectGuidanceLog::with(['finalProject.student'])
-            ->when(!$this->canManageAll(), function ($q) use ($lecturerId) {
+            ->when(!$canManageAll, function ($q) use ($lecturerId) {
                 $q->where('supervisor_id', $lecturerId);
             })
             ->when(request('status'), function($q) {
                 $q->where('status', request('status'));
-            }, function($q) {
-                $q->pending(); // Default to pending
+            }, function($q) use ($canManageAll) {
+                if (!$canManageAll) {
+                    $q->pending(); // Default to pending for supervisor review
+                }
             })
             ->orderBy('guidance_date', 'desc')
             ->paginate(20);
 
-        return view('admin.final-project.guidance.index', compact('logs'));
-    }
-
-    public function show($id)
-    {
-        $lecturerId = auth()->id();
-        
-        $log = FinalProjectGuidanceLog::with(['finalProject.student', 'supervisor'])
-            ->when(!$this->canManageAll(), function ($q) use ($lecturerId) {
-                $q->where('supervisor_id', $lecturerId);
-            })
-            ->findOrFail($id);
-
-        return view('admin.final-project.guidance.show', compact('log'));
+        return view('admin.final-project.guidance.index', compact('logs', 'canManageAll'));
     }
 
     public function approve(Request $request, $id)
     {
+        abort_if($this->canManageAll(), 403);
+
         $lecturerId = auth()->id();
         
         $log = FinalProjectGuidanceLog::when(!$this->canManageAll(), function ($q) use ($lecturerId) {
@@ -72,6 +64,8 @@ class GuidanceReviewController extends Controller
 
     public function reject(Request $request, $id)
     {
+        abort_if($this->canManageAll(), 403);
+
         $lecturerId = auth()->id();
         
         $log = FinalProjectGuidanceLog::when(!$this->canManageAll(), function ($q) use ($lecturerId) {

@@ -396,6 +396,69 @@
         gap: 10px;
         justify-content: flex-end;
     }
+    /* tambahan */
+    .student-section {
+    flex: 1;
+    min-width: 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.btn-approve,
+.btn-approve-confirm,
+.btn-reject,
+.btn-cancel,
+.btn-reject-confirm {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .content-card {
+        padding: 16px;
+    }
+
+    .approval-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .action-buttons {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .action-buttons button {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+
+    .modal-content {
+        padding: 20px;
+        width: calc(100% - 24px);
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 </style>
 @endpush
 

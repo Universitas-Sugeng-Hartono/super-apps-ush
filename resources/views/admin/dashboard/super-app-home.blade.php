@@ -15,7 +15,8 @@
 
         <!-- Row 1: Mahasiswa per Angkatan -->
         <div class="row g-3 mb-3">
-            <div class="col-4">
+                <div class="col-12 col-lg-4">
+
                 <div class="chart-card">
                     <div class="chart-card-header">
                         <div>
@@ -26,7 +27,8 @@
                     <canvas id="batchChart"></canvas>
                 </div>
             </div>
-            <div class="col-lg-4">
+                <div class="col-12 col-lg-4">
+
                 <div class="chart-card">
                     <div class="chart-card-header">
                         <div>
@@ -37,7 +39,8 @@
                     <canvas id="ipkChart"></canvas>
                 </div>
             </div>
-            <div class="col-lg-4">
+                <div class="col-12 col-lg-4">
+
                 <div class="chart-card">
                     <div class="chart-card-header">
                         <div>
@@ -757,4 +760,3 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 @endpush
-

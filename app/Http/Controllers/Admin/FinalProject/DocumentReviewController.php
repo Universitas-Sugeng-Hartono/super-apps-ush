@@ -19,37 +19,25 @@ class DocumentReviewController extends Controller
     public function index()
     {
         $lecturerId = auth()->id();
+        $canManageAll = $this->canManageAll();
 
         $documents = FinalProjectDocument::with(['finalProject.student', 'uploader'])
-            ->when(!$this->canManageAll(), function ($q) use ($lecturerId) {
+            ->when(!$canManageAll, function ($q) use ($lecturerId) {
                 $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
                     $qq->bySupervisor($lecturerId);
                 });
             })
             ->when(request('status'), function($q) {
                 $q->where('review_status', request('status'));
-            }, function($q) {
-                $q->pendingReview(); // Default to pending
+            }, function($q) use ($canManageAll) {
+                if ($canManageAll) {
+                    $q->pendingReview(); // Default to pending for reviewer
+                }
             })
             ->orderBy('uploaded_at', 'desc')
             ->paginate(20);
 
-        return view('admin.final-project.documents.index', compact('documents'));
-    }
-
-    public function show($id)
-    {
-        $lecturerId = auth()->id();
-
-        $document = FinalProjectDocument::with(['finalProject.student', 'uploader', 'reviewer'])
-            ->when(!$this->canManageAll(), function ($q) use ($lecturerId) {
-                $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
-                    $qq->bySupervisor($lecturerId);
-                });
-            })
-            ->findOrFail($id);
-
-        return view('admin.final-project.documents.show', compact('document'));
+        return view('admin.final-project.documents.index', compact('documents', 'canManageAll'));
     }
 
     public function download($id)
@@ -71,6 +59,8 @@ class DocumentReviewController extends Controller
 
     public function approve(Request $request, $id)
     {
+        abort_unless($this->canManageAll(), 403);
+
         $lecturerId = auth()->id();
 
         $document = FinalProjectDocument::when(!$this->canManageAll(), function ($q) use ($lecturerId) {
@@ -96,6 +86,8 @@ class DocumentReviewController extends Controller
 
     public function revision(Request $request, $id)
     {
+        abort_unless($this->canManageAll(), 403);
+
         $lecturerId = auth()->id();
 
         $document = FinalProjectDocument::when(!$this->canManageAll(), function ($q) use ($lecturerId) {
@@ -121,6 +113,8 @@ class DocumentReviewController extends Controller
 
     public function reject(Request $request, $id)
     {
+        abort_unless($this->canManageAll(), 403);
+
         $lecturerId = auth()->id();
 
         $document = FinalProjectDocument::when(!$this->canManageAll(), function ($q) use ($lecturerId) {

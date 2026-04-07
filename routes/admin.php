@@ -156,15 +156,28 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
             Route::delete('/{id}', 'destroy')->name('destroy');
         });
 
-    // Final Project Management (Lecturer)
-    Route::prefix('admin/final-project')->name('admin.final-project.')->group(function () {
-        // Dashboard
+    // Final Project - Dosen: Log Bimbingan + Log Dokumen (view-only)
+Route::prefix('admin/final-project')->name('admin.final-project.')->group(function () {
+    Route::prefix('guidance')->name('guidance.')->controller(\App\Http\Controllers\Admin\FinalProject\GuidanceReviewController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/{id}/approve', 'approve')->middleware('role:admin')->name('approve');
+        Route::post('/{id}/reject', 'reject')->middleware('role:admin')->name('reject');
+        Route::get('/{id}/download', 'download')->name('download');
+    });
+
+    Route::prefix('documents')->name('documents.')->controller(\App\Http\Controllers\Admin\FinalProject\DocumentReviewController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{id}/download', 'download')->name('download');
+    });
+});
+
+    // Final Project - Khusus Kaprodi/Superuser
+    Route::middleware(['role:superadmin,masteradmin'])->prefix('admin/final-project')->name('admin.final-project.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\FinalProject\DashboardController::class, 'index'])->name('index');
         Route::get('/{id}', [\App\Http\Controllers\Admin\FinalProject\DashboardController::class, 'show'])
             ->whereNumber('id')
             ->name('show');
 
-        // Title Approvals
         Route::prefix('titles')->name('titles.')->controller(\App\Http\Controllers\Admin\FinalProject\TitleApprovalController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{id}', 'show')->name('show');
@@ -172,18 +185,12 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
             Route::post('/{id}/reject', 'reject')->name('reject');
         });
 
-        // Supervisor Management
-        Route::prefix('supervisors')
-            ->middleware(['role:superadmin,masteradmin'])
-            ->name('supervisors.')
-            ->controller(\App\Http\Controllers\Admin\FinalProject\SupervisorManagementController::class)
-            ->group(function () {
+        Route::prefix('supervisors')->name('supervisors.')->controller(\App\Http\Controllers\Admin\FinalProject\SupervisorManagementController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{id}/edit', 'edit')->name('edit');
             Route::put('/{id}', 'update')->name('update');
         });
 
-        // Proposal Approvals
         Route::prefix('proposals')->name('proposals.')->controller(\App\Http\Controllers\Admin\FinalProject\ProposalApprovalController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{id}', 'show')->name('show');
@@ -191,7 +198,6 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
             Route::post('/{id}/reject', 'reject')->name('reject');
         });
 
-        // Defense Approvals
         Route::prefix('defenses')->name('defenses.')->controller(\App\Http\Controllers\Admin\FinalProject\DefenseApprovalController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{id}', 'show')->name('show');
@@ -199,20 +205,7 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
             Route::post('/{id}/reject', 'reject')->name('reject');
         });
 
-        // Guidance Review
-        Route::prefix('guidance')->name('guidance.')->controller(\App\Http\Controllers\Admin\FinalProject\GuidanceReviewController::class)->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('/{id}', 'show')->name('show');
-            Route::post('/{id}/approve', 'approve')->name('approve');
-            Route::post('/{id}/reject', 'reject')->name('reject');
-            Route::get('/{id}/download', 'download')->name('download');
-        });
-
-        // Document Review
         Route::prefix('documents')->name('documents.')->controller(\App\Http\Controllers\Admin\FinalProject\DocumentReviewController::class)->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('/{id}', 'show')->name('show');
-            Route::get('/{id}/download', 'download')->name('download');
             Route::post('/{id}/approve', 'approve')->name('approve');
             Route::post('/{id}/revision', 'revision')->name('revision');
             Route::post('/{id}/reject', 'reject')->name('reject');

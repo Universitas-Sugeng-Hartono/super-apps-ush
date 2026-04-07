@@ -3,10 +3,16 @@
 @section('content')
     <div class="content-card">
         <div class="card-header">
-            <h3>Review Log Bimbingan</h3>
+            <div>
+                <h3>{{ $canManageAll ? 'Monitoring Log Bimbingan' : 'Review Log Bimbingan' }}</h3>
+                <p class="card-subtitle">
+                    {{ $canManageAll ? 'Halaman ini hanya untuk monitoring status log bimbingan mahasiswa.' : 'Anda dapat meninjau dan memberikan keputusan pada log bimbingan mahasiswa bimbingan Anda.' }}
+                </p>
+            </div>
             <div class="filters">
                 <select onchange="window.location.href='?status='+this.value" class="filter-select">
-                    <option value="">Pending Review</option>
+                    <option value="">{{ $canManageAll ? 'Semua Status' : 'Pending Review' }}</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
                     <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
@@ -28,9 +34,10 @@
                             <p class="meta">
                                 <span><i class="bi bi-card-text"></i> {{ $log->finalProject->student->nim }}</span>
                                 <span><i class="bi bi-calendar3"></i> {{ $log->guidance_date->format('d M Y') }}</span>
+                                <span><i class="bi bi-person-badge"></i> {{ $log->supervisor->name ?? '-' }}</span>
                             </p>
                         </div>
-                        @if($log->status === 'pending')
+                        @if(!$canManageAll && $log->status === 'pending')
                             <div class="action-buttons">
                                 <button type="button" class="btn-approve" onclick="showApproveModal({{ $log->id }})">
                                     <i class="bi bi-check-circle"></i> ACC
@@ -70,7 +77,7 @@
 
                         @if($log->supervisor_feedback)
                             <div class="content-section feedback-section">
-                                <h5><i class="bi bi-chat-left-text"></i> Feedback Anda:</h5>
+                                <h5><i class="bi bi-chat-left-text"></i> {{ $canManageAll ? 'Feedback Pembimbing:' : 'Feedback Anda:' }}</h5>
                                 <p>{{ $log->supervisor_feedback }}</p>
                                 <small>Diberikan pada {{ $log->approved_at?->format('d M Y H:i') ?? '-' }}</small>
                             </div>
@@ -86,54 +93,56 @@
             <div class="empty-state">
                 <i class="bi bi-inbox"></i>
                 <h4>Tidak ada log bimbingan</h4>
-                <p>Semua log bimbingan sudah direview</p>
+                <p>{{ $canManageAll ? 'Belum ada log bimbingan yang bisa ditampilkan.' : 'Semua log bimbingan sudah direview.' }}</p>
             </div>
         @endif
     </div>
 
-    <!-- Approve Modal -->
-    <div id="approveModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4><i class="bi bi-check-circle"></i> ACC Log Bimbingan</h4>
+    @if(!$canManageAll)
+        <!-- Approve Modal -->
+        <div id="approveModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4><i class="bi bi-check-circle"></i> ACC Log Bimbingan</h4>
+                </div>
+                <form id="approveForm" method="POST">
+                    @csrf
+                    <div class="form-group">
+                        <label>Feedback (Opsional)</label>
+                        <textarea name="supervisor_feedback" class="form-control" rows="3" placeholder="Berikan feedback atau catatan untuk mahasiswa..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
+                        <button type="submit" class="btn-approve-confirm">
+                            <i class="bi bi-check-circle"></i> ACC Bimbingan
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form id="approveForm" method="POST">
-                @csrf
-                <div class="form-group">
-                    <label>Feedback (Opsional)</label>
-                    <textarea name="supervisor_feedback" class="form-control" rows="3" placeholder="Berikan feedback atau catatan untuk mahasiswa..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
-                    <button type="submit" class="btn-approve-confirm">
-                        <i class="bi bi-check-circle"></i> ACC Bimbingan
-                    </button>
-                </div>
-            </form>
         </div>
-    </div>
 
-    <!-- Reject Modal -->
-    <div id="rejectModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4><i class="bi bi-x-circle"></i> Tolak Log Bimbingan</h4>
+        <!-- Reject Modal -->
+        <div id="rejectModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4><i class="bi bi-x-circle"></i> Tolak Log Bimbingan</h4>
+                </div>
+                <form id="rejectForm" method="POST">
+                    @csrf
+                    <div class="form-group">
+                        <label>Alasan Penolakan *</label>
+                        <textarea name="supervisor_feedback" class="form-control" rows="4" required placeholder="Berikan alasan mengapa log bimbingan ditolak..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
+                        <button type="submit" class="btn-reject-confirm">
+                            <i class="bi bi-x-circle"></i> Tolak
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form id="rejectForm" method="POST">
-                @csrf
-                <div class="form-group">
-                    <label>Alasan Penolakan *</label>
-                    <textarea name="supervisor_feedback" class="form-control" rows="4" required placeholder="Berikan alasan mengapa log bimbingan ditolak..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
-                    <button type="submit" class="btn-reject-confirm">
-                        <i class="bi bi-x-circle"></i> Tolak
-                    </button>
-                </div>
-            </form>
         </div>
-    </div>
+    @endif
 @endsection
 
 @push('css')
@@ -159,6 +168,12 @@
         font-weight: 600;
         margin: 0;
         color: #333;
+    }
+
+    .card-subtitle {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: #777;
     }
 
     .filter-select {
@@ -244,6 +259,9 @@
     .action-buttons {
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        flex-shrink: 0;
     }
 
     .btn-approve, .btn-reject, .btn-cancel, .btn-approve-confirm, .btn-reject-confirm {
@@ -602,40 +620,114 @@
         overflow: visible !important;
         position: relative !important;
     }
+    .status-badge.status-pending {
+    background: linear-gradient(135deg, #FF9800, #FFB347);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+/* tambahan */
+.student-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.btn-approve,
+.btn-reject,
+.btn-cancel,
+.btn-approve-confirm,
+.btn-reject-confirm {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .content-card {
+        padding: 16px;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .filters {
+        width: 100%;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .review-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .action-buttons {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .action-buttons button {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+
+    .status-badge {
+        align-self: flex-start;
+    }
+}
+
 </style>
 @endpush
 
 @push('scripts')
-<script>
-function showApproveModal(logId) {
-    const modal = document.getElementById('approveModal');
-    const form = document.getElementById('approveForm');
-    form.action = `/admin/final-project/guidance/${logId}/approve`;
-    modal.style.display = 'flex';
-}
-
-function showRejectModal(logId) {
-    const modal = document.getElementById('rejectModal');
-    const form = document.getElementById('rejectForm');
-    form.action = `/admin/final-project/guidance/${logId}/reject`;
-    modal.style.display = 'flex';
-}
-
-function closeModal() {
-    document.getElementById('approveModal').style.display = 'none';
-    document.getElementById('rejectModal').style.display = 'none';
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const approveModal = document.getElementById('approveModal');
-    const rejectModal = document.getElementById('rejectModal');
-    if (event.target === approveModal) {
-        closeModal();
+@if(!$canManageAll)
+    <script>
+    function showApproveModal(logId) {
+        const modal = document.getElementById('approveModal');
+        const form = document.getElementById('approveForm');
+        form.action = `/admin/final-project/guidance/${logId}/approve`;
+        modal.style.display = 'flex';
     }
-    if (event.target === rejectModal) {
-        closeModal();
+
+    function showRejectModal(logId) {
+        const modal = document.getElementById('rejectModal');
+        const form = document.getElementById('rejectForm');
+        form.action = `/admin/final-project/guidance/${logId}/reject`;
+        modal.style.display = 'flex';
     }
-}
-</script>
+
+    function closeModal() {
+        document.getElementById('approveModal').style.display = 'none';
+        document.getElementById('rejectModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const approveModal = document.getElementById('approveModal');
+        const rejectModal = document.getElementById('rejectModal');
+        if (event.target === approveModal) {
+            closeModal();
+        }
+        if (event.target === rejectModal) {
+            closeModal();
+        }
+    }
+    </script>
+@endif
 @endpush
