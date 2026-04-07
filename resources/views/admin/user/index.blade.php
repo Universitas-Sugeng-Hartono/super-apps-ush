@@ -56,7 +56,7 @@
                     </div>
                     <h5 class="section-title">Informasi Dasar</h5>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="inputNama" class="form-label">
@@ -749,7 +749,7 @@
 function togglePassword() {
     const passwordInput = document.getElementById('inputPassword');
     const toggleIcon = document.getElementById('passwordToggleIcon');
-    
+
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         toggleIcon.classList.remove('bi-eye');

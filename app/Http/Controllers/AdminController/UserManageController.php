@@ -28,9 +28,9 @@ class UserManageController extends Controller
      */
     public function indexMain()
     {
- 
+
         $users = User::where('program_studi', Auth::user()->program_studi)->get();
-        
+
         return view('admin.user.main', compact('users'));
     }
 
@@ -226,7 +226,7 @@ class UserManageController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
-        
+
         // Jangan hapus user yang sedang login
         if ($user->id === Auth::id()) {
             return redirect()->back()->with('error', 'Tidak dapat menghapus akun yang sedang digunakan.');
@@ -253,12 +253,12 @@ class UserManageController extends Controller
     {
         $user = new User();
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
-        
+
         // Tentukan view berdasarkan route
         if (request()->routeIs('admin.management.lecturers.*')) {
             return view('admin.management.lecturers.create', compact('user', 'studyPrograms'));
         }
-        
+
         return view('admin.user.create', compact('user', 'studyPrograms'));
     }
 
@@ -269,12 +269,12 @@ class UserManageController extends Controller
     {
         $user = User::findOrFail($id);
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
-        
+
         // Tentukan view berdasarkan route
         if (request()->routeIs('admin.management.lecturers.*')) {
             return view('admin.management.lecturers.edit', compact('user', 'studyPrograms'));
         }
-        
+
         return view('admin.user.edit', compact('user', 'studyPrograms'));
     }
 
@@ -287,7 +287,7 @@ class UserManageController extends Controller
 
         $user = new User($request->only(['name', 'email', 'username', 'NIDNorNUPTK', 'role', 'program_studi']));
         $user->role = $request->role ?? 'admin';
-        
+
         // Default program studi dari master
         $defaultProdi = StudyProgram::where('is_active', true)->orderBy('order')->first();
         $user->program_studi = $request->program_studi ?? ($defaultProdi ? $defaultProdi->name : 'Bisnis Digital');
@@ -302,7 +302,7 @@ class UserManageController extends Controller
         if (request()->routeIs('admin.management.lecturers.*')) {
             return redirect()->route('admin.management.lecturers.index')->with('success', 'Dosen berhasil ditambahkan');
         }
-        
+
         return redirect()->route('user.admin.main')->with('success', 'User berhasil ditambahkan');
     }
 
@@ -327,11 +327,13 @@ class UserManageController extends Controller
 
         $user->save();
 
+        
+
         // Redirect berdasarkan route yang dipanggil
         if (request()->routeIs('admin.management.lecturers.*')) {
             return redirect()->route('admin.management.lecturers.index')->with('success', 'Dosen berhasil diperbarui');
         }
-        
+
         return redirect()->route('user.admin.index')->with('success', 'User berhasil diperbarui');
     }
 
@@ -341,7 +343,7 @@ class UserManageController extends Controller
     private function rules($id = null): array
     {
         $validPrograms = StudyProgram::where('is_active', true)->pluck('name')->toArray();
-        
+
         return [
             'name'          => 'required|string|max:255',
             'email'         => 'required|email|unique:users,email,' . ($id ?? 'NULL') . ',id',

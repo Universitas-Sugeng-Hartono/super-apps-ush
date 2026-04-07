@@ -272,28 +272,40 @@
                     <i class="bi bi-clipboard-check"></i>
                 </div>
 
-                <h5>
-                    @if($defenseRejected)         Edit Sidang
-                    @elseif($defenseHasNeedsRevision) Revisi Sidang
-                    @elseif($defense)             Lihat Sidang
-                    @else                         Daftar Sidang
-                    @endif
-                </h5>
-                <p>Pendaftaran Sidang TA</p>
-
-                @if(!$finalProject->proposal || $finalProject->proposal->status !== 'approved')
-                    <span class="status-badge warning">Sempro Belum Disetujui</span>
-                @elseif($defenseRejected)
-                    <span class="status-badge danger">Ditolak — Klik untuk Edit</span>
+              <h5>
+                @if($defenseRejected)
+                    Edit Sidang
                 @elseif($defenseHasNeedsRevision)
-                    <span class="status-badge revision">Dokumen Perlu Revisi</span>
-                @elseif($defenseApproved)
-                    <span class="status-badge active">Approved</span>
+                    Edit Dokumen Sidang
                 @elseif($defense)
-                    <span class="status-badge warning">Menunggu Review</span>
+                    Lihat Sidang
                 @else
-                    <span class="status-badge info">Belum Daftar</span>
+                    Daftar Sidang
                 @endif
+            </h5>
+
+            <p>
+                @if($defenseHasNeedsRevision)
+                    Revisi dokumen pendaftaran sidang TA
+                @else
+                    Pendaftaran Sidang TA
+                @endif
+            </p>
+
+            @if(!$finalProject->proposal || $finalProject->proposal->status !== 'approved')
+                <span class="status-badge warning">Sempro Belum Disetujui</span>
+            @elseif($defenseRejected)
+                <span class="status-badge danger">Ditolak - Klik untuk Edit</span>
+            @elseif($defenseHasNeedsRevision)
+                <span class="status-badge revision">Edit Dokumen</span>
+            @elseif($defenseApproved)
+                <span class="status-badge active">Approved</span>
+            @elseif($defense)
+                <span class="status-badge warning">Menunggu Review</span>
+            @else
+                <span class="status-badge info">Belum Daftar</span>
+            @endif
+
             </a>
 
             <!-- Log Bimbingan -->
