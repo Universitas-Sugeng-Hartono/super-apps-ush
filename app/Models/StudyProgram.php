@@ -19,5 +19,9 @@ class StudyProgram extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
-}
 
+    public function skpiAcademicProfile()
+    {
+        return $this->hasOne(SkpiAcademicProfile::class);
+    }
+}

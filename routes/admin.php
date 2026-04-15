@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController\UserManageController;
 use App\Http\Controllers\AdminController\StudentsAdminController;
 use App\Http\Controllers\AdminController\CounselingController;
 use App\Http\Controllers\AdminController\AnnouncementController;
+use App\Http\Controllers\AdminController\SkpiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,6 +77,28 @@ Route::middleware(['auth', 'role:superadmin,masteradmin'])->group(function () {
             Route::get('/main', 'indexMain')->name('main');
             Route::get('/create', 'create')->name('create');
         });
+});
+
+// Khusus Superuser
+Route::middleware(['auth', 'role:masteradmin'])->group(function () {
+    Route::prefix('admin/skpi')->name('admin.skpi.')->controller(SkpiController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/daftar-skpi', 'daftarSkpi')->name('daftar-skpi.index');
+        Route::post('/daftar-skpi/{id}/approve', 'approveDaftarSkpi')->name('daftar-skpi.approve');
+        Route::post('/daftar-skpi/AproveAll','AproveAllDaftarSkpi')->name('daftar-skpi.approve-all');
+        Route::post('/daftar-skpi/{id}/revision', 'revisionDaftarSkpi')->name('daftar-skpi.revision');
+        Route::post('/daftar-skpi/{id}/reject', 'rejectDaftarSkpi')->name('daftar-skpi.reject');
+        Route::get('/input-data-akademi', 'inputDataAkademi')->name('input-data-akademi.index');
+        Route::post('/input-data-akademi', 'storeInputDataAkademi')->name('input-data-akademi.store');
+        Route::post('/input-data-akademi/study-program', 'storeStudyProgram')->name('input-data-akademi.store-prodi');
+        Route::get('/verifikasi-data', 'verifikasiData')->name('verifikasi-data.index');
+        Route::post('/verifikasi-data/{id}/approve', 'approveVerifikasiData')->name('verifikasi-data.approve');
+        Route::post('/verifikasi-data/{id}/reject', 'rejectVerifikasiData')->name('verifikasi-data.reject');
+        Route::post('/verifikasi-data/approve-all', 'approveAllVerifikasiData')->name('verifikasi-data.approve-all');
+        Route::get('/generate-skpi', 'generateSkpi')->name('generate-skpi.index');
+        Route::post('/generate-skpi/metadata', 'storeGenerateMetadata')->name('generate-skpi.metadata.store');
+        Route::post('/generate-skpi/export-pdf', 'exportGeneratedSkpiPdf')->name('generate-skpi.export-pdf');
+    });
 });
 
 

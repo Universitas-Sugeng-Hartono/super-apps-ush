@@ -464,7 +464,11 @@
             }
 
             .user-dropdown {
-                display: none !important;
+                display: block;
+                right: -5px;
+                top: 60px;
+                width: 180px;
+                z-index: 10001 !important;
             }
 
             .desktop-only {

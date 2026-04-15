@@ -505,6 +505,177 @@
                 padding: 10px 8px;
             }
         }
+        .btn-cv-download {
+            color: rgb(3, 3, 3);
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s;
+
+        }
+        .btn-cv-download:hover{
+            color: #4CAF50;
+        }
+
+        /* Premium Table Styles (from achievements page) */
+        .table-premium thead {
+            background: linear-gradient(135deg, rgba(255, 152, 0, 0.07), rgba(255, 179, 71, 0.07));
+        }
+
+        .table-premium thead th {
+            font-weight: 600;
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--primary-orange);
+            padding: 14px 12px !important;
+            font-size: 13px;
+        }
+
+        .table-premium tbody td {
+            padding: 14px 12px !important;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .cell-kegiatan strong {
+            display: block;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .cell-kegiatan small {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .badge-level {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: #EEF2FF;
+            color: #4338CA;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .skp-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 42px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #FFF1DA;
+            color: #C46A00;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .status-approved {
+            background: #E8F7EE;
+            color: #1E7A44;
+        }
+
+        .status-pending {
+            background: #FFF1DA;
+            color: #C46A00;
+        }
+
+        .status-rejected {
+            background: #FDE8E7;
+            color: #C23934;
+        }
+
+        .doc-btn-sm {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #EEF2FF;
+            color: #4338CA;
+            border-radius: 8px;
+            font-size: 14px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .btn-del-sm {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #FDE8E7;
+            color: #C23934;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        /* SKP Result Box (from achievements page) */
+        .skp-result-box {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #FFF8E1, #FFFDE7);
+            border: 2px solid #FFD54F;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .skp-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #FFC107, #FFB300);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .skp-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .skp-info span {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .skp-info strong {
+            font-size: 32px;
+            color: #E65100;
+            line-height: 1;
+            font-weight: 800;
+        }
+
+        .skp-note {
+            margin-left: auto;
+            font-size: 11px;
+            color: #AAA;
+            text-align: right;
+            max-width: 140px;
+        }
     </style>
 @endpush
 
@@ -596,7 +767,7 @@
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="form_type" value="foto">
-                            
+
                             <div class="file-input-wrapper">
                                 <input type="file" name="foto" id="fotoInput" accept="image/*">
                                 <label for="fotoInput" class="file-input-label">
@@ -635,7 +806,7 @@
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="form_type" value="ttd">
-                            
+
                             <div class="file-input-wrapper">
                                 <input type="file" name="ttd" id="ttdInput" accept="image/*">
                                 <label for="ttdInput" class="file-input-label">
@@ -682,6 +853,29 @@
                         <div class="student-info-value">{{ $student->program_studi ?? 'N/A' }}</div>
                     </div>
                 </div>
+                <div class="student-info-item">
+                    <div class="student-info-icon">
+                         <i class="bi bi-file-earmark-person-fill"></i>
+                    </div>
+
+                    <div class="student-info-value">
+                        @if($student->skpiRegistration?->status === 'approved')
+
+                            <a href="{{ route('student.personal.cv.download') }}" class="btn-cv-download w-100">
+
+                                Download CV
+                            </a>
+
+                        @else
+                            <div class="student-info-item mt-3">
+                                <div style="font-size:12px; color:#aaa; text-align:center; width:100%;">
+                                    <i class="bi bi-lock me-1"></i>
+                                    Download CV tersedia setelah SKPI disetujui
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -706,7 +900,7 @@
                                         Nama Orangtua
                                     </label>
                                     <input type="text" name="nama_orangtua" class="form-control"
-                                        value="{{ old('nama_orangtua', $student->nama_orangtua) }}" 
+                                        value="{{ old('nama_orangtua', $student->nama_orangtua) }}"
                                         @readonly(!$student->is_edited)
                                         placeholder="Masukkan nama orangtua">
                                 </div>
@@ -748,7 +942,7 @@
                                             <i class="bi bi-key me-1"></i>
                                             Password Baru
                                         </label>
-                                        <input type="password" name="password" id="password" class="form-control" 
+                                        <input type="password" name="password" id="password" class="form-control"
                                             minlength="8" placeholder="Minimal 8 karakter">
                                         <small class="text-muted">Kosongkan jika tidak ingin mengubah password</small>
                                     </div>
@@ -759,7 +953,7 @@
                                             <i class="bi bi-key-fill me-1"></i>
                                             Konfirmasi Password
                                         </label>
-                                        <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" 
+                                        <input type="password" name="password_confirmation" id="password_confirmation" class="form-control"
                                             minlength="8" placeholder="Ulangi password baru">
                                     </div>
                                 </div>
@@ -812,7 +1006,7 @@
                                         No. HP
                                     </label>
                                     <input type="text" name="no_telepon" class="form-control"
-                                        value="{{ old('no_telepon', $student->no_telepon) }}" 
+                                        value="{{ old('no_telepon', $student->no_telepon) }}"
                                         @readonly(!$student->is_edited)
                                         placeholder="08xxxxxxxxxx">
                                 </div>
@@ -838,7 +1032,7 @@
                                 Email
                             </label>
                             <input type="email" name="email" class="form-control"
-                                value="{{ old('email', $student->email) }}" 
+                                value="{{ old('email', $student->email) }}"
                                 @readonly(!$student->is_edited)
                                 placeholder="email@example.com">
                         </div>
@@ -851,7 +1045,7 @@
                                         IPK (Indeks Prestasi Kumulatif)
                                     </label>
                                     <input type="number" name="ipk" class="form-control"
-                                        value="{{ old('ipk', $student->ipk) }}" 
+                                        value="{{ old('ipk', $student->ipk) }}"
                                         @readonly(!$student->is_edited)
                                         step="0.01" min="0" max="4"
                                         placeholder="contoh: 3.75">
@@ -887,7 +1081,7 @@
                                 <i class="bi bi-lock-fill"></i>
                                 <div class="info-alert-content">
                                     <h6>Data Terkunci</h6>
-                                    <p>Data Anda sudah terkunci dan tidak dapat diubah. Jika ada perubahan yang diperlukan, 
+                                    <p>Data Anda sudah terkunci dan tidak dapat diubah. Jika ada perubahan yang diperlukan,
                                        silakan hubungi <strong>dosen pembimbing akademik</strong> Anda.</p>
                                 </div>
                             </div>
@@ -896,146 +1090,12 @@
                 </div>
             </div>
 
-            <!-- Achievements Card -->
-            <div class="profile-card mt-4">
-                <div class="profile-card-header">
-                    <i class="bi bi-trophy-fill"></i>
-                    <span>Prestasi & Penghargaan</span>
-                </div>
-                <div class="profile-card-body">
-                    <!-- Add Achievement Form -->
-                    @if ($student->is_edited)
-                        <form action="{{ route('student.personal.achievement.store') }}" method="POST" 
-                            enctype="multipart/form-data" class="mb-4" id="achievementForm">
-                            @csrf
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-event me-1"></i>
-                                            Nama Event
-                                        </label>
-                                        <input type="text" name="event" class="form-control" 
-                                            placeholder="contoh: Kompetisi Web Development Nasional" required>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">
-                                            <i class="bi bi-award me-1"></i>
-                                            Prestasi yang Diraih
-                                        </label>
-                                        <input type="text" name="achievement" class="form-control" 
-                                            placeholder="contoh: Juara 1" required>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">
-                                            <i class="bi bi-globe me-1"></i>
-                                            Tingkat
-                                        </label>
-                                        <select name="level" class="form-control" required>
-                                            <option value="">Pilih Tingkat</option>
-                                            <option value="Sekolah/Kampus">Sekolah/Kampus</option>
-                                            <option value="Kota/Kabupaten">Kota/Kabupaten</option>
-                                            <option value="Regional">Regional</option>
-                                            <option value="Nasional">Nasional</option>
-                                            <option value="Internasional">Internasional</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">
-                                            <i class="bi bi-file-earmark-pdf me-1"></i>
-                                            Upload Piagam (Opsional)
-                                        </label>
-                                        <input type="file" name="certificate" class="form-control" 
-                                            accept=".pdf,.jpg,.jpeg,.png">
-                                        <small class="text-muted">Format: PDF, JPG, PNG (Maks. 5MB)</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="text-end">
-                                <button type="submit" class="btn-upload">
-                                    <i class="bi bi-plus-circle"></i>
-                                    Tambah Prestasi
-                                </button>
-                            </div>
-                        </form>
-
-                        <hr style="border-top: 2px solid #e0e0e0; margin: 30px 0;">
-                    @endif
-
-                    <!-- Achievements Table -->
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="achievementsTable">
-                            <thead>
-                                <tr>
-                                    <th style="width: 5%;">#</th>
-                                    <th style="width: 25%;">Event</th>
-                                    <th style="width: 20%;">Prestasi</th>
-                                    <th style="width: 15%;">Tingkat</th>
-                                    <th style="width: 15%;">Piagam</th>
-                                    @if ($student->is_edited)
-                                        <th style="width: 20%;">Aksi</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($student->achievements as $index => $achievement)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $achievement->event }}</td>
-                                        <td>
-                                            <span class="badge bg-success">{{ $achievement->achievement }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info">{{ $achievement->level }}</span>
-                                        </td>
-                                        <td>
-                                            @if ($achievement->certificate)
-                                                <a href="{{ asset('storage/' . $achievement->certificate) }}" 
-                                                   target="_blank" class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-download"></i> Lihat
-                                                </a>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        @if ($student->is_edited)
-                                            <td>
-                                                <form action="{{ route('student.personal.achievement.delete', $achievement->id) }}" 
-                                                    method="POST" class="d-inline"
-                                                    onsubmit="return confirm('Yakin ingin menghapus prestasi ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        @endif
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">
-                                            <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                                            <p class="mt-2">Belum ada prestasi yang ditambahkan</p>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- Logout Card (Mobile Only) -->
+            <div class="profile-card d-md-none mt-3">
+                <div class="profile-card-body p-3">
+                    <a href="{{ route('auth.logout') }}" class="btn btn-danger w-100 py-3" style="border-radius: 12px; font-weight: 700;">
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout dari Akun
+                    </a>
                 </div>
             </div>
         </div>
@@ -1067,12 +1127,12 @@
             // Password validation
             const passwordInput = document.getElementById('password');
             const passwordConfirmationInput = document.getElementById('password_confirmation');
-            
+
             if (passwordInput && passwordConfirmationInput) {
                 function validatePassword() {
                     const password = passwordInput.value;
                     const passwordConfirmation = passwordConfirmationInput.value;
-                    
+
                     if (password && passwordConfirmation) {
                         if (password !== passwordConfirmation) {
                             passwordConfirmationInput.setCustomValidity('Password tidak cocok');
@@ -1116,7 +1176,7 @@
                 var lat = {{ old('alamat_lat', $student->alamat_lat ?? -6.2) }};
                 var lng = {{ old('alamat_lng', $student->alamat_lng ?? 106.816666) }};
                 var map = L.map('map').setView([lat, lng], 13);
-                
+
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
@@ -1124,7 +1184,7 @@
                 var marker = L.marker([lat, lng], {
                     draggable: true
                 }).addTo(map);
-                
+
                 marker.on('dragend', function(e) {
                     var pos = marker.getLatLng();
                     document.getElementById('alamat_lat').value = pos.lat;

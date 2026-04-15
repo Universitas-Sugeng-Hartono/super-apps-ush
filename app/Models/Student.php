@@ -96,6 +96,11 @@ class Student extends Authenticatable
         return $this->hasOne(\App\Models\FinalProject::class, 'student_id', 'id');
     }
 
+    public function skpiRegistration()
+    {
+        return $this->hasOne(\App\Models\SkpiRegistration::class, 'student_id', 'id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Query Scopes
@@ -116,8 +121,8 @@ class Student extends Authenticatable
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_lengkap', 'like', "%{$search}%")
-                  ->orWhere('nim', 'like', "%{$search}%")
-                  ->orWhere('angkatan', 'like', "%{$search}%");
+                    ->orWhere('nim', 'like', "%{$search}%")
+                    ->orWhere('angkatan', 'like', "%{$search}%");
             });
         }
         return $query;
@@ -148,20 +153,20 @@ class Student extends Authenticatable
         $now = now();
         $currentYear = $now->year;
         $currentMonth = $now->month;
-        
+
         // Tentukan semester saat ini (1 = ganjil, 2 = genap)
         // Semester ganjil: Agustus - Januari (bulan 8-12, 1)
         // Semester genap: Februari - Juli (bulan 2-7)
         $currentSemesterInYear = ($currentMonth >= 8 || $currentMonth <= 1) ? 1 : 2;
-        
+
         // Hitung selisih tahun
         $yearDiff = $currentYear - $this->angkatan;
-        
+
         // Semester = (selisih tahun * 2) + semester saat ini
         // Contoh: angkatan 2022, sekarang 2025 semester ganjil
         // = (2025 - 2022) * 2 + 1 = 3 * 2 + 1 = 7
         $semester = ($yearDiff * 2) + $currentSemesterInYear;
-        
+
         return max(1, $semester); // Minimal semester 1
     }
 }

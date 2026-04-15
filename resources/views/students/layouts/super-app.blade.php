@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -429,6 +430,7 @@
         .modal-backdrop {
             z-index: 10040 !important;
         }
+
         .modal {
             z-index: 10050 !important;
         }
@@ -474,7 +476,11 @@
             }
 
             .user-dropdown {
-                display: none !important;
+                display: block;
+                right: -5px;
+                top: 60px;
+                width: 180px;
+                z-index: 10001 !important;
             }
 
             .desktop-only {
@@ -524,9 +530,9 @@
             margin-left: 280px;
             transition: margin-left var(--transition-normal);
         }
-
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <div class="header-section">
@@ -551,9 +557,9 @@
                     </div>
                     <div class="user-avatar">
                         @if (session('path_pic') !== '0')
-                            <img src="{{ asset('storage/' . session('path_pic')) }}" alt="Profile">
+                        <img src="{{ asset('storage/' . session('path_pic')) }}" alt="Profile">
                         @else
-                            <i class="bi bi-person-circle" style="font-size: 35px; color: var(--primary-orange);"></i>
+                        <i class="bi bi-person-circle" style="font-size: 35px; color: var(--primary-orange);"></i>
                         @endif
                     </div>
 
@@ -601,7 +607,7 @@
                 <div class="nav-icon">
                     <i class="bi bi-bell-fill"></i>
                     @if(!empty($globalUnreadCount) && $globalUnreadCount > 0)
-                        <span class="nav-badge">{{ $globalUnreadCount > 99 ? '99+' : $globalUnreadCount }}</span>
+                    <span class="nav-badge">{{ $globalUnreadCount > 99 ? '99+' : $globalUnreadCount }}</span>
                     @endif
                 </div>
                 <span>Notification</span>
@@ -633,7 +639,7 @@
             <div class="nav-icon">
                 <i class="bi bi-bell-fill"></i>
                 @if(!empty($globalUnreadCount) && $globalUnreadCount > 0)
-                    <span class="nav-badge">{{ $globalUnreadCount > 99 ? '99+' : $globalUnreadCount }}</span>
+                <span class="nav-badge">{{ $globalUnreadCount > 99 ? '99+' : $globalUnreadCount }}</span>
                 @endif
             </div>
             <span>Notification</span>
@@ -724,5 +730,5 @@
         }
     </script>
 </body>
-</html>
 
+</html>

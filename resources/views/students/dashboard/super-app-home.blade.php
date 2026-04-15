@@ -91,6 +91,7 @@
                     $iconColors = [
                         'bi-person-video3' => 'linear-gradient(135deg, #FF9800, #FFB347)',
                         'bi-mortarboard' => 'linear-gradient(135deg, #FF5252, #FF8A80)',
+                        'bi-trophy' => 'linear-gradient(135deg, #FFD54F, #FFC107)',
                         'bi-building' => 'linear-gradient(135deg, #FFC107, #FFD54F)',
                         'bi-person-badge' => 'linear-gradient(135deg, #5B9BD5, #7DB8E8)',
                         'bi-book-half' => 'linear-gradient(135deg, #4CAF50, #81C784)',

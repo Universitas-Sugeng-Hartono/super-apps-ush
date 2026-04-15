@@ -24,13 +24,28 @@ Route::middleware(['student'])->group(function () {
         ->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/edit', 'editDataIndex')->name('editDataIndex');
+            Route::get('/achievements', 'achievementIndex')->name('achievements.index');
             Route::put('/update', 'updateData')->name('updateData');
-
+            Route::get('/cv/download', 'downloadCv')->name('cv.download');
+            Route::get('/cv/preview', 'previewCv')->name('cv.preview');
             // Achievements
             Route::post('/achievement/store', 'storeAchievement')->name('achievement.store');
             Route::put('/achievement/update/{id}', 'updateAchievement')->name('achievement.update');
             Route::delete('/achievement/delete/{id}', 'deleteAchievement')->name('achievement.delete');
         });
+
+    // SKPI
+    Route::prefix('student/skpi')->name('student.skpi.')->controller(\App\Http\Controllers\Student\SkpiController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/download-pdf', 'downloadPdf')->name('download-pdf');
+        Route::prefix('daftar')->name('daftar.')->group(function () {
+            Route::get('/', 'daftarIndex')->name('index');
+            Route::get('/create', 'daftarCreate')->name('create');
+            Route::post('/', 'daftarStore')->name('store');
+            Route::get('/show', 'daftarShow')->name('show');
+
+        });
+    });
 
     // Final Project (Tugas Akhir)
     Route::prefix('student/final-project')->name('student.final-project.')->group(function () {
