@@ -395,19 +395,15 @@
 
             <table style="width:100%; border:none; margin-top:30px;">
                 <tr>
-                    <td style="width:50%; border:none; vertical-align:bottom; padding-right:20px;">
-                        <p style="margin-top:6px">%%VICE_RECTOR_TITLE%%</p>
-
-                    </td>
-                    <td style="width:50%; border:none; vertical-align:bottom; padding-left:20px; text-align:left;">
-                        <div>Sukoharjo, %%KOTA_TGL%%</div>
-                        <div class="sign-block %%SIGN_BLOCK_CLASS%%" style="margin-top:10px; min-height:30px;">
+                    <td style="border:none; vertical-align:bottom; text-align:left;">
+                        <div>%%KOTA_TGL%%</div>
+                        <div class="sign-block %%SIGN_BLOCK_CLASS%%" style="margin-top:10px; min-height:30px; text-align:left;">
                             %%SIGNATURE%%
                         </div>
                         <div style="margin-top:10px;" class="_nm">
                             %%VICE_RECTOR_NAME%%
                         </div>
-
+                        <p style="margin-top:6px">%%VICE_RECTOR_TITLE%%</p>
                     </td>
                 </tr>
             </table>

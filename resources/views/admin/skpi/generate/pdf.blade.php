@@ -661,7 +661,7 @@
             <table style="border:none;">
                 <tr>
                     <td style="border:none;">
-                        <div>Sukoharjo, {{ $kotaTgl }}</div>
+                        <div>{{ $kotaTgl }}</div>
                         <div>
                             @if($signatureDataUri)
                             <img src="{{ $signatureDataUri }}" alt="TTD" style="max-height:60px; max-width:200px; display:block;  margin-left:30px;">

@@ -283,13 +283,13 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="vice_rector_name">Nama Wakil Rektor</label>
+                                <label for="vice_rector_name">Nama Pengesah</label>
                                 <input type="text"
                                        id="vice_rector_name"
                                        name="vice_rector_name"
                                        class="form-control"
                                        value="{{ old('vice_rector_name', $documentMeta['vice_rector_name'] ?? '') }}"
-                                       placeholder="Contoh: Dr. Nama Wakil Rektor, S.T., M.Kom.">
+                                       placeholder="Masukan nama dan gelar yang mengesahkan">
                                 @error('vice_rector_name')<span class="error-text">{{ $message }}</span>@enderror
                             </div>
 
