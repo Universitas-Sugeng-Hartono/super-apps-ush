@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SkpiAcademicProfile;
 use App\Models\SkpiDocumentSetting;
 use App\Models\SkpiRegistration;
+use App\Models\Student;
 use App\Models\StudentAchievement;
 use App\Models\StudyProgram;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -291,6 +292,27 @@ public function inputDataAkademi(Request $request)
         return redirect()
             ->route('admin.skpi.input-data-akademi.index', ['study_program_id' => $newProgram->id])
             ->with('success', 'Program Studi baru berhasil ditambahkan.');
+    }
+
+    public function destroyStudyProgram($id)
+    {
+        $studyProgram = StudyProgram::findOrFail($id);
+
+        $usedByStudents = Student::query()
+            ->where('program_studi', $studyProgram->name)
+            ->exists();
+
+        if ($usedByStudents) {
+            return redirect()
+                ->route('admin.skpi.input-data-akademi.index', ['study_program_id' => $studyProgram->id])
+                ->with('error', 'Program Studi tidak bisa dihapus karena masih dipakai oleh data mahasiswa.');
+        }
+
+        $studyProgram->delete();
+
+        return redirect()
+            ->route('admin.skpi.input-data-akademi.index')
+            ->with('success', 'Program Studi berhasil dihapus.');
     }
 
     public function verifikasiData(Request $request)

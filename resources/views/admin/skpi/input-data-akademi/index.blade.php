@@ -32,6 +32,13 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="alert-error">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
         <div class="layout-grid">
 
             {{-- ── Sidebar Daftar Prodi ──────────────────────────── --}}
@@ -51,16 +58,27 @@
                 @if($studyPrograms->count() > 0)
                     <div class="program-list">
                         @foreach($studyPrograms as $studyProgram)
-                            <a href="{{ route('admin.skpi.input-data-akademi.index', ['study_program_id' => $studyProgram->id]) }}"
-                               class="program-item {{ $selectedStudyProgramId === $studyProgram->id ? 'active' : '' }}">
-                                <div>
-                                    <strong>{{ $studyProgram->name }}</strong>
-                                    <span>{{ $studyProgram->skpi_completed_fields }}/{{ $studyProgram->skpi_total_fields }} field terisi</span>
-                                </div>
-                                <span class="program-status {{ $studyProgram->skpi_ready ? 'ready' : 'draft' }}">
-                                    {{ $studyProgram->skpi_ready ? 'Siap' : 'Draft' }}
-                                </span>
-                            </a>
+                            <div class="program-row {{ $selectedStudyProgramId === $studyProgram->id ? 'active' : '' }}">
+                                <a href="{{ route('admin.skpi.input-data-akademi.index', ['study_program_id' => $studyProgram->id]) }}"
+                                   class="program-item">
+                                    <div>
+                                        <strong>{{ $studyProgram->name }}</strong>
+                                        <span>{{ $studyProgram->skpi_completed_fields }}/{{ $studyProgram->skpi_total_fields }} field terisi</span>
+                                    </div>
+                                    <span class="program-status {{ $studyProgram->skpi_ready ? 'ready' : 'draft' }}">
+                                        {{ $studyProgram->skpi_ready ? 'Aktif' : 'Draft' }}
+                                    </span>
+                                </a>
+                                <form method="POST"
+                                      action="{{ route('admin.skpi.input-data-akademi.destroy-prodi', $studyProgram->id) }}"
+                                      onsubmit="return confirm('Yakin ingin menghapus Program Studi {{ addslashes($studyProgram->name) }}? Data akademik SKPI untuk prodi ini juga akan terhapus.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn-delete-prodi" title="Hapus Program Studi">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         @endforeach
                     </div>
                 @else
@@ -375,7 +393,8 @@
     .content-card,
     .sidebar-card,
     .summary-card,
-    .alert-success {
+    .alert-success,
+    .alert-error {
         background: white;
         border-radius: 15px;
         padding: 24px;
@@ -453,13 +472,23 @@
         line-height: 1;
     }
 
-    .alert-success {
+    .alert-success,
+    .alert-error {
         display: flex;
         align-items: center;
         gap: 10px;
+    }
+
+    .alert-success {
         background: #EDF9F0;
         color: #1E7A44;
         border: 1px solid #D6EFD9;
+    }
+
+    .alert-error {
+        background: #FFF1F2;
+        color: #B91C1C;
+        border: 1px solid #FECACA;
     }
 
     .layout-grid {
@@ -495,17 +524,26 @@
         gap: 14px;
     }
 
-    .program-item {
+    .program-row {
         display: flex;
         justify-content: space-between;
         gap: 12px;
         align-items: center;
-        text-decoration: none;
         padding: 16px;
         border-radius: 14px;
         border: 1px solid #E5E7EB;
         background: #FAFAFA;
         transition: all 0.2s ease;
+    }
+
+    .program-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        min-width: 0;
+        flex: 1;
+        text-decoration: none;
     }
 
     .program-item strong {
@@ -515,11 +553,31 @@
         font-size: 15px;
     }
 
-    .program-item:hover,
-    .program-item.active {
+    .program-row:hover,
+    .program-row.active {
         transform: translateY(-1px);
         border-color: #F4C97A;
         background: #FFF9EF;
+    }
+
+    .btn-delete-prodi {
+        width: 34px;
+        height: 34px;
+        border: none;
+        border-radius: 8px;
+        background: #FEE2E2;
+        color: #B91C1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-delete-prodi:hover {
+        background: #DC2626;
+        color: white;
+        transform: translateY(-1px);
     }
 
     .program-status {

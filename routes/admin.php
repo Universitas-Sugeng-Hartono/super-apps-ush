@@ -91,6 +91,7 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
         Route::get('/input-data-akademi', 'inputDataAkademi')->name('input-data-akademi.index');
         Route::post('/input-data-akademi', 'storeInputDataAkademi')->name('input-data-akademi.store');
         Route::post('/input-data-akademi/study-program', 'storeStudyProgram')->name('input-data-akademi.store-prodi');
+        Route::delete('/input-data-akademi/study-program/{id}', 'destroyStudyProgram')->name('input-data-akademi.destroy-prodi');
         Route::get('/verifikasi-data', 'verifikasiData')->name('verifikasi-data.index');
         Route::post('/verifikasi-data/{id}/approve', 'approveVerifikasiData')->name('verifikasi-data.approve');
         Route::post('/verifikasi-data/{id}/reject', 'rejectVerifikasiData')->name('verifikasi-data.reject');
