@@ -22,6 +22,16 @@ $pointsTable[$typeKey] = $typeData['points'];
 return compact('activityTypes', 'levelOptions', 'roleOptions', 'typeCategoryMap', 'pointsTable');
 }
 extract(prepareJsOptions());
+$selectedActivityType = old('activity_type');
+$selectedActivityLabel = null;
+if ($selectedActivityType) {
+    foreach ($activityTypes as $types) {
+        if (isset($types[$selectedActivityType])) {
+            $selectedActivityLabel = $types[$selectedActivityType];
+            break;
+        }
+    }
+}
 @endphp
 
 @if (session('success'))
@@ -135,6 +145,19 @@ extract(prepareJsOptions());
                     <div class="col-md-12">
                         <div class="form-floating-custom">
                             <label class="custom-label">Jenis Kegiatan Akademik/Non-Akademik</label>
+                            <div class="activity-combobox" id="activityCombobox">
+                                <input type="text"
+                                       id="activity_type_search"
+                                       class="custom-select activity-search-input"
+                                       value="{{ $selectedActivityLabel ?? '' }}"
+                                       placeholder="Ketik jenis kegiatan, contoh: lomba, seminar, PKKMB..."
+                                       autocomplete="off"
+                                       role="combobox"
+                                       aria-expanded="false"
+                                       aria-controls="activity_type_results">
+                                <div class="activity-results" id="activity_type_results" role="listbox"></div>
+                            </div>
+                            <small class="combobox-hint">Ketik kata kunci lalu pilih salah satu hasil yang muncul.</small>
                             <select id="activity_type" name="activity_type" class="custom-select" required>
                                 <option value="">— Pilih Jenis Kegiatan —</option>
                                 @foreach(\App\Models\StudentAchievement::manualCategoryOptions() as $cat => $catLabel)
@@ -795,6 +818,88 @@ extract(prepareJsOptions());
         font-weight: 500;
     }
 
+    #activity_type {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .activity-combobox {
+        position: relative;
+    }
+
+    .activity-search-input {
+        cursor: text;
+    }
+
+    .activity-results {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        z-index: 50;
+        max-height: 280px;
+        overflow-y: auto;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
+        padding: 8px;
+    }
+
+    .activity-results.show {
+        display: block;
+    }
+
+    .activity-result-item {
+        width: 100%;
+        border: none;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 11px 12px;
+        border-radius: 10px;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .activity-result-item:hover,
+    .activity-result-item.active {
+        background: #FFF7ED;
+    }
+
+    .activity-result-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1F2937;
+        line-height: 1.35;
+    }
+
+    .activity-result-category {
+        font-size: 11px;
+        color: #D97706;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .activity-empty-result {
+        padding: 12px;
+        color: #6B7280;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .combobox-hint {
+        color: #6B7280;
+        font-size: 12px;
+        margin-left: 5px;
+    }
+
     /* UPLOAD AREA EXCLUSIVE */
     .upload-container-exclusive {
         position: relative;
@@ -1347,8 +1452,12 @@ extract(prepareJsOptions());
         const ROLE_OPTIONS = @json($roleOptions);
         const JS_POINTS_TABLE = @json($pointsTable);
         const TYPE_CATEGORY = @json($typeCategoryMap);
+        const ACTIVITY_GROUPS = @json($activityTypes);
+        const CATEGORY_LABELS = @json(\App\Models\StudentAchievement::manualCategoryOptions());
 
         const $actType = document.getElementById('activity_type');
+        const $actSearch = document.getElementById('activity_type_search');
+        const $actResults = document.getElementById('activity_type_results');
         const $level = document.getElementById('level');
         const $role = document.getElementById('participation_role');
         const $jabLabel = document.getElementById('jabatanLabel');
@@ -1360,6 +1469,74 @@ extract(prepareJsOptions());
         const s1 = document.getElementById('step1');
         const s2 = document.getElementById('step2');
         const s3 = document.getElementById('step3');
+
+        const ACTIVITY_OPTIONS = Object.entries(ACTIVITY_GROUPS).flatMap(([category, types]) => {
+            return Object.entries(types).map(([value, label]) => ({
+                value,
+                label,
+                category,
+                categoryLabel: CATEGORY_LABELS[category] || category,
+                searchText: `${label} ${CATEGORY_LABELS[category] || category}`.toLowerCase(),
+            }));
+        });
+
+        function closeActivityResults() {
+            if (!$actResults || !$actSearch) return;
+            $actResults.classList.remove('show');
+            $actSearch.setAttribute('aria-expanded', 'false');
+        }
+
+        function renderActivityResults(query = '') {
+            if (!$actResults || !$actSearch) return;
+
+            const normalizedQuery = query.trim().toLowerCase();
+            const matches = ACTIVITY_OPTIONS
+                .filter((item) => normalizedQuery === '' || item.searchText.includes(normalizedQuery));
+
+            $actResults.innerHTML = '';
+
+            if (matches.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'activity-empty-result';
+                empty.textContent = 'Tidak ada jenis kegiatan yang cocok. Coba kata kunci lain.';
+                $actResults.appendChild(empty);
+            } else {
+                matches.forEach((item) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'activity-result-item';
+                    button.setAttribute('role', 'option');
+                    button.innerHTML = `
+                        <span class="activity-result-title">${escapeHtml(item.label)}</span>
+                        <span class="activity-result-category">${escapeHtml(item.categoryLabel)}</span>
+                    `;
+                    button.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        selectActivity(item);
+                    });
+                    $actResults.appendChild(button);
+                });
+            }
+
+            $actResults.classList.add('show');
+            $actSearch.setAttribute('aria-expanded', 'true');
+        }
+
+        function selectActivity(item) {
+            $actSearch.value = item.label;
+            $actType.value = item.value;
+            closeActivityResults();
+            $actType.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
 
         function calcSkp(t, l, r) {
             try {
@@ -1401,6 +1578,48 @@ extract(prepareJsOptions());
                 $skpBox.style.display = 'none';
             }
             updateStep3Done();
+        }
+
+        if ($actSearch && $actType) {
+            $actSearch.addEventListener('input', function() {
+                $actType.value = '';
+                $catInput.value = '';
+                $level.innerHTML = '<option value="">â€” Pilih Tingkat â€”</option>';
+                $role.innerHTML = '<option value="">â€” Pilih â€”</option>';
+                $skpBox.style.display = 'none';
+                s1.classList.remove('done');
+                s2.classList.remove('active', 'done');
+                s3.classList.remove('active', 'done');
+                renderActivityResults(this.value);
+            });
+
+            $actSearch.addEventListener('focus', function() {
+                renderActivityResults(this.value);
+            });
+
+            $actSearch.addEventListener('blur', function() {
+                setTimeout(closeActivityResults, 120);
+            });
+
+            $actSearch.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeActivityResults();
+                }
+            });
+
+            document.getElementById('skpiForm')?.addEventListener('submit', function(e) {
+                if (!$actType.value) {
+                    e.preventDefault();
+                    $actSearch.focus();
+                    renderActivityResults($actSearch.value);
+                }
+            });
+
+            $actType.addEventListener('invalid', function(e) {
+                e.preventDefault();
+                $actSearch.focus();
+                renderActivityResults($actSearch.value);
+            });
         }
 
         if ($actType) {
@@ -1448,6 +1667,10 @@ extract(prepareJsOptions());
             });
 
             $role.addEventListener('change', updateSkp);
+
+            if ($actType.value) {
+                $actType.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
     });
 
