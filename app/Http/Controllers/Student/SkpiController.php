@@ -335,7 +335,9 @@ class SkpiController extends Controller
         $hasAcademicProfile = filled($student->ipk) && filled($student->sks);
         
         $finalProject = $student->finalProject;
-        $hasFinalProjectData = $finalProject && filled($finalProject->title) && filled($finalProject->title_en) && $finalProject->defense?->status === 'approved';
+        // title_en bersifat opsional — tidak memblokir jika judul Indonesia sudah ada dan sidang sudah approved
+        // Ini agar mahasiswa lama yang belum mengisi title_en tidak terblokir
+        $hasFinalProjectData = $finalProject && filled($finalProject->title) && $finalProject->defense?->status === 'approved';
         
         $hasDocumentSupport = filled($student->foto) && filled($student->ttd);
         $hasApprovedAchievements = ($student->approved_achievements_count ?? 0) > 0;

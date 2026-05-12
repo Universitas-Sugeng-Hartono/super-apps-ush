@@ -108,8 +108,11 @@
     <div class="ush-menu-grid">
         {{-- CARD DAFTAR SKPI (Span 2) --}}
         @php
-        $isAccessible = (bool)$tugasAkhirReady;
-        $isLockedByTA = !$tugasAkhirReady;
+        // Mahasiswa yang sudah punya registrasi SKPI (draft/pending/approved/dll)
+        // tetap bisa mengakses halaman daftar SKPI meskipun Tugas Akhir belum memenuhi syarat baru.
+        // Ini mencegah mahasiswa lama terkunci setelah ada perubahan persyaratan sistem.
+        $isAccessible = (bool)$tugasAkhirReady || (bool)$skpiRegistration;
+        $isLockedByTA = !$isAccessible;
         @endphp
 
         @if($isAccessible)
