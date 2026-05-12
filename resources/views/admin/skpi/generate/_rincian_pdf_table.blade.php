@@ -19,9 +19,9 @@
             <td style="border:1px solid #000; padding:4px 6px; text-align:center;">{{ $item->skp_points }}</td>
             <td style="border:1px solid #000; padding:4px 6px; text-align:center;">
                 @if($item->certificate)
-                    Terlampir
+                Terlampir
                 @else
-                    -
+                -
                 @endif
             </td>
         </tr>

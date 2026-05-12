@@ -40,10 +40,16 @@
         <div class="form-card">
             <h4>Informasi Tugas Akhir</h4>
             <div class="form-group">
-                <label>Judul Tugas Akhir *</label>
+                <label>Judul Tugas Akhir (Bahasa Indonesia) *</label>
                 <input type="text" class="form-control" value="{{ $finalProject->title }}" disabled>
-                <small>Judul sudah didaftarkan. Hubungi dosen pembimbing jika ingin mengubah.</small>
             </div>
+            @if($finalProject->title_en)
+            <div class="form-group">
+                <label>Judul Tugas Akhir (Bahasa Inggris) *</label>
+                <input type="text" class="form-control" style="font-style: italic;" value="{{ $finalProject->title_en }}" disabled>
+            </div>
+            @endif
+            <small style="margin-top: -10px; display: block; margin-bottom: 20px;">Judul sudah didaftarkan. Hubungi dosen pembimbing jika ingin mengubah.</small>
             
             <div class="form-row">
                 <div class="form-group">
@@ -280,6 +286,29 @@
     .btn-secondary {
         background: #E0E0E0;
         color: #666;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            text-align: center;
+        }
+
+        .stats-card {
+            padding: 15px;
+        }
+
+        .form-card {
+            padding: 15px;
+        }
     }
 
     .btn-secondary:hover {

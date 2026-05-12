@@ -25,12 +25,12 @@ extract(prepareJsOptions());
 $selectedActivityType = old('activity_type');
 $selectedActivityLabel = null;
 if ($selectedActivityType) {
-    foreach ($activityTypes as $types) {
-        if (isset($types[$selectedActivityType])) {
-            $selectedActivityLabel = $types[$selectedActivityType];
-            break;
-        }
-    }
+foreach ($activityTypes as $types) {
+if (isset($types[$selectedActivityType])) {
+$selectedActivityLabel = $types[$selectedActivityType];
+break;
+}
+}
 }
 @endphp
 
@@ -65,14 +65,14 @@ if ($selectedActivityType) {
             <p class="page-subtitle-simple">Kelola seluruh catatan capaian ekstrakurikuler dan prestasi Anda untuk kebutuhan SKPI.</p>
         </div>
         <div class="header-actions">
-            <a href="{{ route('student.skpi.index') }}" class="btn-simple-outline">
-                <i class="bi bi-arrow-left"></i> Kembali ke SKPI
+            <a href="{{ route('student.dashboard') }}" class="btn-simple-outline">
+                <i class="bi bi-arrow-left"></i> Kembali
             </a>
-            @if ($student->is_edited)
+            <!-- @if ($student->is_edited)
             <button type="button" class="btn-simple-primary" onclick="document.getElementById('skpiFormCard').scrollIntoView({behavior: 'smooth'})">
                 <i class="bi bi-plus-lg"></i> Tambah Baru
             </button>
-            @endif
+            @endif -->
         </div>
     </div>
 
@@ -147,14 +147,14 @@ if ($selectedActivityType) {
                             <label class="custom-label">Jenis Kegiatan Akademik/Non-Akademik</label>
                             <div class="activity-combobox" id="activityCombobox">
                                 <input type="text"
-                                       id="activity_type_search"
-                                       class="custom-select activity-search-input"
-                                       value="{{ $selectedActivityLabel ?? '' }}"
-                                       placeholder="Ketik jenis kegiatan, contoh: lomba, seminar, PKKMB..."
-                                       autocomplete="off"
-                                       role="combobox"
-                                       aria-expanded="false"
-                                       aria-controls="activity_type_results">
+                                    id="activity_type_search"
+                                    class="custom-select activity-search-input"
+                                    value="{{ $selectedActivityLabel ?? '' }}"
+                                    placeholder="Ketik jenis kegiatan, contoh: lomba, seminar, PKKMB..."
+                                    autocomplete="off"
+                                    role="combobox"
+                                    aria-expanded="false"
+                                    aria-controls="activity_type_results">
                                 <div class="activity-results" id="activity_type_results" role="listbox"></div>
                             </div>
                             <small class="combobox-hint">Ketik kata kunci lalu pilih salah satu hasil yang muncul.</small>
@@ -269,11 +269,11 @@ if ($selectedActivityType) {
                             <td class="col-main">
                                 <div class="activity-info">
                                     @if($achievement->event && $achievement->event !== '-')
-                                        <strong>{{ $achievement->event }}</strong>
-                                        <span>{{ $achievement->activity_type_label ?? 'Lainnya' }}</span>
+                                    <strong>{{ $achievement->event }}</strong>
+                                    <span>{{ $achievement->activity_type_label ?? 'Lainnya' }}</span>
                                     @else
-                                        <strong>{{ $achievement->activity_type_label ?? '-' }}</strong>
-                                        <span>Kategori Manual</span>
+                                    <strong>{{ $achievement->activity_type_label ?? '-' }}</strong>
+                                    <span>Kategori Manual</span>
                                     @endif
                                 </div>
                             </td>
@@ -332,7 +332,6 @@ if ($selectedActivityType) {
                         <tr>
                             <td colspan="8">
                                 <div class="empty-exclusive">
-                                    <i class="bi bi-emoji-smile"></i>
                                     <p>Belum ada data prestasi yang tercatat.</p>
                                 </div>
                             </td>
@@ -1309,11 +1308,7 @@ if ($selectedActivityType) {
 
         .header-actions {
             width: 100%;
-        }
-
-        .header-actions>* {
-            flex: 1;
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         .analytics-grid {
@@ -1395,7 +1390,8 @@ if ($selectedActivityType) {
 
     @media (max-width: 480px) {
         .header-actions {
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
         }
 
         .analytics-grid {
@@ -1526,7 +1522,9 @@ if ($selectedActivityType) {
             $actSearch.value = item.label;
             $actType.value = item.value;
             closeActivityResults();
-            $actType.dispatchEvent(new Event('change', { bubbles: true }));
+            $actType.dispatchEvent(new Event('change', {
+                bubbles: true
+            }));
         }
 
         function escapeHtml(value) {
@@ -1669,7 +1667,9 @@ if ($selectedActivityType) {
             $role.addEventListener('change', updateSkp);
 
             if ($actType.value) {
-                $actType.dispatchEvent(new Event('change', { bubbles: true }));
+                $actType.dispatchEvent(new Event('change', {
+                    bubbles: true
+                }));
             }
         }
     });

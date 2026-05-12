@@ -30,6 +30,7 @@ class TitleRequestController extends Controller
     {
         $request->validate([
             'title' => 'required|string|min:10|max:500',
+            'title_en' => 'required|string|min:10|max:500',
         ]);
 
         $studentId = decrypt(session('student_id'));
@@ -42,6 +43,7 @@ class TitleRequestController extends Controller
 
         $finalProject->update([
             'title' => $request->title,
+            'title_en' => $request->title_en,
             'status' => 'proposal',
         ]);
 
@@ -67,6 +69,7 @@ class TitleRequestController extends Controller
     {
         $request->validate([
             'title' => 'required|string|min:10|max:500',
+            'title_en' => 'required|string|min:10|max:500',
         ]);
 
         $studentId = decrypt(session('student_id'));
@@ -78,6 +81,7 @@ class TitleRequestController extends Controller
 
         $finalProject->update([
             'title' => $request->title,
+            'title_en' => $request->title_en,
         ]);
 
         return redirect()->route('student.final-project.index')

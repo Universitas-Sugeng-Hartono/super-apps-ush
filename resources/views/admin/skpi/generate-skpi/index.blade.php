@@ -1,403 +1,258 @@
 @extends('admin.layouts.super-app')
 
 @php
-    use App\Models\StudentAchievement;
+use App\Models\StudentAchievement;
 
-    $formatDate = fn ($date) => $date ? $date->translatedFormat('d F Y') : '-';
+$formatDate = fn ($date) => $date ? $date->translatedFormat('d F Y') : '-';
 
-    // Kategori transkrip SKPI sesuai dokumen panduan
-    $transkripCategories = [
-        'wajib' => 'Wajib Universitas',
-        'organisasi' => 'Kegiatan Bidang Organisasi dan Kepemimpinan',
-        'penalaran' => 'Kegiatan Bidang Penalaran dan Keilmuan',
-        'minat_bakat' => 'Kegiatan Bidang Minat dan Bakat',
-        'kepedulian_sosial' => 'Kegiatan Bidang Kepedulian Sosial',
-        'lainnya' => 'Kegiatan Lainnya',
-        'volunteer' => 'Volunteer Mahasiswa',
-    ];
+// Kategori transkrip SKPI sesuai dokumen panduan
+$transkripCategories = [
+'wajib' => 'Wajib Universitas',
+'organisasi' => 'Kegiatan Bidang Organisasi dan Kepemimpinan',
+'penalaran' => 'Kegiatan Bidang Penalaran dan Keilmuan',
+'minat_bakat' => 'Kegiatan Bidang Minat dan Bakat',
+'kepedulian_sosial' => 'Kegiatan Bidang Kepedulian Sosial',
+'lainnya' => 'Kegiatan Lainnya',
+'volunteer' => 'Volunteer Mahasiswa',
+];
 
-    // Group achievements by category
-    $groupedByCategory = [];
-    $skpByCategory = [];
-    foreach ($transkripCategories as $catKey => $catLabel) {
-        $items = $selectedAchievements->where('category', $catKey)->values();
-        $groupedByCategory[$catKey] = $items;
-        $skpByCategory[$catKey] = $items->sum('skp_points');
-    }
+// Group achievements by category
+$groupedByCategory = [];
+$skpByCategory = [];
+foreach ($transkripCategories as $catKey => $catLabel) {
+$items = $selectedAchievements->where('category', $catKey)->values();
+$groupedByCategory[$catKey] = $items;
+$skpByCategory[$catKey] = $items->sum('skp_points');
+}
 
-    $totalSkp = array_sum($skpByCategory);
+$totalSkp = array_sum($skpByCategory);
 
-    // Predikat SKPI S1
-    if ($totalSkp > 251) {
-        $predikat = 'Sangat Baik';
-    } elseif ($totalSkp >= 151) {
-        $predikat = 'Baik';
-    } elseif ($totalSkp >= 80) {
-        $predikat = 'Cukup';
-    } else {
-        $predikat = '-';
-    }
+// Predikat SKPI S1
+if ($totalSkp > 251) {
+$predikat = 'Sangat Baik';
+} elseif ($totalSkp >= 151) {
+$predikat = 'Baik';
+} elseif ($totalSkp >= 80) {
+$predikat = 'Cukup';
+} else {
+$predikat = '-';
+}
 
-    // Build text for old template sections
-    $buildAchievementText = function ($achievement) {
-        return collect([
-            $achievement->activity_type_label ?? $achievement->activity_type,
-            filled($achievement->level) && $achievement->level !== '-' ? '(' . $achievement->level . ')' : null,
-            filled($achievement->participation_role) && $achievement->participation_role !== '-' ? $achievement->participation_role : null,
-        ])->filter()->implode(' - ');
-    };
+// Build text for old template sections
+$buildAchievementText = function ($achievement) {
+return collect([
+$achievement->activity_type_label ?? $achievement->activity_type,
+filled($achievement->level) && $achievement->level !== '-' ? '(' . $achievement->level . ')' : null,
+filled($achievement->participation_role) && $achievement->participation_role !== '-' ? $achievement->participation_role : null,
+])->filter()->implode(' - ');
+};
 
-    $templatePayload = [
-        'nomor' => $selectedRegistration?->nomor_skpi ?? $documentMeta['nomor_skpi'] ?? '',
-        'nama' => $selectedRegistration?->nama_lengkap ?? '',
-        'ttl' => collect([
-            $selectedRegistration?->tempat_lahir,
-            $selectedRegistration?->tanggal_lahir?->translatedFormat('d F Y'),
-        ])->filter()->implode(', '),
-        'nim' => $selectedRegistration?->nim ?? '',
-        'tahun_masuk' => $selectedRegistration?->angkatan ?? '',
-        'no_ijazah' => $selectedRegistration?->nomor_ijazah ?? '',
-        'gelar' => $selectedRegistration?->gelar ?? '',
-        'sk_pt' => $academicProfile?->sk_pendirian_perguruan_tinggi ?? '',
-        'nama_pt' => $academicProfile?->nama_perguruan_tinggi ?? 'UNIVERSITAS SUGENG HARTONO',
-        'akr_pt' => $academicProfile?->akreditasi_perguruan_tinggi ?? '',
-        'prodi' => $selectedStudent?->program_studi ?? '',
-        'akr_prodi' => $academicProfile?->akreditasi_program_studi ?? '',
-        'jenis_jenjang' => $academicProfile?->jenis_dan_jenjang_pendidikan ?? '',
-        'kkni_level' => $academicProfile?->jenjang_kualifikasi_kkni ?? '',
-        'entry_req' => $academicProfile?->persyaratan_penerimaan ?? '',
-        'bahasa_pengantar' => $academicProfile?->bahasa_pengantar_kuliah ?? 'Inggris / Indonesia',
-        'no_akr_pt' => $academicProfile?->nomor_akreditasi_perguruan_tinggi ?? '',
-        'sistem_penilaian' => $academicProfile?->sistem_penilaian ?? 'Skala/Scale : 0-4 : A=4, A-=3.75, B+=3.5, B=3, C=2, D=1, E=0',
-        'lama_studi' => $academicProfile?->lama_studi ?? '',
-        'no_akr_prodi' => $academicProfile?->nomor_akreditasi_program_studi ?? '',
-        'prof_status' => $academicProfile?->status_profesi ?? '-',
-        'prestasi' => $groupedByCategory['penalaran']->map($buildAchievementText)->values()->all(),
-        'organisasi' => $groupedByCategory['organisasi']->map($buildAchievementText)->values()->all(),
-        'magang' => $groupedByCategory['lainnya']->map($buildAchievementText)->values()->all(),
-        'pelatihan' => [],
-        'sertif' => $groupedByCategory['wajib']->map($buildAchievementText)->values()->all(),
-        'skripsi_id' => optional($automaticEntries->first())->event ?? ($selectedStudent?->finalProject?->title ?? ''),
-        'skripsi_en' => optional($automaticEntries->first())->event ?? ($selectedStudent?->finalProject?->title ?? ''),
-        'kota_tgl' => $documentMeta['authorization_place_date'] ?? ('Sukoharjo, ' . now()->translatedFormat('d F Y')),
-        'vice_rector_name' => $documentMeta['vice_rector_name'] ?? '',
-        'vice_rector_title' => $documentMeta['vice_rector_title'] ?? 'Wakil Rektor I Universitas Sugeng Hartono',
-        'signature_url' => $documentMeta['signature_url'] ?? null,
-    ];
+$templatePayload = [
+'nomor' => $selectedRegistration?->nomor_skpi ?? $documentMeta['nomor_skpi'] ?? '',
+'nama' => $selectedRegistration?->nama_lengkap ?? '',
+'ttl' => collect([
+$selectedRegistration?->tempat_lahir,
+$selectedRegistration?->tanggal_lahir?->translatedFormat('d F Y'),
+])->filter()->implode(', '),
+'nim' => $selectedRegistration?->nim ?? '',
+'tahun_masuk' => $selectedRegistration->angkatan ?? '',
+'no_ijazah' => $selectedRegistration->nomor_ijazah ?? '',
+'gelar' => $academicProfile?->gelar_lulusan ?? $selectedRegistration->gelar ?? '',
+'sk_pt' => $academicProfile?->sk_pendirian_perguruan_tinggi ?? '',
+'nama_pt' => $academicProfile?->nama_perguruan_tinggi ?? 'UNIVERSITAS SUGENG HARTONO',
+'akr_pt' => $academicProfile?->akreditasi_perguruan_tinggi ?? '',
+'prodi' => $selectedStudent?->program_studi ?? '',
+'akr_prodi' => $academicProfile?->akreditasi_program_studi ?? '',
+'jenis_jenjang' => $academicProfile?->jenis_dan_jenjang_pendidikan ?? '',
+'kkni_level' => $academicProfile?->jenjang_kualifikasi_kkni ?? '',
+'entry_req' => $academicProfile?->persyaratan_penerimaan ?? '',
+'bahasa_pengantar' => $academicProfile?->bahasa_pengantar_kuliah ?? 'Inggris / Indonesia',
+'no_akr_pt' => $academicProfile?->nomor_akreditasi_perguruan_tinggi ?? '',
+'sistem_penilaian' => $academicProfile?->sistem_penilaian ?? 'Skala/Scale : 0-4 : A=4, A-=3.75, B+=3.5, B=3, C=2, D=1, E=0',
+'lama_studi' => $academicProfile?->lama_studi ?? '',
+'no_akr_prodi' => $academicProfile?->nomor_akreditasi_program_studi ?? '',
+'prof_status' => $academicProfile?->status_profesi ?? '-',
+'prestasi' => $groupedByCategory['penalaran']->map($buildAchievementText)->values()->all(),
+'organisasi' => $groupedByCategory['organisasi']->map($buildAchievementText)->values()->all(),
+'magang' => $groupedByCategory['lainnya']->map($buildAchievementText)->values()->all(),
+'pelatihan' => [],
+'sertif' => $groupedByCategory['wajib']->map($buildAchievementText)->values()->all(),
+'skripsi_id' => optional($automaticEntries->first())->event ?? ($selectedStudent?->finalProject?->title ?? ''),
+'skripsi_en' => optional($automaticEntries->first())->event ?? ($selectedStudent?->finalProject?->title ?? ''),
+'kota_tgl' => $documentMeta['authorization_place_date'] ?? ('Sukoharjo, ' . now()->translatedFormat('d F Y')),
+'vice_rector_name' => $documentMeta['vice_rector_name'] ?? '',
+'vice_rector_title' => $documentMeta['vice_rector_title'] ?? 'Wakil Rektor I Universitas Sugeng Hartono',
+'signature_url' => $documentMeta['signature_data_uri'] ?? $documentMeta['signature_url'] ?? null,
+];
 @endphp
 
 @section('content')
-    <div class="page-shell">
-        <div class="hero-card">
-            <div>
-                <span class="hero-badge">Generate Draft SKPI</span>
-                <h3>Siapkan Data Cetak SKPI</h3>
+<div class="page-shell">
+    <div class="hero-card">
+        <div>
+            <span class="hero-badge">Generate Draft SKPI</span>
+            <h3>Siapkan Data Cetak SKPI</h3>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-chip">
+                <span>Mahasiswa Approved</span>
+                <strong>{{ $stats['approved_registrations'] }}</strong>
             </div>
-            <div class="hero-stats">
-                <div class="stat-chip">
-                    <span>Mahasiswa Approved</span>
-                    <strong>{{ $stats['approved_registrations'] }}</strong>
-                </div>
-                <div class="stat-chip">
-                    <span>Prestasi Approved</span>
-                    <strong>{{ $stats['approved_achievements'] }}</strong>
-                </div>
-                <div class="stat-chip">
-                    <span>Prestasi Dipilih</span>
-                    <strong>{{ $stats['selected_achievements'] }}</strong>
-                </div>
+            <div class="stat-chip">
+                <span>Prestasi Approved</span>
+                <strong>{{ $stats['approved_achievements'] }}</strong>
+            </div>
+            <div class="stat-chip">
+                <span>Prestasi Dipilih</span>
+                <strong>{{ $stats['selected_achievements'] }}</strong>
             </div>
         </div>
-
-        <div class="content-card">
-            <form method="GET" action="{{ route('admin.skpi.generate-skpi.index') }}" class="generate-form">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="registration_id">Mahasiswa / Pendaftar SKPI Approved</label>
-                        <select name="registration_id" id="registration_id" class="form-control" onchange="this.form.submit()">
-                            <option value="">Pilih mahasiswa</option>
-                            @foreach($approvedRegistrations as $registration)
-                                <option value="{{ $registration->id }}" {{ $selectedRegistrationId === $registration->id ? 'selected' : '' }}>
-                                    {{ $registration->nim }} - {{ $registration->nama_lengkap }} - {{ $registration->student->program_studi ?? '-' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="achievement_ids">Aktivitas / Prestasi Approved Yang Akan Dipakai</label>
-                        <select name="achievement_ids[]" id="achievement_ids" class="form-control multi-select" multiple size="6">
-                            @forelse($approvedAchievements as $achievement)
-                                <option value="{{ $achievement->id }}" {{ in_array($achievement->id, $selectedAchievementIds, true) ? 'selected' : '' }}>
-                                    {{ $achievement->category_label }} - {{ $achievement->activity_type_label ?? $achievement->activity_type }} ({{ $achievement->level }}) {{ $achievement->skp_points }} SKP
-                                </option>
-                            @empty
-                                <option value="" disabled>Belum ada prestasi approved</option>
-                            @endforelse
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">
-                        <i class="bi bi-funnel"></i> Terapkan Pilihan
-                    </button>
-                </div>
-            </form>
-        </div>
-
-
-        @if($selectedRegistration && $selectedStudent)
-            <div class="summary-grid">
-                <div class="summary-card">
-                    <span class="summary-label">Pemegang SKPI</span>
-                    <h4>{{ $selectedRegistration->nama_lengkap }}</h4>
-                    <p>{{ $selectedRegistration->nim }} • {{ $selectedStudent->program_studi ?? '-' }}</p>
-                    <div class="summary-meta">
-                        <span>Status Pendaftaran</span>
-                        <strong>Approved</strong>
-                    </div>
-                    <div class="summary-meta">
-                        <span>Disetujui Oleh</span>
-                        <strong>{{ $selectedRegistration->approver->name ?? '-' }}</strong>
-                    </div>
-                </div>
-
-                <div class="summary-card">
-                    <span class="summary-label">Profil Akademik Prodi</span>
-                    <h4>{{ $selectedStudyProgram->name ?? 'Belum Terhubung' }}</h4>
-                    <p>{{ $academicProfile ? 'Data akademik prodi sudah ditemukan untuk generate.' : 'Data akademik prodi belum diinput di menu Input Data Akademik.' }}</p>
-                    <div class="summary-meta">
-                        <span>Akreditasi Prodi</span>
-                        <strong>{{ $academicProfile?->akreditasi_program_studi ?? '-' }}</strong>
-                    </div>
-                    <div class="summary-meta">
-                        <span>Jenjang KKNI</span>
-                        <strong>{{ $academicProfile?->jenjang_kualifikasi_kkni ?? '-' }}</strong>
-                    </div>
-                </div>
-
-                <div class="summary-card">
-                    <span class="summary-label">Aktivitas Terpilih</span>
-                    <h4>{{ $selectedAchievements->count() }} Data</h4>
-                    <p>{{ $selectedAchievements->count() > 0 ? 'Data aktivitas ini siap ditarik ke draft generate SKPI.' : 'Belum ada data approved yang dipilih untuk mahasiswa ini.' }}</p>
-                    <div class="summary-meta">
-                        <span>Total Approved</span>
-                        <strong>{{ $approvedAchievements->count() }}</strong>
-                    </div>
-                    <div class="summary-meta">
-                        <span>Judul Tugas Akhir</span>
-                        <strong>{{ $selectedStudent->finalProject?->title ?? '-' }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            <div class="content-grid">
-                <div class="content-card">
-                    <div class="section-header">
-                        <div>
-                            <h4>Data Akademik Mahasiswa</h4>
-                            <p>Data akademik ini ikut disiapkan saat proses generate SKPI.</p>
-                        </div>
-                    </div>
-
-                    <div class="detail-grid">
-                        <div class="detail-item">
-                            <span>Program Studi</span>
-                            <strong>{{ $selectedStudent->program_studi ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>IPK</span>
-                            <strong>{{ $selectedStudent->ipk ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>SKS</span>
-                            <strong>{{ $selectedStudent->sks ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Judul Skripsi / Tugas Akhir</span>
-                            <strong>{{ $selectedStudent->finalProject?->title ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Tanggal Masuk</span>
-                            <strong>{{ $selectedStudent->tanggal_masuk?->translatedFormat('d F Y') ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Tanggal Lulus</span>
-                            <strong>{{ $selectedStudent->tanggal_lulus?->translatedFormat('d F Y') ?? '-' }}</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="content-card">
-                    <div class="section-header">
-                        <div>
-                            <h4>Data Pemegang SKPI</h4>
-                            <p>Field utama hasil pendaftaran mahasiswa yang sudah approved.</p>
-                        </div>
-                    </div>
-
-                    <div class="detail-grid">
-                        <div class="detail-item">
-                            <span>Nama Lengkap</span>
-                            <strong>{{ $selectedRegistration->nama_lengkap }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Tempat / Tanggal Lahir</span>
-                            <strong>{{ $selectedRegistration->tempat_lahir }}, {{ $selectedRegistration->tanggal_lahir?->translatedFormat('d F Y') ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>NIM</span>
-                            <strong>{{ $selectedRegistration->nim }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Tahun Masuk</span>
-                            <strong>{{ $selectedRegistration->angkatan }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Nomor Ijazah</span>
-                            <strong>{{ $selectedRegistration->nomor_ijazah }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Gelar</span>
-                            <strong>{{ $selectedRegistration->gelar }}</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="content-card">
-                    <div class="section-header">
-                        <div>
-                            <h4>Identitas Penyelenggara Program</h4>
-                            <p>Data ini diambil dari menu input data akademik sesuai program studi mahasiswa.</p>
-                        </div>
-                    </div>
-
-                    <div class="detail-grid">
-                        <div class="detail-item">
-                            <span>Nama Perguruan Tinggi</span>
-                            <strong>{{ $academicProfile?->nama_perguruan_tinggi ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>SK Pendirian PT</span>
-                            <strong>{{ $academicProfile?->sk_pendirian_perguruan_tinggi ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Akreditasi PT</span>
-                            <strong>{{ $academicProfile?->akreditasi_perguruan_tinggi ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Akreditasi Prodi</span>
-                            <strong>{{ $academicProfile?->akreditasi_program_studi ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Jenis / Jenjang</span>
-                            <strong>{{ $academicProfile?->jenis_dan_jenjang_pendidikan ?? '-' }}</strong>
-                        </div>
-                        <div class="detail-item">
-                            <span>Bahasa Pengantar</span>
-                            <strong>{{ $academicProfile?->bahasa_pengantar_kuliah ?? '-' }}</strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="content-card">
-                <div class="section-header">
-                    <div>
-                        <h4>Aktivitas Yang Siap Masuk SKPI</h4>
-                        <p>Daftar ini berisi data manual yang sudah approved dan dipilih dari dropdown, ditambah skripsi yang otomatis diambil dari Tugas Akhir.</p>
-                    </div>
-                </div>
-
-                <div class="achievement-list">
-                    @foreach($automaticEntries as $entry)
-                        <div class="achievement-item auto-item">
-                            <div class="achievement-icon">
-                                <i class="bi bi-journal-richtext"></i>
-                            </div>
-                            <div class="achievement-body">
-                                <h5>{{ $entry->achievement }}</h5>
-                                <p>{{ $entry->category_label }} • {{ $entry->event }} • Sumber: {{ $entry->source }}</p>
-                            </div>
-                            <span class="status-badge info">Otomatis</span>
-                        </div>
-                    @endforeach
-
-                    @forelse($selectedAchievements as $achievement)
-                        <div class="achievement-item">
-                            <div class="achievement-icon">
-                                <i class="bi bi-trophy-fill"></i>
-                            </div>
-                            <div class="achievement-body">
-                                <h5>{{ $achievement->activity_type_label ?? $achievement->activity_type }}</h5>
-                                <p>{{ $achievement->category_label }} • {{ $achievement->level }} • {{ $achievement->participation_role ?? '-' }} • <strong>{{ $achievement->skp_points }} SKP</strong></p></p>
-                            </div>
-                            <span class="status-badge active">Approved</span>
-                        </div>
-                    @empty
-                        <div class="empty-state">
-                            <i class="bi bi-inbox"></i>
-                            <h4>Belum ada prestasi terpilih</h4>
-                            <p>Pilih mahasiswa terlebih dahulu atau pilih prestasi approved dari dropdown di atas.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="content-card note-card">
-                <div class="section-header">
-                    <div>
-                        <h4>Catatan Generate</h4>
-                        <p>Halaman ini sekarang fokus untuk menghasilkan PDF final. Preview HTML dipakai sebagai acuan tampilan, lalu dokumen diunduh dalam format `PDF`.</p>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <form method="POST" action="{{ route('admin.skpi.generate-skpi.export-pdf') }}" class="inline-action-form">
-                        @csrf
-                        <input type="hidden" name="registration_id" value="{{ $selectedRegistrationId }}">
-                        @foreach($selectedAchievementIds as $achievementId)
-                            <input type="hidden" name="achievement_ids[]" value="{{ $achievementId }}">
-                        @endforeach
-                        <button type="submit" class="btn-primary">
-                            <i class="bi bi-file-earmark-pdf"></i> Generate SKPI.pdf
-                        </button>
-                    </form>
-                    <button type="button" class="btn-secondary" id="generateTemplateBtn">
-                        <i class="bi bi-file-earmark-richtext"></i> Preview HTML
-                    </button>
-                </div>
-
-            </div>
-
-            <div class="content-card template-preview-card" id="templatePreviewCard">
-                <div class="section-header">
-                    <div>
-                        <h4>Preview Template SKPI</h4>
-
-                    </div>
-                </div>
-                <div class="template-preview-shell">
-                    <div id="templatePreviewArea">
-                        <div class="empty-state compact-empty">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <h4>Template belum digenerate</h4>
-                            <p>Klik tombol <strong>Preview HTML</strong> untuk mengecek data sebelum mengunduh hasil `SKPI.pdf`.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            @include('admin.skpi.generate.template')
-        @else
-            <div class="empty-state">
-                <i class="bi bi-person-x"></i>
-                <h4>Belum ada mahasiswa approved</h4>
-                <p>Menu generate akan aktif setelah ada pendaftaran SKPI mahasiswa yang sudah disetujui.</p>
-            </div>
-        @endif
     </div>
+
+    {{-- Section List per Prodi --}}
+    @php
+    $checkMissing = function($reg, $profile) {
+    $missing = [];
+    if (!$reg->nomor_ijazah) $missing[] = 'No. Ijazah';
+
+    if (!$profile) {
+    $missing[] = 'Profil Prodi';
+    } else {
+    if (!$profile->gelar_lulusan) $missing[] = 'Gelar';
+    if (!$profile->sk_pendirian_perguruan_tinggi) $missing[] = 'SK PT';
+    if (!$profile->akreditasi_program_studi) $missing[] = 'Akr. Prodi';
+    if (!$profile->jenjang_kualifikasi_kkni) $missing[] = 'KKNI';
+    }
+    return $missing;
+    };
+    @endphp
+
+    <div class="prodi-list-container">
+        @foreach($studyPrograms as $prodi)
+        @php
+        $prodiRegistrations = $approvedRegistrations->filter(function($reg) use ($prodi) {
+        return ($reg->student->program_studi ?? '') === $prodi->name;
+        });
+        $profile = $prodi->skpiAcademicProfile;
+        @endphp
+
+        <div class="content-card prodi-section" style="margin-bottom: 30px;">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <div>
+                    <h4 style="margin:0; color: var(--primary);">{{ $prodi->name }}</h4>
+                    <p style="font-size: 13px; color: #666;">Total: {{ $prodiRegistrations->count() }} Mahasiswa Approved</p>
+                </div>
+                @if(!$profile)
+                <span class="badge-error"><i class="bi bi-exclamation-triangle"></i> Profil Prodi Belum Diisi</span>
+                @endif
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th width="50">No</th>
+                            <th width="120">NIM</th>
+                            <th>Nama Mahasiswa</th>
+                            <th width="150">No. Ijazah</th>
+                            <th width="100">Gelar</th>
+                            <th>Data Kosong</th>
+                            <th width="120" style="text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($prodiRegistrations as $index => $reg)
+                        @php
+                        $missing = $checkMissing($reg, $profile);
+                        $isSelected = $selectedRegistrationId === $reg->id;
+                        @endphp
+                        <tr class="{{ $isSelected ? 'row-selected' : '' }}">
+                            <td>{{ $index + 1 }}</td>
+                            <td><code>{{ $reg->nim }}</code></td>
+                            <td><strong>{{ $reg->nama_lengkap }}</strong></td>
+                            <td>
+                                @if($reg->nomor_ijazah)
+                                <span class="text-success">{{ $reg->nomor_ijazah }}</span>
+                                @else
+                                <span class="text-danger"><em>Belum ada</em></span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($profile?->gelar_lulusan)
+                                <span class="text-success">{{ $profile->gelar_lulusan }}</span>
+                                @else
+                                <span class="text-danger"><em>-</em></span>
+                                @endif
+                            </td>
+                            <td>
+                                @if(empty($missing))
+                                <span class="badge-success">Lengkap</span>
+                                @else
+                                @foreach($missing as $m)
+                                <span class="badge-missing">{{ $m }}</span>
+                                @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px; justify-content: center;">
+                                    <a href="{{ route('admin.skpi.generate-skpi.index', ['registration_id' => $reg->id]) }}" class="btn-icon-sm" title="Preview / Siapkan">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form method="POST" action="{{ route('admin.skpi.generate-skpi.download-all') }}" style="margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="registration_id" value="{{ $reg->id }}">
+                                        <button type="submit" class="btn-icon-sm btn-download" title="Download Word">
+                                            <i class="bi bi-file-earmark-word"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 30px; color: #999;">Belum ada mahasiswa approved di prodi ini.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endforeach
+    </div>
+
+    @if($selectedRegistration && $selectedStudent)
+    <div id="selected-student-focus" style="margin-bottom: 20px; padding: 20px; background: #eef2ff; border-radius: 15px; border: 1px solid #c7d2fe;">
+        <h4 style="margin:0 0 10px; color: #4338ca;">Detail Preview: {{ $selectedRegistration->nama_lengkap }} ({{ $selectedRegistration->nim }})</h4>
+        <div class="form-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+            <button type="button" class="btn-secondary" id="generateTemplateBtn" style="padding: 8px 16px; font-size: 13px;">
+                <i class="bi bi-file-earmark-richtext"></i> Tampilkan Preview HTML
+            </button>
+            <a href="{{ route('admin.skpi.generate-skpi.index') }}" class="btn-cancel" style="text-decoration:none; padding: 8px 16px; font-size: 13px; background: #fff; border: 1px solid #ccc; border-radius: 8px; color: #666;">
+                <i class="bi bi-x-lg"></i> Tutup Preview
+            </a>
+        </div>
+    </div>
+
+    <div class="content-card template-preview-card" id="templatePreviewCard">
+        <div class="section-header">
+            <div>
+                <h4>Preview Template SKPI</h4>
+            </div>
+        </div>
+        <div class="template-preview-shell">
+            <div id="templatePreviewArea">
+                <div class="empty-state compact-empty">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <h4>Template belum digenerate</h4>
+                    <p>Klik tombol <strong>Tampilkan Preview HTML</strong> untuk mengecek data.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @include('admin.skpi.generate.template')
+    @endif
+</div>
 @endsection
 
 @push('css')
@@ -788,6 +643,133 @@
     .transkrip-table .sub-cat-row td {
         background: #FAFBFC;
         color: #374151;
+    }
+
+    /* ── Custom Table for Student List ── */
+    .custom-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        font-size: 14px;
+    }
+
+    .custom-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .custom-table td {
+        background: white;
+        padding: 12px 16px;
+        border-top: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .custom-table tr td:first-child {
+        border-left: 1px solid #f1f5f9;
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+
+    .custom-table tr td:last-child {
+        border-right: 1px solid #f1f5f9;
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .custom-table tr:hover td {
+        background: #fdfdfd;
+        border-color: #cbd5e1;
+    }
+
+    .row-selected td {
+        background: #eff6ff !important;
+        border-color: #bfdbfe !important;
+    }
+
+    .badge-missing {
+        background: #fff1f2;
+        color: #e11d48;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-right: 4px;
+        margin-bottom: 4px;
+        display: inline-block;
+        border: 1px solid #fecdd3;
+    }
+
+    .badge-success {
+        background: #f0fdf4;
+        color: #16a34a;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid #bbf7d0;
+    }
+
+    .badge-error {
+        background: #ef4444;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .btn-icon-sm {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-icon-sm:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+
+    .btn-download {
+        background: #2b5797;
+        color: white;
+        border: none;
+    }
+
+    .btn-download:hover {
+        background: #1e3e6d;
+        color: white;
+    }
+
+    .text-success {
+        color: #16a34a;
+        font-weight: 600;
+    }
+
+    .text-danger {
+        color: #dc2626;
+        font-weight: 500;
+    }
+
+    .prodi-section {
+        border-left: 5px solid var(--primary);
     }
 
     .transkrip-table .total-row td {
@@ -1324,7 +1306,7 @@
         .template-preview-shell table {
             font-size: 9px !important;
         }
-        
+
         .section-title-row {
             font-size: 10px !important;
         }
@@ -1388,7 +1370,7 @@
 @push('scripts')
 <script>
     const skpiTemplatePayload = @json($templatePayload);
-    const hasSelectedSkpiData = @json((bool) ($selectedRegistration && $selectedStudent));
+    const hasSelectedSkpiData = @json((bool)($selectedRegistration && $selectedStudent));
     const logoSrc = @json(asset('ush.png'));
 
     function escapeHtml(value) {
@@ -1430,12 +1412,12 @@
         }
 
         let html = document.getElementById('skpiDocumentTemplate').innerHTML;
-        const logoMarkup = logoSrc
-            ? `<img src="${escapeHtml(logoSrc)}" alt="Logo USH">`
-            : '<div class="logo-placeholder">Logo<br>USH</div>';
-        const signatureMarkup = skpiTemplatePayload.signature_url
-            ? `<img src="${escapeHtml(skpiTemplatePayload.signature_url)}" alt="Tanda tangan" class="signature-image" style="max-height:60px; max-width:200px; display:block;">`
-            : '';
+        const logoMarkup = logoSrc ?
+            `<img src="${escapeHtml(logoSrc)}" alt="Logo USH">` :
+            '<div class="logo-placeholder">Logo<br>USH</div>';
+        const signatureMarkup = skpiTemplatePayload.signature_url ?
+            `<img src="${escapeHtml(skpiTemplatePayload.signature_url)}" alt="Tanda tangan" class="signature-image" style="max-height:60px; max-width:200px; display:block;">` :
+            '';
         const signBlockClass = skpiTemplatePayload.signature_url ? 'has-signature' : '';
 
         const replacements = {
@@ -1482,10 +1464,13 @@
         document.getElementById('templatePreviewArea').innerHTML = html;
         document.getElementById('templatePreviewCard').classList.add('visible');
         document.getElementById('printTemplateBtn').style.display = 'inline-flex';
-        document.getElementById('templatePreviewCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('templatePreviewCard').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const generateButton = document.getElementById('generateTemplateBtn');
 
         if (generateButton) {

@@ -131,7 +131,16 @@
                                         <small>{{ $fp->student->nim }}</small>
                                     </div>
                                 </td>
-                                <td>{{ $fp->title ?? '-' }}</td>
+                                <td>
+                                    <div style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.4;">
+                                        {{ $fp->title ?? '-' }}
+                                    </div>
+                                    @if($fp->title && $fp->title_en)
+                                        <div style="font-size: 12px; color: #666; font-style: italic; margin-top: 4px; line-height: 1.4;">
+                                            {{ $fp->title_en }}
+                                        </div>
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="status-badge status-{{ $fp->status }}">
                                         {{ ucfirst($fp->status) }}

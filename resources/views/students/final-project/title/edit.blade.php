@@ -23,10 +23,17 @@
         <div class="form-card">
             <h4>Judul Tugas Akhir</h4>
             <div class="form-group">
-                <label>Judul Tugas Akhir *</label>
-                <textarea name="title" class="form-control" rows="4" placeholder="Masukkan judul Tugas Akhir Anda..." required>{{ old('title', $finalProject->title) }}</textarea>
+                <label>Judul Tugas Akhir (Bahasa Indonesia) *</label>
+                <textarea name="title" class="form-control" rows="3" placeholder="Masukkan judul dalam Bahasa Indonesia..." required>{{ old('title', $finalProject->title) }}</textarea>
                 <small>Minimal 10 karakter, maksimal 500 karakter</small>
                 @error('title')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label>Judul Tugas Akhir (Bahasa Inggris) *</label>
+                <textarea name="title_en" class="form-control" rows="3" placeholder="Masukkan judul dalam Bahasa Inggris..." required>{{ old('title_en', $finalProject->title_en) }}</textarea>
+                <small>Final project title in English version</small>
+                @error('title_en')<span class="error">{{ $message }}</span>@enderror
             </div>
         </div>
 

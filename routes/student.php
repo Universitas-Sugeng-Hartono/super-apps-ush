@@ -37,11 +37,12 @@ Route::middleware(['student'])->group(function () {
     // SKPI
     Route::prefix('student/skpi')->name('student.skpi.')->controller(\App\Http\Controllers\Student\SkpiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::get('/download-pdf', 'downloadPdf')->name('download-pdf');
+        Route::get('/download-word', 'downloadWord')->name('download-word');
         Route::prefix('daftar')->name('daftar.')->group(function () {
             Route::get('/', 'daftarIndex')->name('index');
             Route::get('/create', 'daftarCreate')->name('create');
             Route::post('/', 'daftarStore')->name('store');
+            Route::post('/submit', 'daftarSubmit')->name('submit');
             Route::get('/show', 'daftarShow')->name('show');
 
         });

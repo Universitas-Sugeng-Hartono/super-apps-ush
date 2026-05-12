@@ -10,7 +10,7 @@ use App\Models\SkpiRegistration;
 use App\Models\Student;
 use App\Models\StudentAchievement;
 use App\Models\StudyProgram;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\SkpiDocumentEncryption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 
@@ -25,17 +25,10 @@ class SkpiController extends Controller
         $achievementMeta = $this->buildAchievementMeta($student);
         $skpiRegistration = $student->skpiRegistration;
         $registrationStatus = $this->buildStatusMeta($skpiRegistration?->status);
-         // Cek apakah tugas akhir sudah siap (checklist index 1)
-        $tugasAkhirReady = $registrationChecklist[1]['ready'];
+        // Cek apakah tugas akhir sudah siap (checklist index 2 sekarang setelah dipisah)
+        $tugasAkhirReady = $registrationChecklist[2]['ready'];
+
         $menus = [
-            [
-                'title' => 'Data Pemegang SKPI',
-                'description' => 'Cek identitas utama seperti nama, NIM, tempat lahir, tanggal lahir, dan data diri dasar.',
-                'icon' => 'bi bi-person-vcard',
-                'badge' => $registrationChecklist[0]['ready'] ? 'Siap' : 'Lengkapi',
-                'badge_class' => $registrationChecklist[0]['ready'] ? 'active' : 'warning',
-                'href' => route('student.personal.editDataIndex'),
-            ],
             [
                 'title' => 'Prestasi & Penghargaan',
                 'description' => $achievementMeta['description'],
@@ -46,18 +39,20 @@ class SkpiController extends Controller
             ],
             [
                 'title' => ' Tugas Akhir',
-                'description' => 'Pastikan Anda sudah menyelesaikan Tugas Akhir/Skripsi .',
+                'description' => $student->finalProject && $student->finalProject->title 
+                    ? $student->finalProject->title . ($student->finalProject->title_en ? ' (' . $student->finalProject->title_en . ')' : '')
+                    : 'Pastikan Anda sudah menyelesaikan Tugas Akhir/Skripsi.',
                 'icon' => 'bi bi-journal-check',
-                'badge' => $registrationChecklist[1]['ready'] ? 'Siap' : 'Cek Data',
-                'badge_class' => $registrationChecklist[1]['ready'] ? 'active' : 'info',
+                'badge' => $registrationChecklist[2]['ready'] ? 'Siap' : 'Cek Data',
+                'badge_class' => $registrationChecklist[2]['ready'] ? 'active' : 'info',
                 'href' => route('student.final-project.index'),
             ],
             [
                 'title' => 'Foto & Tanda Tangan',
                 'description' => 'Lengkapi foto profil dan tanda tangan agar dokumen pendukung SKPI siap digunakan saat proses akhir.',
                 'icon' => 'bi bi-pencil-square',
-                'badge' => $registrationChecklist[2]['ready'] ? 'Lengkap' : '2 Dokumen',
-                'badge_class' => $registrationChecklist[2]['ready'] ? 'active' : 'warning',
+                'badge' => $registrationChecklist[3]['ready'] ? 'Lengkap' : '2 Dokumen',
+                'badge_class' => $registrationChecklist[3]['ready'] ? 'active' : 'warning',
                 'href' => route('student.personal.editDataIndex'),
             ],
         ];
@@ -65,6 +60,7 @@ class SkpiController extends Controller
         return view('students.skpi.index', compact(
             'student',
             'stats',
+
             'achievementMeta',
             'menus',
             'registrationChecklist',
@@ -79,6 +75,7 @@ class SkpiController extends Controller
     {
         $student = $this->getStudent();
         $skpiRegistration = $student->skpiRegistration;
+
         $registrationChecklist = $this->buildRegistrationChecklist($student);
         $registrationMeta = $this->buildRegistrationMeta($registrationChecklist);
         $holderFields = $this->buildHolderFields($this->buildHolderData($student, $skpiRegistration));
@@ -89,6 +86,7 @@ class SkpiController extends Controller
         return view('students.skpi.daftar.index', compact(
             'student',
             'skpiRegistration',
+
             'registrationChecklist',
             'registrationMeta',
             'holderFields',
@@ -102,6 +100,9 @@ class SkpiController extends Controller
     {
         $student = $this->getStudent();
         $skpiRegistration = $student->skpiRegistration;
+
+
+
         $holderData = $this->buildHolderData($student, $skpiRegistration, $request);
         $holderFields = $this->buildHolderFields($holderData);
         $holderMeta = $this->buildHolderMeta($holderFields);
@@ -124,17 +125,10 @@ class SkpiController extends Controller
         $student = $this->getStudent();
         $skpiRegistration = $student->skpiRegistration;
 
-        // Server-side: cek prasyarat sebelum izinkan submit
-        // (Tidak cek Data Pemegang SKPI karena itu data yang sedang dikirim via form ini)
-        $hasAcademicProfile = filled($student->ipk) && filled($student->sks);
-        $hasFinalProjectData = filled(optional($student->finalProject)->title);
-        $hasDocumentSupport = filled($student->foto) && filled($student->ttd);
 
-        if (!$hasAcademicProfile || !$hasFinalProjectData || !$hasDocumentSupport) {
-            return redirect()
-                ->route('student.skpi.index')
-                ->with('error', 'Anda belum memenuhi semua persyaratan untuk mendaftar SKPI. Pastikan tugas akhir sudah selesai dan dokumen (foto/tanda tangan) sudah lengkap.');
-        }
+
+
+        // Server-side: Hapus cek prasyarat di sini karena ini hanya simpan draft Identitas
 
         if ($skpiRegistration && !$this->canEditRegistration($skpiRegistration)) {
             return redirect()
@@ -148,28 +142,72 @@ class SkpiController extends Controller
             'tanggal_lahir' => 'required|date',
             'nim' => 'required|string|max:20',
             'angkatan' => 'required|integer|min:1900|max:2100',
-            'nomor_ijazah' => 'required|string|max:100',
-            'gelar' => 'required|string|max:100',
+            'gelar' => 'nullable|string|max:100',
         ], [
             'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
             'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
             'tanggal_lahir.required' => 'Tanggal lahir wajib diisi.',
             'nim.required' => 'NIM wajib diisi.',
             'angkatan.required' => 'Tahun masuk wajib diisi.',
-            'nomor_ijazah.required' => 'Nomor ijazah wajib diisi.',
-            'gelar.required' => 'Gelar wajib diisi.',
         ]);
+
+        // Ambil gelar otomatis dari prodi (Selalu prioritaskan dari profil akademik prodi terbaru)
+        $studyProgram = \App\Models\StudyProgram::where('name', $student->program_studi)->first();
+        $gelarFromProfile = null;
+        if ($studyProgram) {
+            $academicProfile = \App\Models\SkpiAcademicProfile::where('study_program_id', $studyProgram->id)->first();
+            $gelarFromProfile = $academicProfile?->gelar_lulusan;
+        }
+
+        $gelar = $gelarFromProfile ?? $validated['gelar'] ?? null;
+        $status = $skpiRegistration ? $skpiRegistration->status : 'draft';
 
         $registration = SkpiRegistration::updateOrCreate(
             ['student_id' => $student->id],
             array_merge($validated, [
-                'status' => 'pending',
-                'submitted_at' => now(),
-                'approved_by' => null,
-                'approved_at' => null,
-                'approval_notes' => null,
+                'gelar' => $gelar,
+                'status' => $status,
             ])
         );
+
+        return redirect()
+            ->route('student.skpi.daftar.index')
+            ->with('success', 'Data Identitas Pemegang SKPI berhasil disimpan.');
+    }
+
+    public function daftarSubmit(Request $request)
+    {
+        $student = $this->getStudent();
+        $skpiRegistration = $student->skpiRegistration;
+
+        if (!$skpiRegistration) {
+            return redirect()
+                ->route('student.skpi.daftar.index')
+                ->with('error', 'Anda belum mengisi Form Identitas Pemegang SKPI.');
+        }
+
+        $registrationChecklist = $this->buildRegistrationChecklist($student);
+        $registrationMeta = $this->buildRegistrationMeta($registrationChecklist);
+
+        if (!$registrationMeta['ready']) {
+            return redirect()
+                ->route('student.skpi.daftar.index')
+                ->with('error', 'Gagal mengirim pengajuan! Anda belum memenuhi semua Prasyarat Sistem.');
+        }
+
+        if (!$this->canEditRegistration($skpiRegistration)) {
+            return redirect()
+                ->route('student.skpi.daftar.index')
+                ->with('error', 'Pendaftaran SKPI dengan status saat ini tidak dapat diajukan ulang.');
+        }
+
+        $skpiRegistration->update([
+            'status' => 'pending',
+            'submitted_at' => now(),
+            'approval_notes' => null,
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
 
         $recipientIds = NotificationHelper::kaprodiAndSuperuserUserIdsForProdi(
             NotificationHelper::prodiFromStudent($student)
@@ -181,12 +219,12 @@ class SkpiController extends Controller
             'Pendaftaran SKPI Baru',
             "{$student->nama_lengkap} mengajukan pendaftaran SKPI dan menunggu review.",
             route('admin.skpi.daftar-skpi.index'),
-            ['skpi_registration_id' => $registration->id]
+            ['skpi_registration_id' => $skpiRegistration->id]
         );
 
         return redirect()
-            ->route('student.skpi.daftar.show')
-            ->with('success', 'Pendaftaran SKPI berhasil disimpan dan dikirim untuk direview.');
+            ->route('student.skpi.daftar.index')
+            ->with('success', 'Pendaftaran SKPI berhasil dikirim untuk direview.');
     }
 
     public function daftarShow()
@@ -215,95 +253,65 @@ class SkpiController extends Controller
         ));
     }
 
-public function downloadPdf()
-{
-    $student = $this->getStudent();
-    $registration = $student->skpiRegistration;
+    public function downloadWord()
+    {
+        $student      = $this->getStudent();
+        $registration = $student->skpiRegistration;
 
-    if (!$registration) {
-        return redirect()->route('student.skpi.daftar.index')
-            ->with('error', 'Anda belum memiliki pengajuan SKPI.');
-    }
+        if (!$registration) {
+            return redirect()->route('student.skpi.daftar.index')
+                ->with('error', 'Anda belum memiliki pengajuan SKPI.');
+        }
 
-    if ($registration->status !== 'approved') {
-        return redirect()->route('student.skpi.daftar.show')
-            ->with('error', 'PDF SKPI baru bisa diunduh setelah pengajuan Anda disetujui.');
-    }
+        if ($registration->status !== 'approved') {
+            return redirect()->route('student.skpi.daftar.show')
+                ->with('error', 'Dokumen SKPI baru bisa diunduh setelah pengajuan Anda disetujui.');
+        }
 
-    $studyProgram = StudyProgram::query()
-        ->where('name', $student->program_studi)
-        ->first();
+        if (!$registration->hasGeneratedDocument()) {
+            return redirect()->route('student.skpi.daftar.show')
+                ->with('error', 'Dokumen SKPI Anda belum siap. Mohon hubungi Admin agar dokumen segera di-generate.');
+        }
 
-    $academicProfile = $studyProgram
-        ? SkpiAcademicProfile::query()->where('study_program_id', $studyProgram->id)->first()
-        : null;
+        try {
+            $decrypted = SkpiDocumentEncryption::decrypt($registration->skpi_document);
+        } catch (\Throwable $e) {
+            \Log::error('[StudentSkpi] Gagal dekripsi SKPI NIM=' . $registration->nim . ': ' . $e->getMessage());
+            return redirect()->route('student.skpi.daftar.show')
+                ->with('error', 'Dokumen SKPI tidak dapat dibaca. Silakan hubungi Admin.');
+        }
 
-    // Otomatis ambil semua achievement approved milik mahasiswa ini
-    $manualCategories = array_keys(StudentAchievement::manualCategoryOptions());
-    $selectedAchievements = StudentAchievement::query()
-        ->where('student_id', $student->id)
-        ->where('status', 'approved')
-        ->whereIn('category', $manualCategories)
-        ->latest()
-        ->get();
+        $safeNim  = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $registration->nim) ?: 'student';
+        $fileName = 'SKPI_' . $safeNim . '.docx';
 
-    $automaticEntries = collect();
-    if (filled($student->finalProject?->title)) {
-        $automaticEntries->push((object) [
-            'id'             => 'skripsi-auto-' . $student->id,
-            'category'       => StudentAchievement::CATEGORY_SKRIPSI,
-            'category_label' => StudentAchievement::categoryOptions()[StudentAchievement::CATEGORY_SKRIPSI],
-            'event'          => $student->finalProject->title,
-            'achievement'    => 'Judul Skripsi / Tugas Akhir',
-            'level'          => $student->program_studi ?? '-',
-            'source'         => 'Tugas Akhir',
-            'status'         => 'approved',
+        return response($decrypted, 200, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Content-Length'      => strlen($decrypted),
         ]);
     }
-
-    $documentMeta = $this->resolveDocumentMeta();
-    $documentMeta['nomor_skpi'] = $registration->nomor_skpi ?? $documentMeta['nomor_skpi'];
-    $signatureDataUri = $this->resolveStorageDataUri($documentMeta['signature_path'] ?? null);
-    $logoDataUri = $this->resolveLogoDataUri();
-
-    $safeNim = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $registration->nim) ?: 'student';
-    $downloadName = 'SKPI-' . $safeNim . '.pdf';
-
-    $pdf = Pdf::loadView('admin.skpi.generate.pdf', [
-        'selectedRegistration' => $registration,
-        'selectedStudent'      => $student,
-        'academicProfile'      => $academicProfile,
-        'selectedAchievements' => $selectedAchievements,
-        'automaticEntries'     => $automaticEntries,
-        'documentMeta'         => $documentMeta,
-        'signatureDataUri'     => $signatureDataUri,
-        'logoDataUri'          => $logoDataUri,
-    ])->setPaper('a4');
-
-    return $pdf->download($downloadName);
-}
 
     private function getStudent(): Student
     {
         return Student::withCount([
-                'achievements',
-                'achievements as approved_achievements_count' => function ($query) {
-                    $query->where('status', 'approved');
-                },
-                'achievements as pending_achievements_count' => function ($query) {
-                    $query->where('status', 'pending');
-                },
-                'achievements as rejected_achievements_count' => function ($query) {
-                    $query->where('status', 'rejected');
-                },
-            ])
-            ->with(['finalProject', 'skpiRegistration'])
+            'achievements',
+            'achievements as approved_achievements_count' => function ($query) {
+                $query->where('status', 'approved');
+            },
+            'achievements as pending_achievements_count' => function ($query) {
+                $query->where('status', 'pending');
+            },
+            'achievements as rejected_achievements_count' => function ($query) {
+                $query->where('status', 'rejected');
+            },
+        ])
+            ->with(['finalProject.defense', 'skpiRegistration'])
             ->findOrFail(decrypt(session('student_id')));
     }
 
     private function canEditRegistration(?SkpiRegistration $registration): bool
     {
-        return !$registration || in_array($registration->status, ['needs_revision', 'rejected'], true);
+        return !$registration || in_array($registration->status, ['draft', 'needs_revision', 'rejected'], true);
     }
 
     private function buildStats(Student $student): array
@@ -325,32 +333,41 @@ public function downloadPdf()
         $holderData = $this->buildHolderData($student, $registration);
         $birthIdentityComplete = filled($holderData['tempat_lahir']) && filled($holderData['tanggal_lahir']);
         $hasAcademicProfile = filled($student->ipk) && filled($student->sks);
-        $hasFinalProjectData = filled(optional($student->finalProject)->title);
+        
+        $finalProject = $student->finalProject;
+        $hasFinalProjectData = $finalProject && filled($finalProject->title) && filled($finalProject->title_en) && $finalProject->defense?->status === 'approved';
+        
         $hasDocumentSupport = filled($student->foto) && filled($student->ttd);
         $hasApprovedAchievements = ($student->approved_achievements_count ?? 0) > 0;
 
         return [
             [
                 'title' => 'Data Pemegang SKPI',
-                'description' => 'Identitas dasar seperti nama, tempat lahir, tanggal lahir, dan NIM perlu sudah siap.',
+                'description' => 'Identitas dasar seperti nama, tempat lahir, tanggal lahir, dan NIM.',
                 'ready' => $birthIdentityComplete,
                 'required' => true,
             ],
             [
+                'title' => 'Profil Akademik',
+                'description' => 'Data IPK dan SKS harus sudah tersedia di sistem.',
+                'ready' => $hasAcademicProfile,
+                'required' => true,
+            ],
+            [
                 'title' => 'Tugas Akhir',
-                'description' => 'Data Tugas akhir yang sudah di selesaikan !.',
-                'ready' => $hasAcademicProfile && $hasFinalProjectData,
+                'description' => 'Judul Tugas Akhir versi Indonesia dan Inggris sudah ada dan Pendaftaran Sidang telah di-approve.',
+                'ready' => $hasFinalProjectData,
                 'required' => true,
             ],
             [
                 'title' => 'Foto & Tanda Tangan',
-                'description' => 'Dokumen pendukung visual sudah lengkap untuk proses akhir.',
+                'description' => 'Foto profil dan tanda tangan digital sudah lengkap.',
                 'ready' => $hasDocumentSupport,
                 'required' => true,
             ],
             [
                 'title' => 'Prestasi & Penghargaan',
-                'description' => 'Bagian ini opsional. Hanya prestasi yang sudah approved yang akan masuk ke SKPI.',
+                'description' => 'Opsional. Hanya prestasi yang sudah approved yang akan masuk ke SKPI.',
                 'ready' => $hasApprovedAchievements,
                 'required' => false,
             ],
@@ -415,14 +432,21 @@ public function downloadPdf()
         ?SkpiRegistration $registration = null,
         ?Request $request = null
     ): array {
+        // Selalu ambil gelar terbaru dari profil prodi sebagai prioritas utama
+        $gelarFromProfile = null;
+        $studyProgram = \App\Models\StudyProgram::where('name', $student->program_studi)->first();
+        if ($studyProgram) {
+            $academicProfile = \App\Models\SkpiAcademicProfile::where('study_program_id', $studyProgram->id)->first();
+            $gelarFromProfile = $academicProfile?->gelar_lulusan;
+        }
+
         $defaults = [
             'nama_lengkap' => $registration?->nama_lengkap ?? $student->nama_lengkap,
             'tempat_lahir' => $registration?->tempat_lahir ?? $student->tempat_lahir,
             'tanggal_lahir' => optional($registration?->tanggal_lahir ?? $student->tanggal_lahir)->format('Y-m-d'),
             'nim' => $registration?->nim ?? $student->nim,
             'angkatan' => $registration?->angkatan ?? $student->angkatan,
-            'nomor_ijazah' => $registration?->nomor_ijazah,
-            'gelar' => $registration?->gelar,
+            'gelar' => $gelarFromProfile ?? $registration?->gelar,
         ];
 
         return [
@@ -431,7 +455,6 @@ public function downloadPdf()
             'tanggal_lahir' => old('tanggal_lahir', $request?->input('tanggal_lahir', $defaults['tanggal_lahir']) ?? $defaults['tanggal_lahir']),
             'nim' => old('nim', $request?->input('nim', $defaults['nim']) ?? $defaults['nim']),
             'angkatan' => old('angkatan', $request?->input('angkatan', $defaults['angkatan']) ?? $defaults['angkatan']),
-            'nomor_ijazah' => old('nomor_ijazah', $request?->input('nomor_ijazah', $defaults['nomor_ijazah']) ?? $defaults['nomor_ijazah']),
             'gelar' => old('gelar', $request?->input('gelar', $defaults['gelar']) ?? $defaults['gelar']),
         ];
     }
@@ -472,12 +495,6 @@ public function downloadPdf()
                 'display' => $holderData['angkatan'] ?? null,
             ],
             [
-                'key' => 'nomor_ijazah',
-                'label' => 'Nomor Ijazah',
-                'value' => $holderData['nomor_ijazah'] ?? null,
-                'display' => $holderData['nomor_ijazah'] ?? null,
-            ],
-            [
                 'key' => 'gelar',
                 'label' => 'Gelar',
                 'value' => $holderData['gelar'] ?? null,
@@ -489,7 +506,7 @@ public function downloadPdf()
     private function buildHolderMeta(array $holderFields): array
     {
         $filledCount = collect($holderFields)
-            ->filter(fn ($field) => filled($field['value']))
+            ->filter(fn($field) => filled($field['value']))
             ->count();
 
         return [
@@ -497,7 +514,7 @@ public function downloadPdf()
             'total_count' => count($holderFields),
             'complete' => $filledCount === count($holderFields),
             'missing_fields' => collect($holderFields)
-                ->filter(fn ($field) => blank($field['value']))
+                ->filter(fn($field) => blank($field['value']))
                 ->pluck('label')
                 ->values(),
         ];
@@ -523,6 +540,12 @@ public function downloadPdf()
                 'label' => 'Rejected',
                 'badge_class' => 'danger',
                 'description' => 'Pendaftaran SKPI ditolak dan perlu disesuaikan ulang.',
+            ],
+            'draft' => [
+                'value' => 'draft',
+                'label' => 'Draft',
+                'badge_class' => 'muted',
+                'description' => 'Data identitas sudah disimpan, tetapi belum diajukan.',
             ],
             'pending' => [
                 'value' => 'pending',
@@ -556,7 +579,7 @@ public function downloadPdf()
     private function resolveLogoDataUri(): ?string
     {
         $logoPath = public_path('ush.png');
-        
+
         if (!File::exists($logoPath)) {
             $logoPath = public_path('img/logo-ush.png'); // Fallback ke path standar lain jika ada
         }

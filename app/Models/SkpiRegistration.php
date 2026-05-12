@@ -9,26 +9,35 @@ class SkpiRegistration extends Model
 {
     protected $fillable = [
         'student_id',
-        'nomor_skpi',
+
         'nama_lengkap',
         'tempat_lahir',
         'tanggal_lahir',
         'nim',
         'angkatan',
-        'nomor_ijazah',
         'gelar',
+        'nomor_ijazah',
         'status',
         'approval_notes',
         'approved_by',
         'approved_at',
         'submitted_at',
+        'skpi_document',
+        'skpi_generated_at',
     ];
 
     protected $casts = [
-        'tanggal_lahir' => 'date',
-        'approved_at' => 'datetime',
-        'submitted_at' => 'datetime',
+        'tanggal_lahir'      => 'date',
+        'approved_at'        => 'datetime',
+        'submitted_at'       => 'datetime',
+        'skpi_generated_at'  => 'datetime',
     ];
+
+    /** Apakah file SKPI sudah pernah di-generate dan tersimpan. */
+    public function hasGeneratedDocument(): bool
+    {
+        return !empty($this->skpi_document);
+    }
 
     public function student(): BelongsTo
     {

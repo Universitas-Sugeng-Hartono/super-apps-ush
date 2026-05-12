@@ -24,6 +24,7 @@ class SkpiAcademicProfile extends Model
         'lama_studi',
         'nomor_akreditasi_program_studi',
         'status_profesi',
+        'gelar_lulusan',
     ];
 
     public function studyProgram()

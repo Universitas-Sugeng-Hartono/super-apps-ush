@@ -45,7 +45,16 @@
         <div class="stats-header">
             <div>
                 <h3>Tugas Akhir</h3>
-                <p style="margin: 5px 0 0; font-size: 14px; color: #666;">{{ $finalProject->title ?? 'Belum menentukan judul' }}</p>
+                <div style="margin-top: 8px;">
+                    <p style="margin: 0; font-size: 14px; color: #333; font-weight: 600; line-height: 1.4;">
+                        {{ $finalProject->title ?? 'Belum menentukan judul' }}
+                    </p>
+                    @if($finalProject->title && $finalProject->title_en)
+                        <p style="margin: 4px 0 0; font-size: 13px; color: #666; font-style: italic; line-height: 1.4;">
+                            {{ $finalProject->title_en }}
+                        </p>
+                    @endif
+                </div>
             </div>
             <span class="semester-badge status-{{ $finalProject->status }}">{{ ucfirst($finalProject->status) }}</span>
         </div>
@@ -663,6 +672,18 @@
     .status-badge.danger   { background: #FFEBEE; color: #C62828; }
     .status-badge.revision { background: #FFF8E1; color: #E65100; }
 
+
+    @media (max-width: 768px) {
+        .stats-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .semester-badge {
+            order: -1; /* Pindahkan badge ke atas judul di mobile agar lebih terbaca */
+        }
+    }
 
     @media (min-width: 769px) {
         .menu-grid {

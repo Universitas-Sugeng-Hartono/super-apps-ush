@@ -8,6 +8,8 @@
         </div>
     @endif
 
+
+
     <div class="page-card">
         <div>
             <span class="page-eyebrow">Form Draft</span>
@@ -26,6 +28,16 @@
             <div>
                 <strong>Catatan Review Terakhir</strong>
                 <p>{{ $skpiRegistration->approval_notes }}</p>
+            </div>
+        </div>
+    @endif
+
+    @if($holderMeta['filled_count'] < $holderMeta['total_count'])
+        <div class="alert-card alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div>
+                <strong>Data Belum Lengkap!</strong>
+                <p>Terdapat {{ $holderMeta['total_count'] - $holderMeta['filled_count'] }} field data yang masih kosong. Mohon hubungi Dosen Pembimbing Anda jika ada data yang kurang lengkap.</p>
             </div>
         </div>
     @endif
@@ -64,7 +76,7 @@
             @csrf
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="nama_lengkap">Nama Lengkap</label>
+                    <label for="nama_lengkap">Nama Lengkap (sesuai nama ijasah)</label>
                     <input id="nama_lengkap" type="text" name="nama_lengkap" class="form-control" value="{{ $holderData['nama_lengkap'] }}" placeholder="Masukkan nama lengkap" @disabled(!$canEditRegistration)>
                     @error('nama_lengkap')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
@@ -95,16 +107,12 @@
 
                 <div class="form-group">
                     <label for="gelar">Gelar</label>
-                    <input id="gelar" type="text" name="gelar" class="form-control" value="{{ $holderData['gelar'] }}" placeholder="Contoh: S.Kom." @disabled(!$canEditRegistration)>
+                    <input id="gelar" type="text" name="gelar" class="form-control readonly-field" value="{{ $holderData['gelar'] }}" placeholder="Gelar dari program studi..." readonly>
+                    <small class="text-muted"><i class="bi bi-info-circle"></i> Gelar diatur oleh Masteradmin sesuai Program Studi Anda.</small>
                     @error('gelar')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
 
-                <div class="form-group full-width">
-                    <label for="nomor_ijazah">Nomor Ijazah</label>
-                    <input id="nomor_ijazah" type="text" name="nomor_ijazah" class="form-control" value="{{ $holderData['nomor_ijazah'] }}" placeholder="Masukkan nomor ijazah resmi" @disabled(!$canEditRegistration)>
-                    @error('nomor_ijazah')<small class="text-danger">{{ $message }}</small>@enderror
-                    <small>Gunakan nomor ijazah resmi perguruan tinggi. Field ini wajib saat pengajuan dikirim.</small>
-                </div>
+                {{-- Nomor Ijazah diisi oleh Masteradmin, bukan mahasiswa --}}
             </div>
 
             {{-- <div class="quick-links">
@@ -121,7 +129,7 @@
             <div class="form-actions">
                 <a href="{{ route('student.skpi.daftar.index') }}" class="btn btn-soft">Kembali</a>
                 @if($canEditRegistration)
-                    <button type="submit" class="btn btn-primary-soft">{{ $skpiRegistration ? 'Simpan Ulang Pengajuan' : 'Simpan & Kirim Pengajuan' }}</button>
+                    <button type="submit" class="btn btn-primary-soft">{{ $skpiRegistration ? 'Update Data Identitas' : 'Simpan Data Identitas' }}</button>
                 @else
                     <a href="{{ route('student.skpi.daftar.show') }}" class="btn btn-primary-soft">Lihat Pengajuan</a>
                 @endif
@@ -258,12 +266,19 @@
         color: #795548;
     }
 
-    .alert-note strong {
+    .alert-warning {
+        background: #FFF3E0;
+        color: #E65100;
+    }
+
+    .alert-note strong,
+    .alert-warning strong {
         display: block;
         margin-bottom: 4px;
     }
 
-    .alert-note p {
+    .alert-note p,
+    .alert-warning p {
         margin: 0;
         color: inherit;
     }

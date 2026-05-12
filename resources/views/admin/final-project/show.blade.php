@@ -38,9 +38,15 @@
             <div class="detail-section">
                 <h4>Informasi Tugas Akhir</h4>
                 <div class="detail-row">
-                    <span class="label">Judul</span>
-                    <span class="value">{{ $finalProject->title ?? '-' }}</span>
+                    <span class="label">Judul (ID)</span>
+                    <span class="value" style="font-weight: 600;">{{ $finalProject->title ?? '-' }}</span>
                 </div>
+                @if($finalProject->title && $finalProject->title_en)
+                <div class="detail-row">
+                    <span class="label">Judul (EN)</span>
+                    <span class="value" style="font-style: italic; color: #666;">{{ $finalProject->title_en }}</span>
+                </div>
+                @endif
                 <div class="detail-row">
                     <span class="label">Status</span>
                     <span class="value">

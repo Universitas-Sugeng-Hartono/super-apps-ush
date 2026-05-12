@@ -104,10 +104,15 @@
         <div class="form-card">
             <h4>Informasi Tugas Akhir</h4>
             <div class="form-group">
-                <label>Judul Tugas Akhir</label>
-                <input type="text" class="form-control"
-                       value="{{ $finalProject->title }}" disabled>
+                <label>Judul Tugas Akhir (Bahasa Indonesia)</label>
+                <input type="text" class="form-control" value="{{ $finalProject->title }}" disabled>
             </div>
+            @if($finalProject->title_en)
+            <div class="form-group">
+                <label>Judul Tugas Akhir (Bahasa Inggris)</label>
+                <input type="text" class="form-control" style="font-style: italic;" value="{{ $finalProject->title_en }}" disabled>
+            </div>
+            @endif
             <div class="form-row">
                 <div class="form-group">
                     <label>Pembimbing 1</label>
@@ -463,6 +468,29 @@
         background: #FFEBEE;
         border: 1px solid #FFCDD2;
         color: #C62828;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            text-align: center;
+        }
+
+        .stats-card {
+            padding: 15px;
+        }
+
+        .form-card {
+            padding: 15px;
+        }
     }
 </style>
 @endpush

@@ -1,1220 +1,1002 @@
 @extends('admin.layouts.super-app')
 
 @section('content')
-    <div class="dropdown-backdrop" id="dropdownBackdrop"></div>
-    <div class="stats-row">
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #29375d, #4E6BA8);">
-            <i class="bi bi-card-list"></i>
-        </div>
-        <div class="stat-info">
-            <h5>Total Pendaftar</h5>
-            <h3>{{ $stats['total'] }}</h3>
-        </div>
+<div class="page-shell">
+    <div class="mb-3" style="padding-top: 10px;">
+        <a href="{{ route('admin.skpi.index') }}" class="text-decoration-none text-secondary" style="font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="bi bi-arrow-left"></i> Kembali ke Menu Utama SKPI
+        </a>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #FF9800, #FFB347);">
-            <i class="bi bi-hourglass-split"></i>
-        </div>
-        <div class="stat-info">
-            <h5>Pending</h5>
-            <h3>{{ $stats['pending'] }}</h3>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
-            <i class="bi bi-check2-circle"></i>
-        </div>
-        <div class="stat-info">
-            <h5>Approved</h5>
-            <h3>{{ $stats['approved'] }}</h3>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #2196F3, #64B5F6);">
-            <i class="bi bi-arrow-repeat"></i>
-        </div>
-        <div class="stat-info">
-            <h5>Need Revision</h5>
-            <h3>{{ $stats['needs_revision'] }}</h3>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #F44336, #FF8A80);">
-            <i class="bi bi-x-circle"></i>
-        </div>
-        <div class="stat-info">
-            <h5>Rejected</h5>
-            <h3>{{ $stats['rejected'] }}</h3>
-        </div>
-    </div>
-</div>
 
-@if(session('success'))
-<div class="flash-card flash-success">
-    <i class="bi bi-check-circle"></i> {{ session('success') }}
-</div>
-@endif
-
-@if($errors->any())
-<div class="flash-card flash-error">
-    @foreach($errors->all() as $error)
-    <div>{{ $error }}</div>
-    @endforeach
-</div>
-@endif
-
-<div class="content-card">
-    <div class="card-header">
-        <div>
+    <div class="hero-card shadow-sm">
+        <div class="hero-content">
+            <span class="hero-badge">Manajemen Pendaftaran</span>
             <h3>Daftar Pengajuan SKPI</h3>
-            <p class="card-subtitle">Review pendaftar SKPI dari mahasiswa, lalu ubah statusnya sesuai hasil verifikasi awal.</p>
+            <p>Review pendaftar SKPI, kelola nomor ijazah, dan pantau status verifikasi mahasiswa secara terpusat.</p>
         </div>
+        <div class="stats-row">
+            <div class="stat-box">
+                <span class="stat-label">Total</span>
+                <span class="stat-value">{{ $stats['total'] }}</span>
+            </div>
+            <div class="stat-box warning">
+                <span class="stat-label">Pending</span>
+                <span class="stat-value">{{ $stats['pending'] }}</span>
+            </div>
+            <div class="stat-box success">
+                <span class="stat-label">Approved</span>
+                <span class="stat-value">{{ $stats['approved'] }}</span>
+            </div>
+            <div class="stat-box info">
+                <span class="stat-label">Revision</span>
+                <span class="stat-value">{{ $stats['needs_revision'] }}</span>
+            </div>
+        </div>
+    </div>
 
-        <div class="header-actions">
-            {{-- Approve Semua --}}
-            @if($stats['pending'] > 0)
-            <button type="button" class="btn-approve-all" onclick="showApproveAllModal()">
-                <i class="bi bi-check2-all"></i>
-                Approve Semua Pending
-                <span class="pending-count">{{ $stats['pending'] }}</span>
-            </button>
-            @endif
+    @if(session('success'))
+    <div class="alert-modern alert-success-modern animate__animated animate__fadeIn">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ session('success') }}</span>
+    </div>
+    @endif
 
-            <form method="GET" action="{{ route('admin.skpi.daftar-skpi.index') }}" class="filter-form">
-                <input type="text" name="search" value="{{ $search }}" class="filter-input" placeholder="Cari nama, NIM, atau prodi">
-                <select name="status" class="filter-select">
+    @if($errors->any())
+    <div class="alert-modern alert-danger-modern animate__animated animate__shakeX">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>
+            <strong>Terjadi Kesalahan:</strong>
+            <ul class="mb-0 mt-1">
+                @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+    @endif
+
+    <div class="filter-card shadow-sm">
+        <form method="GET" action="{{ route('admin.skpi.daftar-skpi.index') }}" class="filter-grid">
+            <div class="filter-item">
+                <label>Cari Mahasiswa</label>
+                <div class="input-with-icon">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" class="form-control-modern" value="{{ $search }}" placeholder="Nama, NIM, atau Prodi...">
+                </div>
+            </div>
+            <div class="filter-item">
+                <label>Status</label>
+                <select name="status" class="form-select-modern" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
                     <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved</option>
                     <option value="needs_revision" {{ $status === 'needs_revision' ? 'selected' : '' }}>Need Revision</option>
                     <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
-                <button type="submit" class="btn-filter">
+            </div>
+            <div class="filter-item">
+                <label>Program Studi</label>
+                <select name="study_program_id" class="form-select-modern" onchange="this.form.submit()">
+                    <option value="">Semua Program Studi</option>
+                    @foreach($studyPrograms as $prodi)
+                    <option value="{{ $prodi->id }}" {{ $studyProgramId == $prodi->id ? 'selected' : '' }}>{{ $prodi->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="filter-actions-modern">
+                <a href="{{ route('admin.skpi.daftar-skpi.index') }}" class="btn-reset-modern" title="Reset Filter">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+                <button type="submit" class="btn-search-modern">
                     <i class="bi bi-funnel"></i> Filter
                 </button>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
-    @if($registrations->count() > 0)
-    <div class="registration-list">
-        @foreach($registrations as $registration)
-        <div class="registration-card status-{{ $registration->status }}">
-            <div class="registration-head">
-                <div>
-                    <h4>{{ $registration->nama_lengkap }}</h4>
-                    <p>{{ $registration->nim }} • {{ $registration->student->program_studi ?? '-' }} • Angkatan {{ $registration->angkatan }}</p>
-                </div>
-                <span class="status-badge status-{{ $registration->status }}">
-                    {{ match($registration->status) {
-                                    'approved'       => 'Approved',
-                                    'needs_revision' => 'Need Revision',
-                                    'rejected'       => 'Rejected',
-                                    default          => 'Pending',
+    @if($stats['pending'] > 0)
+    <div class="quick-action-bar animate__animated animate__fadeInUp">
+        <div class="quick-info">
+            <div class="pulse-icon"><i class="bi bi-lightning-fill"></i></div>
+            <div>
+                <strong>Terdapat {{ $stats['pending'] }} antrean pending</strong>
+                <p>Gunakan fitur approve massal jika data sudah tervalidasi semua.</p>
+            </div>
+        </div>
+        <button type="button" class="btn-bulk-approve" onclick="showApproveAllModal()">
+            <i class="bi bi-check-all"></i> Approve Semua Pending
+        </button>
+    </div>
+    @endif
+
+    <div class="table-card shadow-sm">
+        <div class="table-responsive-modern">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Mahasiswa & NIM</th>
+                        <th>Program Studi</th>
+                        <th>Kelengkapan</th>
+                        <th>Nomor Ijazah</th>
+                        <th>Status</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($registrations as $reg)
+                    @php
+                    $s = $reg->student;
+                    $hasIpkSks = filled($s->ipk) && filled($s->sks);
+                    $hasFinalProject = filled(optional($s->finalProject)->title);
+                    $hasFoto = filled($s->foto);
+                    $hasTtd = filled($s->ttd);
+                    $allReady = $hasIpkSks && $hasFinalProject && $hasFoto && $hasTtd;
+                    @endphp
+                    <tr>
+                        <td>
+                            <div class="student-profile">
+                                <div class="student-meta">
+                                    <span class="student-name">{{ $reg->nama_lengkap }}</span>
+                                    <span class="student-nim">{{ $reg->nim }} <span class="divider"></span> Angkatan {{ $reg->angkatan }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="prodi-tag">{{ $s->program_studi ?? '-' }}</span>
+                        </td>
+                        <td>
+                            <div class="prereq-container">
+                                <div class="prereq-item {{ $hasIpkSks ? 'done' : 'missing' }}" title="IPK/SKS">I</div>
+                                <div class="prereq-item {{ $hasFinalProject ? 'done' : 'missing' }}" title="Tugas Akhir">T</div>
+                                <div class="prereq-item {{ $hasFoto ? 'done' : 'missing' }}" title="Foto">F</div>
+                                <div class="prereq-item {{ $hasTtd ? 'done' : 'missing' }}" title="TTD">S</div>
+                                @if($allReady)
+                                <i class="bi bi-shield-check-fill text-success ms-2" title="Semua Prasyarat Terpenuhi"></i>
+                                @endif
+                            </div>
+                        </td>
+                        <td>
+                            @if($reg->nomor_ijazah)
+                            <div class="ijazah-box">
+                                <code>{{ $reg->nomor_ijazah }}</code>
+                                <button class="btn-edit-inline" onclick="showEditIjazahModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}', '{{ $reg->nomor_ijazah }}')" title="Edit Nomor Ijazah">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                            </div>
+                            @else
+                            <span class="empty-text">Belum diinput</span>
+                            @endif
+                        </td>
+                        <td>
+                            <span class="badge-status status-{{ $reg->status }}">
+                                {{ match($reg->status) {
+                                    'approved' => 'Approved',
+                                    'needs_revision' => 'Revision',
+                                    'rejected' => 'Rejected',
+                                    default => 'Pending'
                                 } }}
-                </span>
-            </div>
-
-            <div class="registration-body">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span>Tempat, Tanggal Lahir</span>
-                        <strong>{{ $registration->tempat_lahir }}, {{ $registration->tanggal_lahir?->translatedFormat('d F Y') ?? '-' }}</strong>
-                    </div>
-                    <div class="info-item">
-                        <span>Nomor Ijazah</span>
-                        <strong>{{ $registration->nomor_ijazah }}</strong>
-                    </div>
-                    <div class="info-item">
-                        <span>Gelar</span>
-                        <strong>{{ $registration->gelar }}</strong>
-                    </div>
-                    <div class="info-item">
-                        <span>Dikirim Pada</span>
-                        <strong>{{ $registration->submitted_at?->format('d M Y H:i') ?? '-' }}</strong>
-                    </div>
-                    <div class="info-item">
-                        <span>Direview Oleh</span>
-                        <strong>{{ $registration->approver->name ?? 'Belum direview' }}</strong>
-                    </div>
-                    <div class="info-item">
-                        <span>Review Terakhir</span>
-                        <strong>{{ $registration->approved_at?->format('d M Y H:i') ?? '-' }}</strong>
-                    </div>
-                </div>
-
-                {{-- Indikator Kelengkapan Prasyarat --}}
-                @php
-                $s = $registration->student;
-                $hasIpkSks = filled($s->ipk) && filled($s->sks);
-                $hasFinalProject = filled(optional($s->finalProject)->title);
-                $hasFoto = filled($s->foto);
-                $hasTtd = filled($s->ttd);
-                $allReady = $hasIpkSks && $hasFinalProject && $hasFoto && $hasTtd;
-                @endphp
-                <div class="prereq-row">
-                    <span class="prereq-badge {{ $hasIpkSks ? 'complete' : 'incomplete' }}">
-                        <i class="bi {{ $hasIpkSks ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                        IPK/SKS
-                    </span>
-                    <span class="prereq-badge {{ $hasFinalProject ? 'complete' : 'incomplete' }}">
-                        <i class="bi {{ $hasFinalProject ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                        Tugas Akhir
-                    </span>
-                    <span class="prereq-badge {{ $hasFoto ? 'complete' : 'incomplete' }}">
-                        <i class="bi {{ $hasFoto ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                        Foto
-                    </span>
-                    <span class="prereq-badge {{ $hasTtd ? 'complete' : 'incomplete' }}">
-                        <i class="bi {{ $hasTtd ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                        Tanda Tangan
-                    </span>
-                    @if($allReady)
-                    <span class="prereq-summary ready">
-                        <i class="bi bi-shield-check"></i> Siap Approve
-                    </span>
-                    @else
-                    <span class="prereq-summary not-ready">
-                        <i class="bi bi-shield-exclamation"></i> Data Belum Lengkap
-                    </span>
-                    @endif
-                </div>
-
-                @if($registration->approval_notes)
-                <div class="notes-box">
-                    <span>Catatan Review</span>
-                    <p>{{ $registration->approval_notes }}</p>
-                </div>
-                @endif
-
-                {{-- Tombol aksi: tampil sesuai status --}}
-                @if($registration->status === 'approved')
-                {{-- Sudah approved: tampilkan dropdown ubah status --}}
-                <div class="action-buttons">
-                    <div class="approved-info">
-                        <i class="bi bi-check-circle-fill"></i>
-                        Sudah disetujui
-                    </div>
-                    <div class="dropdown-wrapper">
-                        <button type="button" class="btn-change-status" onclick="toggleDropdown({{ $registration->id }})">
-                            <i class="bi bi-pencil-square"></i> Ubah Status
-                            <i class="bi bi-chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu" id="dropdown-{{ $registration->id }}">
-                            <button type="button" class="dropdown-item item-revision"
-                                onclick="closeDropdown({{ $registration->id }}); showRevisionModal({{ $registration->id }})">
-                                <i class="bi bi-arrow-repeat"></i> Set Need Revision
-                            </button>
-                            <button type="button" class="dropdown-item item-reject"
-                                onclick="closeDropdown({{ $registration->id }}); showRejectModal({{ $registration->id }})">
-                                <i class="bi bi-x-circle"></i> Reject
-                            </button>
-                            <button type="button" class="dropdown-item d-md-none text-muted"
-                                    onclick="closeDropdown({{ $registration->id }})" 
-                                    style="margin-top: 10px; border-top: 1px solid #eee; justify-content: center; font-weight: 700;">
-                                <i class="bi bi-x-lg"></i> Batalkan
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @else
-                {{-- Belum approved: tampilkan tombol aksi lengkap --}}
-                <div class="action-buttons">
-                    <button type="button" class="btn-action btn-approve"
-                        onclick="showApproveModal({{ $registration->id }})">
-                        <i class="bi bi-check-circle"></i> Approve
-                    </button>
-                    <button type="button" class="btn-action btn-revision"
-                        onclick="showRevisionModal({{ $registration->id }})">
-                        <i class="bi bi-arrow-repeat"></i> Need Revision
-                    </button>
-                    <button type="button" class="btn-action btn-reject"
-                        onclick="showRejectModal({{ $registration->id }})">
-                        <i class="bi bi-x-circle"></i> Reject
-                    </button>
-                </div>
-                @endif
-            </div>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group-modern">
+                                @if($reg->status !== 'approved')
+                                <button class="btn-table btn-table-success" onclick="showApproveModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Approve">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                @endif
+                                <button class="btn-table btn-table-primary" onclick="showRevisionModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Minta Revisi">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                                <button class="btn-table btn-table-danger" onclick="showRejectModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Tolak">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-table">
+                                <img src="https://illustrations.popsy.co/amber/box.svg" alt="empty" style="width: 120px;">
+                                <p>Data pendaftaran tidak ditemukan</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-        @endforeach
     </div>
 
-    <div class="pagination-wrapper">
-        <div class="pagination-info">
-            Menampilkan {{ $registrations->firstItem() }}–{{ $registrations->lastItem() }} dari {{ $registrations->total() }} pendaftar
-        </div>
+    @if($registrations->hasPages())
+    <div class="pagination-container">
         {{ $registrations->links('pagination::bootstrap-5') }}
-    </div>
-    @else
-    <div class="empty-state">
-        <i class="bi bi-inbox"></i>
-        <p>Belum ada pengajuan SKPI dari mahasiswa.</p>
     </div>
     @endif
 </div>
 
 {{-- Modal Approve --}}
-<div id="approveModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-head">
-            <div class="modal-icon icon-approve"><i class="bi bi-check-circle"></i></div>
-            <div>
-                <h4>Approve Pendaftaran SKPI</h4>
-                <p>Mahasiswa akan mendapat notifikasi dan SKPI siap diunduh.</p>
+<div id="approveModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern">
+        <div class="modal-header-modern bg-success">
+            <div class="modal-icon-wrap"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="modal-title-wrap">
+                <h4>Setujui Pendaftaran</h4>
+                <p id="approve_target_name"></p>
             </div>
         </div>
         <form id="approveForm" method="POST">
             @csrf
-            <div class="form-group">
-                <label>Catatan Approval <span class="optional">(Opsional)</span></label>
-                <textarea name="approval_notes" class="form-control" rows="3"
-                    placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+            @method('PATCH')
+            <div class="modal-body-modern">
+                <div class="form-group-modern">
+                    <label>Nomor Ijazah <span class="text-danger">*</span></label>
+                    <input type="text" name="nomor_ijazah" class="form-control-modern" placeholder="Contoh: 12345/UN/2026" required autofocus>
+                    <small class="helper-text">Pastikan nomor ijazah sudah sesuai dengan fisik ijazah.</small>
+                </div>
+                <div class="form-group-modern mt-3">
+                    <label>Catatan (Opsional)</label>
+                    <textarea name="approval_notes" class="form-control-modern" rows="3" placeholder="Tulis catatan jika diperlukan..."></textarea>
+                </div>
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeApproveModal()">Batal</button>
-                <button type="submit" class="btn-action btn-approve">
-                    <i class="bi bi-check-circle"></i> Approve
-                </button>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modern" onclick="closeApproveModal()">Batal</button>
+                <button type="submit" class="btn-submit-modern bg-success">Setujui & Simpan</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- Modal Need Revision --}}
-<div id="revisionModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-head">
-            <div class="modal-icon icon-revision"><i class="bi bi-arrow-repeat"></i></div>
-            <div>
-                <h4>Set Need Revision</h4>
-                <p>Mahasiswa akan diminta memperbaiki data pengajuan SKPI.</p>
+{{-- Modal Edit Ijazah (Koreksi) --}}
+<div id="editIjazahModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern">
+        <div class="modal-header-modern bg-primary">
+            <div class="modal-icon-wrap"><i class="bi bi-pencil-fill"></i></div>
+            <div class="modal-title-wrap">
+                <h4>Koreksi Nomor Ijazah</h4>
+                <p id="edit_ijazah_target_name"></p>
+            </div>
+        </div>
+        <form id="editIjazahForm" method="POST">
+            @csrf
+            @method('PATCH')
+            <div class="modal-body-modern">
+                <div class="form-group-modern">
+                    <label>Nomor Ijazah Baru <span class="text-danger">*</span></label>
+                    <input type="text" id="edit_nomor_ijazah_input" name="nomor_ijazah" class="form-control-modern" placeholder="Masukkan nomor ijazah yang benar..." required>
+                    <small class="helper-text">Perubahan ini hanya memperbarui data tanpa mengubah status approval.</small>
+                </div>
+            </div>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modern" onclick="closeEditIjazahModal()">Batal</button>
+                <button type="submit" class="btn-submit-modern bg-primary">Update Nomor</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Modal Revision --}}
+<div id="revisionModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern">
+        <div class="modal-header-modern bg-warning">
+            <div class="modal-icon-wrap"><i class="bi bi-arrow-repeat"></i></div>
+            <div class="modal-title-wrap">
+                <h4>Minta Revisi</h4>
+                <p id="revision_target_name"></p>
             </div>
         </div>
         <form id="revisionForm" method="POST">
             @csrf
-            <div class="form-group">
-                <label>Catatan Revisi <span class="required">*</span></label>
-                <textarea name="approval_notes" class="form-control" rows="4" required
-                    placeholder="Tulis catatan revisi yang harus diperbaiki mahasiswa..."></textarea>
+            @method('PATCH')
+            <div class="modal-body-modern">
+                <div class="form-group-modern">
+                    <label>Catatan Revisi <span class="text-danger">*</span></label>
+                    <textarea name="approval_notes" class="form-control-modern" rows="4" required placeholder="Jelaskan detail data yang harus diperbaiki mahasiswa..."></textarea>
+                </div>
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeRevisionModal()">Batal</button>
-                <button type="submit" class="btn-action btn-revision">
-                    <i class="bi bi-arrow-repeat"></i> Simpan Revisi
-                </button>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modern" onclick="closeRevisionModal()">Batal</button>
+                <button type="submit" class="btn-submit-modern bg-warning">Kirim Revisi</button>
             </div>
         </form>
     </div>
 </div>
 
 {{-- Modal Reject --}}
-<div id="rejectModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-head">
-            <div class="modal-icon icon-reject"><i class="bi bi-x-circle"></i></div>
-            <div>
-                <h4>Reject Pendaftaran SKPI</h4>
-                <p>Pengajuan SKPI mahasiswa akan ditolak.</p>
+<div id="rejectModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern">
+        <div class="modal-header-modern bg-danger">
+            <div class="modal-icon-wrap"><i class="bi bi-x-circle-fill"></i></div>
+            <div class="modal-title-wrap">
+                <h4>Tolak Pendaftaran</h4>
+                <p id="reject_target_name"></p>
             </div>
         </div>
         <form id="rejectForm" method="POST">
             @csrf
-            <div class="form-group">
-                <label>Alasan Penolakan <span class="required">*</span></label>
-                <textarea name="approval_notes" class="form-control" rows="4" required
-                    placeholder="Tulis alasan penolakan yang jelas..."></textarea>
+            @method('PATCH')
+            <div class="modal-body-modern">
+                <div class="form-group-modern">
+                    <label>Alasan Penolakan <span class="text-danger">*</span></label>
+                    <textarea name="approval_notes" class="form-control-modern" rows="4" required placeholder="Tulis alasan penolakan yang jelas..."></textarea>
+                </div>
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeRejectModal()">Batal</button>
-                <button type="submit" class="btn-action btn-reject">
-                    <i class="bi bi-x-circle"></i> Reject
-                </button>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modern" onclick="closeRejectModal()">Batal</button>
+                <button type="submit" class="btn-submit-modern bg-danger">Tolak Permanen</button>
             </div>
         </form>
     </div>
 </div>
 
 {{-- Modal Approve Semua --}}
-<div id="approveAllModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-head">
-            <div class="modal-icon icon-approve"><i class="bi bi-check2-all"></i></div>
-            <div>
+<div id="approveAllModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern">
+        <div class="modal-header-modern bg-success">
+            <div class="modal-icon-wrap"><i class="bi bi-check-all"></i></div>
+            <div class="modal-title-wrap">
                 <h4>Approve Semua Pending</h4>
-                <p>Semua <strong>{{ $stats['pending'] }} pengajuan</strong> berstatus pending akan disetujui sekaligus.</p>
+                <p>Menyetujui {{ $stats['pending'] }} pengajuan sekaligus.</p>
             </div>
         </div>
         <form id="approveAllForm" method="POST" action="{{ route('admin.skpi.daftar-skpi.approve-all') }}">
             @csrf
-            <div class="form-group">
-                <label>Catatan Approval Massal <span class="optional">(Opsional)</span></label>
-                <textarea name="approval_notes" class="form-control" rows="3"
-                    placeholder="Catatan ini akan diterapkan ke semua pengajuan yang di-approve..."></textarea>
+            <div class="modal-body-modern">
+                <div class="alert-info-modern">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Fitur ini untuk approval cepat. Nomor ijazah bisa dikoreksi secara manual nanti jika diperlukan.</span>
+                </div>
+                <div class="form-group-modern mt-3">
+                    <label>Catatan Massal (Opsional)</label>
+                    <textarea name="approval_notes" class="form-control-modern" rows="3" placeholder="Catatan ini akan muncul di semua pengajuan..."></textarea>
+                </div>
             </div>
-            <div class="approve-all-warning">
-                <i class="bi bi-exclamation-triangle"></i>
-                Tindakan ini tidak bisa dibatalkan sekaligus. Pastikan Anda sudah memeriksa semua pengajuan.
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeApproveAllModal()">Batal</button>
-                <button type="submit" class="btn-action btn-approve">
-                    <i class="bi bi-check2-all"></i> Approve Semua
-                </button>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modern" onclick="closeApproveAllModal()">Batal</button>
+                <button type="submit" class="btn-submit-modern bg-success">Approve Massal</button>
             </div>
         </form>
     </div>
 </div>
-
 @endsection
 
 @push('css')
 <style>
-    .stats-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    :root {
+        --primary: #2563EB;
+        --success: #10B981;
+        --warning: #F59E0B;
+        --danger: #EF4444;
+        --slate-50: #F8FAFC;
+        --slate-200: #E2E8F0;
+        --slate-700: #334155;
+    }
+
+    .page-shell {
+        display: flex;
+        flex-direction: column;
         gap: 20px;
-        margin-bottom: 24px;
+        padding-bottom: 50px;
     }
 
-    .stat-card {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: var(--shadow);
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-        color: white;
-        font-size: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .stat-info h5 {
-        font-size: 13px;
-        color: #666;
-        margin: 0 0 4px;
-    }
-
-    .stat-info h3 {
-        font-size: 28px;
-        color: #333;
-        margin: 0;
-    }
-
-    .flash-card {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 18px;
-        border-radius: 14px;
-        margin-bottom: 16px;
-        box-shadow: var(--shadow);
-        font-weight: 600;
-    }
-
-    .flash-success {
-        background: #E8F5E9;
-        color: #2E7D32;
-    }
-
-    .flash-error {
-        background: #FFEBEE;
-        color: #C62828;
-    }
-
-    .content-card {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: var(--shadow);
-    }
-
-    .card-header {
+    /* Hero Card */
+    .hero-card {
+        background: #213158;
+        border-radius: 20px;
+        padding: 30px;
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 2px solid #F5F5F5;
+        align-items: center;
         flex-wrap: wrap;
+        gap: 20px;
+        border: 1px solid var(--slate-200);
     }
 
-    .card-header h3 {
+    .hero-content h3 {
+        font-size: 26px;
+        font-weight: 800;
+        color: #d5b228;
+        margin: 8px 0;
+    }
+
+    .hero-content p {
+        color: #ffffffff;
         margin: 0;
-        font-size: 22px;
-        color: #333;
+        font-size: 15px;
     }
 
-    .card-subtitle {
-        margin: 8px 0 0;
-        color: #777;
-        font-size: 14px;
-    }
-
-    .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .filter-form {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .filter-input,
-    .filter-select,
-    .form-control {
-        border: 2px solid #E0E0E0;
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-size: 14px;
-        font-family: inherit;
-    }
-
-    .filter-input {
-        min-width: 220px;
-    }
-
-    .btn-filter {
-        border: none;
-        border-radius: 12px;
-        padding: 10px 16px;
-        font-size: 13px;
-        font-weight: 600;
-        color: white;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        background: linear-gradient(135deg, var(--primary-orange), #FFB347);
-        transition: all 0.2s ease;
-    }
-
-    /* ── Tombol Approve Semua ──────────────────────────────── */
-    .btn-approve-all {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: none;
-        border-radius: 12px;
-        padding: 10px 16px;
-        font-size: 13px;
-        font-weight: 700;
-        color: white;
-        background: linear-gradient(135deg, #4CAF50, #66BB6A);
-        cursor: pointer;
-        transition: all 0.2s ease;
-        white-space: nowrap;
-    }
-
-    .btn-approve-all:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 14px rgba(76, 175, 80, 0.4);
-    }
-
-    .pending-count {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 999px;
-        padding: 2px 8px;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    /* ── Registration Card ─────────────────────────────────── */
-    .registration-list {
-        display: grid;
-        gap: 18px;
-    }
-
-    .registration-card {
-        border-radius: 18px;
-        border: 1px solid #F0F0F0;
-        background: #FCFCFC;
-        overflow: hidden;
-    }
-
-    .registration-card.status-approved {
-        border-left: 5px solid #4CAF50;
-    }
-
-    .registration-card.status-needs_revision {
-        border-left: 5px solid #2196F3;
-    }
-
-    .registration-card.status-rejected {
-        border-left: 5px solid #F44336;
-    }
-
-    .registration-card.status-pending {
-        border-left: 5px solid #FF9800;
-    }
-
-    .registration-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        padding: 20px 20px 16px;
-        background: white;
-        border-bottom: 1px solid #F4F4F4;
-    }
-
-    .registration-head h4 {
-        margin: 0 0 6px;
-        font-size: 18px;
-        color: #333;
-    }
-
-    .registration-head p {
-        margin: 0;
-        font-size: 13px;
-        color: #777;
-    }
-
-    .status-badge {
-        display: inline-flex;
-        padding: 6px 12px;
-        border-radius: 999px;
+    .hero-badge {
+        background: #EEF2FF;
+        color: var(--primary);
+        padding: 5px 12px;
+        border-radius: 99px;
         font-size: 11px;
-        font-weight: 700;
-        white-space: nowrap;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .status-badge.status-pending {
-        background: #FFF3E0;
-        color: #E65100;
-    }
-
-    .status-badge.status-approved {
-        background: #E8F5E9;
-        color: #2E7D32;
-    }
-
-    .status-badge.status-needs_revision {
-        background: #E3F2FD;
-        color: #1565C0;
-    }
-
-    .status-badge.status-rejected {
-        background: #FFEBEE;
-        color: #C62828;
-    }
-
-    .registration-body {
-        padding: 20px;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-
-    .info-item {
-        background: white;
-        border: 1px solid #F1F1F1;
-        border-radius: 14px;
-        padding: 14px;
-    }
-
-    .info-item span {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: #777;
-        margin-bottom: 6px;
-    }
-
-    .info-item strong {
-        font-size: 14px;
-        color: #333;
-        line-height: 1.5;
-    }
-
-    .notes-box {
-        padding: 14px 16px;
-        border-radius: 14px;
-        background: #FFF8E1;
-        color: #795548;
-        margin-bottom: 16px;
-    }
-
-    .notes-box span {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
-
-    .notes-box p {
-        margin: 0;
-        line-height: 1.6;
-    }
-
-    /* ── Action Buttons ────────────────────────────────────── */
-    .action-buttons {
+    .stats-row {
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        align-items: center;
-        padding-top: 12px;
-        border-top: 1px dashed #E0E0E0;
-        margin-top: 8px;
+        gap: 12px;
     }
 
-    .btn-action {
-        border: none;
-        border-radius: 12px;
-        padding: 10px 16px;
-        font-size: 13px;
-        font-weight: 600;
-        color: white;
-        display: inline-flex;
-        align-items: center;
+    .stat-box {
+        background: var(--slate-50);
+        padding: 12px 20px;
+        border-radius: 16px;
+        border: 1px solid var(--slate-200);
+        display: flex;
+        flex-direction: column;
+        min-width: 90px;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        color: #94A3B8;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .stat-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--slate-700);
+    }
+
+    .stat-box.warning .stat-value {
+        color: var(--warning);
+    }
+
+    .stat-box.success .stat-value {
+        color: var(--success);
+    }
+
+    .stat-box.info .stat-value {
+        color: var(--primary);
+    }
+
+    /* Filter Grid - FIXED Layout */
+    .filter-card {
+        background: white;
+        padding: 24px;
+        border-radius: 20px;
+        border: 1px solid var(--slate-200);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr) auto;
+        gap: 20px;
+        align-items: flex-end;
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
         gap: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
     }
 
-    .btn-action:hover {
-        transform: translateY(-2px);
-    }
-
-    .btn-approve {
-        background: linear-gradient(135deg, #4CAF50, #66BB6A);
-    }
-
-    .btn-revision {
-        background: linear-gradient(135deg, #2196F3, #64B5F6);
-    }
-
-    .btn-reject {
-        background: linear-gradient(135deg, #F44336, #FF8A80);
-    }
-
-    .btn-approve:hover {
-        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.35);
-    }
-
-    .btn-revision:hover {
-        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.35);
-    }
-
-    .btn-reject:hover {
-        box-shadow: 0 4px 12px rgba(244, 67, 54, 0.35);
-    }
-
-    /* ── Approved info + dropdown ubah status ──────────────── */
-    .approved-info {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+    .filter-item label {
         font-size: 13px;
-        font-weight: 600;
-        color: #2E7D32;
-        background: #E8F5E9;
-        padding: 8px 14px;
-        border-radius: 999px;
+        font-weight: 700;
+        color: var(--slate-700);
     }
 
-    .dropdown-wrapper {
+    .form-control-modern,
+    .form-select-modern {
+        height: 46px;
+        border-radius: 12px;
+        border: 1px solid var(--slate-200);
+        padding: 0 15px;
+        font-size: 14px;
+        background: #fff;
+        transition: all 0.2s;
+    }
+
+    .form-control-modern:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    .input-with-icon {
         position: relative;
     }
 
-    .btn-change-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 2px solid #E0E0E0;
-        border-radius: 12px;
-        padding: 9px 14px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #555;
-        background: white;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-change-status:hover {
-        border-color: #BDBDBD;
-        background: #FAFAFA;
-    }
-
-    .dropdown-menu {
-        display: none;
+    .input-with-icon i {
         position: absolute;
-        right: 0;
-        background: white;
-        border: 1px solid #E0E0E0;
-        border-radius: 14px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        overflow: hidden;
-        z-index: 100;
-        min-width: 190px;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94A3B8;
     }
 
-    .dropdown-menu.open {
-        display: block;
+    .input-with-icon input {
+        padding-left: 40px;
+        width: 100%;
     }
 
-    .dropdown-item {
+    .filter-actions-modern {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-search-modern {
+        height: 46px;
+        background: var(--slate-700);
+        color: white;
+        border: none;
+        padding: 0 25px;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 8px;
-        width: 100%;
-        padding: 12px 16px;
-        font-size: 13px;
-        font-weight: 600;
-        border: none;
-        background: white;
-        cursor: pointer;
-        transition: background 0.15s ease;
-        text-align: left;
+        gap: 10px;
     }
 
-    .dropdown-item:hover {
-        background: #F5F5F5;
-    }
-
-    .item-revision {
-        color: #1565C0;
-    }
-
-    .item-reject {
-        color: #C62828;
-    }
-
-    /* ── Modal ─────────────────────────────────────────────── */
-    .modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        z-index: 9999;
-        padding: 20px;
+    .btn-reset-modern {
+        height: 46px;
+        width: 46px;
+        background: var(--slate-50);
+        color: #64748B;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
     }
 
-    .modal-content {
+    /* Quick Action Bar */
+    .quick-action-bar {
+        background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+        border: 1px solid #FED7AA;
+        border-radius: 18px;
+        padding: 15px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .quick-info {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .pulse-icon {
+        width: 40px;
+        height: 40px;
+        background: #FB923C;
+        color: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        animation: pulse-orange 2s infinite;
+    }
+
+    .quick-info strong {
+        color: #9A3412;
+        font-size: 16px;
+    }
+
+    .quick-info p {
+        margin: 0;
+        color: #C2410C;
+        font-size: 13px;
+    }
+
+    .btn-bulk-approve {
+        background: #15803D;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    /* Table */
+    .table-card {
         background: white;
         border-radius: 20px;
-        padding: 28px;
-        width: min(100%, 520px);
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+        border: 1px solid var(--slate-200);
+        overflow: hidden;
     }
 
-    .modal-head {
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-modern th {
+        background: #213158;
+        padding: 18px 20px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 800;
+        color: #ffffffff;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--slate-200);
+    }
+
+    .table-modern td {
+        padding: 18px 20px;
+        border-bottom: 1px solid #F1F5F9;
+        vertical-align: middle;
+    }
+
+    .table-modern tr:hover {
+        background: #FBFDFF;
+    }
+
+    .student-profile {
         display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        margin-bottom: 22px;
+        flex-direction: column;
     }
 
-    .modal-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        font-size: 22px;
+    .student-name {
+        font-weight: 700;
+        color: var(--slate-700);
+        font-size: 15px;
+    }
+
+    .student-nim {
+        font-size: 12px;
+        color: #94A3B8;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .divider {
+        width: 4px;
+        height: 4px;
+        background: #CBD5E1;
+        border-radius: 50%;
+    }
+
+    .prodi-tag {
+        background: #F1F5F9;
+        color: #475569;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .prereq-container {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .prereq-item {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 800;
+        color: white;
+        cursor: default;
+    }
+
+    .prereq-item.done {
+        background: var(--success);
+    }
+
+    .prereq-item.missing {
+        background: #FEE2E2;
+        color: #EF4444;
+    }
+
+    .ijazah-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #F8FAFC;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px dashed var(--slate-200);
+        width: fit-content;
+    }
+
+    .ijazah-box code {
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .btn-edit-inline {
+        background: none;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        padding: 0;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+    }
+
+    .badge-status {
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .status-pending {
+        background: #FFF7ED;
+        color: #C2410C;
+    }
+
+    .status-approved {
+        background: #ECFDF5;
+        color: #059669;
+    }
+
+    .status-needs_revision {
+        background: #EFF6FF;
+        color: #2563EB;
+    }
+
+    .status-rejected {
+        background: #FEF2F2;
+        color: #DC2626;
+    }
+
+    .btn-group-modern {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .btn-table {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-table-success {
+        background: var(--success);
+    }
+
+    .btn-table-primary {
+        background: var(--primary);
+    }
+
+    .btn-table-danger {
+        background: var(--danger);
+    }
+
+    .btn-table:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modals - FIXED Style */
+    .modal-backdrop-modern {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+
+    .modal-dialog-modern {
+        background: white;
+        width: 100%;
+        max-width: 550px;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 25px 70px -12px rgba(0, 0, 0, 0.3);
+        animation: modal-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-header-modern {
+        padding: 30px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
         color: white;
     }
 
-    .icon-approve {
-        background: linear-gradient(135deg, #4CAF50, #66BB6A);
+    .modal-icon-wrap {
+        width: 54px;
+        height: 54px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        flex-shrink: 0;
     }
 
-    .icon-revision {
-        background: linear-gradient(135deg, #2196F3, #64B5F6);
-    }
-
-    .icon-reject {
-        background: linear-gradient(135deg, #F44336, #FF8A80);
-    }
-
-    .modal-head h4 {
-        margin: 0 0 4px;
-        font-size: 18px;
-        color: #333;
-    }
-
-    .modal-head p {
+    .modal-title-wrap h4 {
         margin: 0;
-        font-size: 13px;
-        color: #777;
-        line-height: 1.5;
+        font-size: 20px;
+        font-weight: 800;
+        line-height: 1.2;
     }
 
-    .form-group {
-        margin-bottom: 18px;
+    .modal-title-wrap p {
+        margin: 4px 0 0;
+        opacity: 0.85;
+        font-size: 13.5px;
     }
 
-    .form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 8px;
+    .modal-body-modern {
+        padding: 30px;
     }
 
-    .optional {
-        font-weight: 400;
-        color: #999;
-    }
-
-    .required {
-        color: #F44336;
-    }
-
-    .form-control {
-        width: 100%;
-        resize: vertical;
-        font-family: inherit;
-    }
-
-    .modal-actions {
+    .modal-footer-modern {
+        padding: 20px 30px;
+        background: #F8FAFC;
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
+        gap: 15px;
+        border-top: 1px solid #F1F5F9;
     }
 
-    .btn-cancel {
-        border: none;
-        border-radius: 12px;
-        padding: 10px 18px;
-        background: #EEEEEE;
-        color: #555;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s ease;
-    }
-
-    .btn-cancel:hover {
-        background: #E0E0E0;
-    }
-
-    /* ── Approve All Warning ───────────────────────────────── */
-    .approve-all-warning {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 12px 14px;
-        border-radius: 12px;
-        background: #FFF8E1;
-        color: #795548;
-        font-size: 13px;
-        line-height: 1.5;
-        margin-bottom: 18px;
-    }
-
-    .approve-all-warning i {
-        font-size: 16px;
-        flex-shrink: 0;
-        margin-top: 1px;
-        color: #FF9800;
-    }
-
-    /* ── Indikator Kelengkapan Prasyarat ─────────────────── */
-    .prereq-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        margin-bottom: 16px;
-        padding: 12px 14px;
+    .btn-cancel-modern {
+        background: white;
+        border: 1px solid #E2E8F0;
+        padding: 12px 24px;
         border-radius: 14px;
-        background: #FAFAFA;
-        border: 1px solid #F0F0F0;
-    }
-
-    .prereq-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .prereq-badge.complete {
-        background: #E8F5E9;
-        color: #2E7D32;
-    }
-
-    .prereq-badge.incomplete {
-        background: #FFF3E0;
-        color: #E65100;
-    }
-
-    .prereq-summary {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 12px;
-        border-radius: 999px;
-        font-size: 12px;
         font-weight: 700;
-        margin-left: auto;
+        color: #64748B;
+        cursor: pointer;
+        transition: all 0.2s;
     }
 
-    .prereq-summary.ready {
-        background: #E8F5E9;
-        color: #1B5E20;
+    .btn-cancel-modern:hover {
+        background: #F1F5F9;
+        border-color: #CBD5E1;
+        color: #334155;
     }
 
-    .prereq-summary.not-ready {
-        background: #FFEBEE;
-        color: #B71C1C;
+    .btn-submit-modern {
+        border: none;
+        padding: 12px 28px;
+        border-radius: 14px;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #999;
+    .btn-submit-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        filter: brightness(1.1);
     }
 
-    .empty-state i {
-        font-size: 56px;
-        margin-bottom: 12px;
-        display: block;
-    }
-
-    .pagination-wrapper {
-        margin-top: 24px;
+    .form-group-modern {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        padding: 20px;
-        background: #FAFAFA;
-        border-radius: 14px;
-        border: 1px solid #F0F0F0;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 20px;
     }
 
-    .pagination-info {
-        font-size: 13px;
-        color: #777;
+    .form-group-modern:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group-modern label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #334155;
+        display: block;
+        text-align: left;
+    }
+
+    .form-control-modern {
+        width: 100% !important;
+        display: block;
+        border-radius: 14px;
+        border: 1.5px solid #E2E8F0;
+        padding: 12px 16px;
+        font-size: 14.5px;
+        transition: all 0.2s;
+        background: #FFF;
+        box-sizing: border-box;
+    }
+
+    .form-control-modern:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    textarea.form-control-modern {
+        resize: none;
+        min-height: 120px;
+        line-height: 1.6;
+    }
+
+    .alert-modern {
+        padding: 16px 20px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
         font-weight: 600;
     }
 
-    /* ── Dropdown Backdrop ── */
-    .dropdown-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: none;
-        z-index: 10000;
-        backdrop-filter: blur(3px);
-        -webkit-backdrop-filter: blur(3px);
+    .alert-success-modern {
+        background: #ECFDF5;
+        border: 1px solid #D1FAE5;
+        color: #065F46;
     }
 
-    .dropdown-backdrop.show {
+    .alert-danger-modern {
+        background: #FEF2F2;
+        border: 1px solid #FEE2E2;
+        color: #991B1B;
+    }
+
+    .helper-text {
         display: block;
+        margin-top: 5px;
+        color: #94A3B8;
+        font-size: 12px;
     }
 
-    /* ── Mobile Layout Refinements ── */
-    @media (max-width: 768px) {
-        .stats-row {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px;
+    .alert-info-modern {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        background: #EFF6FF;
+        border-radius: 12px;
+        color: #1E40AF;
+        font-size: 13px;
+    }
+
+    @keyframes pulse-orange {
+        0% {
+            box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.7);
         }
 
-        .stat-card {
-            padding: 12px;
-            flex-direction: column;
-            text-align: center;
-            gap: 5px;
-            border-radius: 12px;
+        70% {
+            box-shadow: 0 0 0 10px rgba(251, 146, 60, 0);
         }
 
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            font-size: 16px;
-        }
-
-        .stat-info h3 {
-            font-size: 20px;
-        }
-
-        .card-header {
-            flex-direction: column;
-            text-align: center;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
-        }
-
-        .header-actions {
-            width: 100%;
-        }
-
-        .filter-form {
-            width: 100%;
-            gap: 8px;
-        }
-
-        .filter-input, 
-        .filter-select, 
-        .btn-filter,
-        .btn-approve-all {
-            width: 100% !important;
-            margin: 0;
-            padding: 12px !important;
-        }
-
-        .registration-card {
-            margin-bottom: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .registration-head {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 15px;
-            gap: 10px;
-        }
-
-        .registration-head h4 {
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .status-badge {
-            font-size: 10px;
-            padding: 4px 10px;
-        }
-
-        .info-grid {
-            grid-template-columns: 1fr !important;
-            gap: 8px;
-        }
-
-        .info-item {
-            padding: 10px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: none;
-            background: #fdfdfd;
-            border-bottom: 1px solid #f5f5f5;
-            border-radius: 0;
-        }
-
-        .info-item:last-child { border-bottom: none; }
-
-        .info-item span { margin-bottom: 0; font-size: 11px; }
-        .info-item strong { font-size: 13px; text-align: right; }
-
-        .prereq-row {
-            flex-direction: column;
-            padding: 12px;
-            gap: 8px;
-        }
-
-        .prereq-badge {
-            width: 100%;
-            padding: 8px 12px;
-        }
-
-        .prereq-summary {
-            margin-left: 0;
-            width: 100%;
-            justify-content: center;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 13px;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-            gap: 8px;
-            padding-top: 15px;
-        }
-
-        .btn-action, 
-        .btn-change-status,
-        .approved-info {
-            width: 100%;
-            justify-content: center;
-            padding: 12px !important;
-            font-size: 14px;
-        }
-
-        /* ── Dropdown as Bottom Sheet ── */
-        .dropdown-menu {
-            position: fixed !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: -100% !important; /* Start hidden */
-            top: auto !important;
-            width: 100% !important;
-            border-radius: 20px 20px 0 0 !important;
-            padding: 10px 0 35px 0 !important;
-            z-index: 10001 !important;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.25) !important;
-            border: none !important;
-            display: block !important;
-            visibility: hidden;
-            transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s !important;
-        }
-
-        .dropdown-menu.open {
-            bottom: 0 !important;
-            visibility: visible;
-        }
-
-        .dropdown-item {
-            padding: 18px 24px !important;
-            font-size: 16px !important;
-            border-bottom: 1px solid #f5f5f5;
-        }
-
-        .dropdown-item:last-child { border-bottom: none; }
-
-        /* Modal fixes */
-        .modal-content {
-            padding: 20px;
-            border-radius: 15px;
-        }
-
-        .modal-actions {
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .modal-actions button {
-            width: 100% !important;
+        100% {
+            box-shadow: 0 0 0 0 rgba(251, 146, 60, 0);
         }
     }
 
-    @media (max-width: 480px) {
-        .stats-row {
-            grid-template-columns: 1fr;
+    @keyframes modal-slide-in {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
         }
 
-        .registration-head h4 {
-            font-size: 16px;
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
     }
 </style>
@@ -1222,38 +1004,47 @@
 
 @push('scripts')
 <script>
-    /* ── Modal individual ──────────────────────────────────── */
-    function showApproveModal(registrationId) {
-        document.getElementById('approveForm').action =
-            `/admin/skpi/daftar-skpi/${registrationId}/approve`;
+    function showApproveModal(id, name) {
+        document.getElementById('approve_target_name').innerText = name;
+        document.getElementById('approveForm').action = `/admin/skpi/daftar-skpi/${id}/approve`;
         document.getElementById('approveModal').style.display = 'flex';
-    }
-
-    function showRevisionModal(registrationId) {
-        document.getElementById('revisionForm').action =
-            `/admin/skpi/daftar-skpi/${registrationId}/revision`;
-        document.getElementById('revisionModal').style.display = 'flex';
-    }
-
-    function showRejectModal(registrationId) {
-        document.getElementById('rejectForm').action =
-            `/admin/skpi/daftar-skpi/${registrationId}/reject`;
-        document.getElementById('rejectModal').style.display = 'flex';
     }
 
     function closeApproveModal() {
         document.getElementById('approveModal').style.display = 'none';
     }
 
+    function showEditIjazahModal(id, name, currentNumber) {
+        document.getElementById('edit_ijazah_target_name').innerText = name;
+        document.getElementById('edit_nomor_ijazah_input').value = currentNumber;
+        document.getElementById('editIjazahForm').action = `/admin/skpi/daftar-skpi/${id}/update-ijazah`;
+        document.getElementById('editIjazahModal').style.display = 'flex';
+    }
+
+    function closeEditIjazahModal() {
+        document.getElementById('editIjazahModal').style.display = 'none';
+    }
+
+    function showRevisionModal(id, name) {
+        document.getElementById('revision_target_name').innerText = name;
+        document.getElementById('revisionForm').action = `/admin/skpi/daftar-skpi/${id}/revision`;
+        document.getElementById('revisionModal').style.display = 'flex';
+    }
+
     function closeRevisionModal() {
         document.getElementById('revisionModal').style.display = 'none';
+    }
+
+    function showRejectModal(id, name) {
+        document.getElementById('reject_target_name').innerText = name;
+        document.getElementById('rejectForm').action = `/admin/skpi/daftar-skpi/${id}/reject`;
+        document.getElementById('rejectModal').style.display = 'flex';
     }
 
     function closeRejectModal() {
         document.getElementById('rejectModal').style.display = 'none';
     }
 
-    /* ── Modal approve semua ───────────────────────────────── */
     function showApproveAllModal() {
         document.getElementById('approveAllModal').style.display = 'flex';
     }
@@ -1262,76 +1053,10 @@
         document.getElementById('approveAllModal').style.display = 'none';
     }
 
-    /* ── Dropdown ubah status (untuk approved) ─────────────── */
-    function toggleDropdown(id) {
-        const menu = document.getElementById(`dropdown-${id}`);
-        const btn = menu.previousElementSibling;
-        const isOpen = menu.classList.contains('open');
-        const backdrop = document.getElementById('dropdownBackdrop');
-
-        // Close all other menus
-        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
-
-        if (!isOpen) {
-            if (window.innerWidth > 768) {
-                const btnRect = btn.getBoundingClientRect();
-                const menuHeight = 100;
-                const spaceBelow = window.innerHeight - btnRect.bottom;
-
-                menu.style.position = 'fixed';
-                menu.style.right = (window.innerWidth - btnRect.right) + 'px';
-                menu.style.width = btnRect.width + 'px';
-
-                if (spaceBelow < menuHeight) {
-                    menu.style.top = 'auto';
-                    menu.style.bottom = (window.innerHeight - btnRect.top + 6) + 'px';
-                } else {
-                    menu.style.top = (btnRect.bottom + 6) + 'px';
-                    menu.style.bottom = 'auto';
-                }
-            } else {
-                // Mobile: CSS handles positioning, JS handles backdrop
-                backdrop.classList.add('show');
-                document.body.style.overflow = 'hidden';
-            }
-            menu.classList.add('open');
-        } else {
-            closeDropdown(id);
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal-backdrop-modern')) {
+            event.target.style.display = 'none';
         }
     }
-
-    function closeDropdown(id) {
-        const menu = document.getElementById(`dropdown-${id}`);
-        if (menu) menu.classList.remove('open');
-        
-        const backdrop = document.getElementById('dropdownBackdrop');
-        if (backdrop) backdrop.classList.remove('show');
-        document.body.style.overflow = '';
-    }
-
-    // Close on backdrop click (for mobile)
-    document.getElementById('dropdownBackdrop')?.addEventListener('click', function() {
-        document.querySelectorAll('.dropdown-menu.open').forEach(m => {
-            const id = m.id.replace('dropdown-', '');
-            closeDropdown(id);
-        });
-    });
-
-    // Close on outside click (for desktop)
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('.dropdown-wrapper') && window.innerWidth > 768) {
-            document.querySelectorAll('.dropdown-menu.open').forEach(m => {
-                const id = m.id.replace('dropdown-', '');
-                closeDropdown(id);
-            });
-        }
-    });
-
-    // Tutup modal kalau klik backdrop
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) modal.style.display = 'none';
-        });
-    });
 </script>
 @endpush

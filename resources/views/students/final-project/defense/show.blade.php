@@ -38,6 +38,18 @@
         <h4>Informasi Sidang</h4>
 
         <div class="info-row">
+            <div class="label">Judul (ID)</div>
+            <div class="value" style="font-weight: 600;">{{ $defense->finalProject->title ?? '-' }}</div>
+        </div>
+
+        @if($defense->finalProject->title_en)
+        <div class="info-row">
+            <div class="label">Judul (EN)</div>
+            <div class="value" style="font-style: italic; color: #666;">{{ $defense->finalProject->title_en }}</div>
+        </div>
+        @endif
+
+        <div class="info-row">
             <div class="label">Status</div>
             <div class="value">
                 <span class="status-badge {{ $defense->status === 'approved' ? 'active' : ($defense->status === 'rejected' ? 'danger' : 'warning') }}">
@@ -212,7 +224,25 @@
         display: flex; align-items: center; gap: 8px;
     }
     @media (max-width: 768px) {
-        .info-row { grid-template-columns: 1fr; }
+        .info-row { 
+            grid-template-columns: 1fr;
+            padding: 10px 0;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .form-actions a {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .stats-card, .form-card {
+            padding: 15px;
+        }
     }
 </style>
 @endpush

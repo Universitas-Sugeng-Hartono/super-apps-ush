@@ -20,11 +20,11 @@
             <td>{{ $item->skp_points }}</td>
             <td>
                 @if($item->certificate)
-                    <a href="{{ asset('storage/' . $item->certificate) }}" target="_blank" class="doc-link" title="Lihat Bukti">
-                        <i class="bi bi-file-earmark-check"></i>
-                    </a>
+                <a href="{{ asset('storage/' . $item->certificate) }}" target="_blank" class="doc-link" title="Lihat Bukti">
+                    <i class="bi bi-file-earmark-check"></i>
+                </a>
                 @else
-                    <span class="text-muted">-</span>
+                <span class="text-muted">-</span>
                 @endif
             </td>
         </tr>

@@ -65,6 +65,7 @@ class TitleApprovalController extends Controller
         
         $finalProject->update([
             'title' => null,
+            'title_en' => null,
         ]);
 
         $studentId = (int) $finalProject->student_id;

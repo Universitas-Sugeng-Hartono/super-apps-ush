@@ -38,9 +38,15 @@
 
                     <div class="proposal-details">
                         <div class="detail-row">
-                            <strong>Judul TA:</strong>
-                            <p>{{ $finalProject->title }}</p>
+                            <strong>Judul TA (Bahasa Indonesia):</strong>
+                            <p style="font-weight: 600; color: #333;">{{ $finalProject->title }}</p>
                         </div>
+                        @if($finalProject->title_en)
+                        <div class="detail-row">
+                            <strong>Judul TA (Bahasa Inggris):</strong>
+                            <p style="font-style: italic; color: #666;">{{ $finalProject->title_en }}</p>
+                        </div>
+                        @endif
                         <div class="detail-row">
                             <strong>Pembimbing PA:</strong>
                             <p>{{ $finalProject->student->dosenPA->name ?? '-' }}</p>

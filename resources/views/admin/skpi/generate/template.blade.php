@@ -309,7 +309,6 @@
             </table>
         </div>
     </div>
-    </div>
 
     {{-- ═══════════ LAMPIRAN 3: TRANSKRIP SKPI ═══════════ --}}
     <div class="skpi-doc" style="margin-top:40px; border-top: 2px dashed #ccc; padding-top: 40px;">

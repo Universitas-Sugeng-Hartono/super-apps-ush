@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminController\StudentsAdminController;
 use App\Http\Controllers\AdminController\CounselingController;
 use App\Http\Controllers\AdminController\AnnouncementController;
 use App\Http\Controllers\AdminController\SkpiController;
+use App\Http\Controllers\AdminController\SkpiWordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,24 +82,30 @@ Route::middleware(['auth', 'role:superadmin,masteradmin'])->group(function () {
 
 // Khusus Superuser
 Route::middleware(['auth', 'role:masteradmin'])->group(function () {
+
+
     Route::prefix('admin/skpi')->name('admin.skpi.')->controller(SkpiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/daftar-skpi', 'daftarSkpi')->name('daftar-skpi.index');
-        Route::post('/daftar-skpi/{id}/approve', 'approveDaftarSkpi')->name('daftar-skpi.approve');
-        Route::post('/daftar-skpi/AproveAll','AproveAllDaftarSkpi')->name('daftar-skpi.approve-all');
-        Route::post('/daftar-skpi/{id}/revision', 'revisionDaftarSkpi')->name('daftar-skpi.revision');
-        Route::post('/daftar-skpi/{id}/reject', 'rejectDaftarSkpi')->name('daftar-skpi.reject');
+        Route::post('/daftar-skpi/AproveAll', 'AproveAllDaftarSkpi')->name('daftar-skpi.approve-all');
+        Route::get('/daftar-skpi/{id}', [SkpiController::class, 'showDaftarSkpi'])->name('daftar-skpi.show');
+        Route::patch('/daftar-skpi/{id}/approve', [SkpiController::class, 'approveDaftarSkpi'])->name('daftar-skpi.approve');
+        Route::patch('/daftar-skpi/{id}/revision', [SkpiController::class, 'revisionDaftarSkpi'])->name('daftar-skpi.revision');
+        Route::patch('/daftar-skpi/{id}/reject', [SkpiController::class, 'rejectDaftarSkpi'])->name('daftar-skpi.reject');
+        Route::patch('/daftar-skpi/{id}/update-ijazah', [SkpiController::class, 'updateIjazahOnly'])->name('daftar-skpi.update-ijazah');
         Route::get('/input-data-akademi', 'inputDataAkademi')->name('input-data-akademi.index');
         Route::post('/input-data-akademi', 'storeInputDataAkademi')->name('input-data-akademi.store');
         Route::post('/input-data-akademi/study-program', 'storeStudyProgram')->name('input-data-akademi.store-prodi');
         Route::delete('/input-data-akademi/study-program/{id}', 'destroyStudyProgram')->name('input-data-akademi.destroy-prodi');
+        Route::post('/input-data-akademi/learning-outcome', 'storeLearningOutcome')->name('input-data-akademi.store-learning-outcome');
         Route::get('/verifikasi-data', 'verifikasiData')->name('verifikasi-data.index');
         Route::post('/verifikasi-data/{id}/approve', 'approveVerifikasiData')->name('verifikasi-data.approve');
         Route::post('/verifikasi-data/{id}/reject', 'rejectVerifikasiData')->name('verifikasi-data.reject');
         Route::post('/verifikasi-data/approve-all', 'approveAllVerifikasiData')->name('verifikasi-data.approve-all');
         Route::get('/generate-skpi', 'generateSkpi')->name('generate-skpi.index');
         Route::post('/generate-skpi/metadata', 'storeGenerateMetadata')->name('generate-skpi.metadata.store');
-        Route::post('/generate-skpi/export-pdf', 'exportGeneratedSkpiPdf')->name('generate-skpi.export-pdf');
+        Route::match(['get', 'post'], '/generate-skpi/download-all', [SkpiWordController::class, 'downloadAllApproved'])->name('generate-skpi.download-all');
+        Route::get('/generate-skpi/{id}/download-saved', 'downloadSavedSkpi')->name('generate-skpi.download-saved');
     });
 });
 
@@ -181,19 +188,19 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
         });
 
     // Final Project - Dosen: Log Bimbingan + Log Dokumen (view-only)
-Route::prefix('admin/final-project')->name('admin.final-project.')->group(function () {
-    Route::prefix('guidance')->name('guidance.')->controller(\App\Http\Controllers\Admin\FinalProject\GuidanceReviewController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/{id}/approve', 'approve')->middleware('role:admin')->name('approve');
-        Route::post('/{id}/reject', 'reject')->middleware('role:admin')->name('reject');
-        Route::get('/{id}/download', 'download')->name('download');
-    });
+    Route::prefix('admin/final-project')->name('admin.final-project.')->group(function () {
+        Route::prefix('guidance')->name('guidance.')->controller(\App\Http\Controllers\Admin\FinalProject\GuidanceReviewController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/{id}/approve', 'approve')->middleware('role:admin')->name('approve');
+            Route::post('/{id}/reject', 'reject')->middleware('role:admin')->name('reject');
+            Route::get('/{id}/download', 'download')->name('download');
+        });
 
-    Route::prefix('documents')->name('documents.')->controller(\App\Http\Controllers\Admin\FinalProject\DocumentReviewController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/{id}/download', 'download')->name('download');
+        Route::prefix('documents')->name('documents.')->controller(\App\Http\Controllers\Admin\FinalProject\DocumentReviewController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{id}/download', 'download')->name('download');
+        });
     });
-});
 
     // Final Project - Khusus Kaprodi/Superuser
     Route::middleware(['role:superadmin,masteradmin'])->prefix('admin/final-project')->name('admin.final-project.')->group(function () {

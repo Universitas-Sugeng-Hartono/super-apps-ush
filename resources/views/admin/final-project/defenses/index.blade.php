@@ -35,9 +35,15 @@
 
                     <div class="proposal-details">
                         <div class="detail-row">
-                            <strong>Judul TA:</strong>
-                            <p>{{ $proposal->finalProject->title ?? 'Belum ditentukan' }}</p>
+                            <strong>Judul TA (Bahasa Indonesia):</strong>
+                            <p style="font-weight: 600; color: #333;">{{ $proposal->finalProject->title ?? '-' }}</p>
                         </div>
+                        @if($proposal->finalProject->title_en)
+                        <div class="detail-row">
+                            <strong>Judul TA (Bahasa Inggris):</strong>
+                            <p style="font-style: italic; color: #666;">{{ $proposal->finalProject->title_en }}</p>
+                        </div>
+                        @endif
                         <div class="detail-row">
                             <strong>Pembimbing:</strong>
                             <p>
