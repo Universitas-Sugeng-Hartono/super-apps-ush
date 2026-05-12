@@ -11,13 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 1. Hapus foreign key dan kolom skpi_period_id dari skpi_registrations
+        // 1. Hapus foreign key dan kolom skpi_period_id dari skpi_registrations (jika ada)
+        if (Schema::hasColumn('skpi_registrations', 'skpi_period_id')) {
             Schema::table('skpi_registrations', function (Blueprint $table) {
-                $table->dropForeign(['skpi_period_id']); 
+                // Cek apakah foreign key ada sebelum di-drop
+                try {
+                    $table->dropForeign(['skpi_period_id']);
+                } catch (\Throwable $e) {
+                    // Foreign key mungkin sudah tidak ada, lanjut saja
+                }
                 $table->dropColumn('skpi_period_id');
             });
+        }
 
-        // 2. Hapus tabel skpi_periods
+        // 2. Hapus tabel skpi_periods (jika ada)
         Schema::dropIfExists('skpi_periods');
     }
 
