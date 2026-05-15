@@ -66,6 +66,12 @@ class ProposalRegistrationController extends Controller
     {
         $studentId = decrypt(session('student_id'));
         $finalProject = FinalProject::where('student_id', $studentId)->firstOrFail();
+        
+        // Prevent double submission
+        if (FinalProjectProposal::where('final_project_id', $finalProject->id)->where('status', 'pending')->exists()) {
+            return redirect()->route('student.final-project.index')
+                ->with('info', 'Anda sudah mendaftar seminar proposal. Silakan tunggu persetujuan.');
+        }
 
         $request->validate([
             'proposal_file'                => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',

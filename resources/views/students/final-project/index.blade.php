@@ -261,7 +261,6 @@
                 $defenseHasEditableDocs = $defense
                     ? $finalProject->documents
                         ->where('document_type', 'final')
-                        ->where('title', 'Draft Final TA')
                         ->whereIn('review_status', ['needs_revision', 'rejected'])
                         ->count() > 0
                     : false;

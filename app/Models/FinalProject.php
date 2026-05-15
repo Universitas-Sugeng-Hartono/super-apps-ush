@@ -26,8 +26,45 @@ class FinalProject extends Model
         'title_approved_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
-        'progress_percentage' => 'integer',
     ];
+
+    public function getProgressPercentageAttribute(): int
+    {
+        if ($this->status === 'completed') return 100;
+
+        $progress = 0;
+
+        // Milestone 1: Judul disetujui (10%)
+        if ($this->title_approved_at) {
+            $progress += 10;
+        }
+
+        // Milestone 2: Seminar Proposal (max 30%)
+        if ($this->proposal) {
+            if ($this->proposal->status === 'approved') {
+                $progress += 30; // Total 40%
+            } else {
+                $progress += 10; // Total 20%
+            }
+        }
+
+        // Milestone 3: Bimbingan (max 40%)
+        // Asumsi minimal 8 bimbingan untuk 100% dari porsi bimbingan
+        $guidanceCount = $this->guidanceLogs()->approved()->count();
+        $guidanceProgress = min($guidanceCount * 5, 40); 
+        $progress += $guidanceProgress;
+
+        // Milestone 4: Pendaftaran Sidang (max 20%)
+        if ($this->defense) {
+            if ($this->defense->status === 'approved') {
+                return 100;
+            } else {
+                $progress += 10;
+            }
+        }
+
+        return min($progress, 95); // Maksimal 95% jika belum benar-benar selesai
+    }
 
     /*
     |--------------------------------------------------------------------------

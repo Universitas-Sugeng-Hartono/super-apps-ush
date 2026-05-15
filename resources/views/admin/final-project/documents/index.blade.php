@@ -10,13 +10,25 @@
                 </p>
             </div>
             <div class="filters">
-                <select onchange="window.location.href='?status='+this.value" class="filter-select">
-                    <option value="">{{ $canManageAll ? 'Pending Review' : 'Semua Status' }}</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                    <option value="needs_revision" {{ request('status') == 'needs_revision' ? 'selected' : '' }}>Need Revision</option>
-                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                </select>
+                <form method="GET" action="{{ route('admin.final-project.documents.index') }}" class="filter-form">
+                    @if($canManageAll)
+                    <select name="prodi" onchange="this.form.submit()" class="filter-select">
+                        <option value="">Semua Program Studi</option>
+                        @foreach($availableProdis as $prodi)
+                            <option value="{{ $prodi }}" {{ ($prodiFilter ?? '') == $prodi ? 'selected' : '' }}>
+                                {{ $prodi }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @endif
+                    <select name="status" onchange="this.form.submit()" class="filter-select">
+                        <option value="">{{ $canManageAll ? 'Pending Review' : 'Semua Status' }}</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="needs_revision" {{ request('status') == 'needs_revision' ? 'selected' : '' }}>Need Revision</option>
+                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    </select>
+                </form>
             </div>
         </div>
 
@@ -200,6 +212,13 @@
         margin: 6px 0 0;
         font-size: 13px;
         color: #777;
+    }
+
+    .filter-form {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
     }
 
     .filter-select {

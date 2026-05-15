@@ -132,9 +132,57 @@
             <h4>Upload Dokumen</h4>
 
             <div class="form-group">
-                <label for="finalDraft">Draft Final Tugas Akhir *</label>
+                <label for="ukt_semester_8_file">1. Bebas biaya pendidikan (UKT Semester 8) *</label>
+                <input id="ukt_semester_8_file" type="file" name="ukt_semester_8_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                @error('ukt_semester_8_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="bebas_perpustakaan_file">2. Bebas peminjaman buku perpustakaan *</label>
+                <input id="bebas_perpustakaan_file" type="file" name="bebas_perpustakaan_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                @error('bebas_perpustakaan_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="persetujuan_dospem_file">3. Formulir persetujuan Dosen Pembimbing TA *</label>
+                <input id="persetujuan_dospem_file" type="file" name="persetujuan_dospem_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                @error('persetujuan_dospem_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="lembar_konsultasi_file">4. Lembar Konsultasi TA (min. 8x konsultasi) *</label>
+                <input id="lembar_konsultasi_file" type="file" name="lembar_konsultasi_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                @error('lembar_konsultasi_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="transkrip_nilai_file">5. Transkrip Nilai Sementara USH (sudah disahkan) *</label>
+                <input id="transkrip_nilai_file" type="file" name="transkrip_nilai_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                @error('transkrip_nilai_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="turnitin_file">6. Hasil Turnitin/plagiarism (maksimal 25%) *</label>
+                <input id="turnitin_file" type="file" name="turnitin_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                @error('turnitin_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="sertifikat_pkkmb_file">7. Sertifikat PKKMB *</label>
+                <input id="sertifikat_pkkmb_file" type="file" name="sertifikat_pkkmb_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                @error('sertifikat_pkkmb_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="finalDraft">8. Dokumen/Makalah TA *</label>
                 <input id="finalDraft" type="file" name="final_draft_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
                 @error('final_draft_file')<span class="error">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="dokumen_pendukung_prodi_file">9. Dokumen pendukung Prodi (jika ada)</label>
+                <input id="dokumen_pendukung_prodi_file" type="file" name="dokumen_pendukung_prodi_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                @error('dokumen_pendukung_prodi_file')<span class="error">{{ $message }}</span>@enderror
             </div>
         </div>
 

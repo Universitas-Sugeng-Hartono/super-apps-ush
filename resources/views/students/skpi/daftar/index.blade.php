@@ -157,6 +157,7 @@
         <div class="ush-col-side">
             
             {{-- Action Cards --}}
+            @if($status !== 'approved')
             <div class="ush-card no-padding bg-transparent shadow-none border-0">
                 <h4 class="side-title">Menu Utama</h4>
                 
@@ -182,6 +183,7 @@
                     <i class="bi bi-chevron-right action-arrow"></i>
                 </a>
             </div>
+            @endif
 
             {{-- Summary Stats --}}
             <div class="ush-card bg-light-blue mt-4">

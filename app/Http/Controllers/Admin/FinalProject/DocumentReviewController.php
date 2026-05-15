@@ -16,12 +16,29 @@ class DocumentReviewController extends Controller
         return in_array($role, ['superadmin', 'masteradmin'], true);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $lecturerId = auth()->id();
         $canManageAll = $this->canManageAll();
+        $prodiFilter = $request->input('prodi');
+        $availableProdis = \App\Models\User::whereNotNull('program_studi')->distinct()->pluck('program_studi');
 
         $documents = FinalProjectDocument::with(['finalProject.student', 'uploader'])
+            ->where(function ($q) {
+                $q->whereNotIn('document_type', ['proposal', 'presentation'])
+                  ->where(function ($sub) {
+                      $sub->where('document_type', '!=', 'final')
+                          ->orWhere(function ($finalQ) {
+                              $finalQ->where('document_type', 'final')
+                                     ->where('title', '!=', 'Draft Final TA');
+                          });
+                  });
+            })
+            ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                $q->whereHas('finalProject.student', function ($sq) use ($prodiFilter) {
+                    $sq->where('program_studi', $prodiFilter);
+                });
+            })
             ->when(!$canManageAll, function ($q) use ($lecturerId) {
                 $q->whereHas('finalProject', function ($qq) use ($lecturerId) {
                     $qq->bySupervisor($lecturerId);
@@ -37,7 +54,7 @@ class DocumentReviewController extends Controller
             ->orderBy('uploaded_at', 'desc')
             ->paginate(20);
 
-        return view('admin.final-project.documents.index', compact('documents', 'canManageAll'));
+        return view('admin.final-project.documents.index', compact('documents', 'canManageAll', 'prodiFilter', 'availableProdis'));
     }
 
     public function download($id)
@@ -55,6 +72,60 @@ class DocumentReviewController extends Controller
         }
 
         return Storage::disk('public')->download($document->file_path);
+    }
+
+    public function downloadZip(Request $request, $id, $type)
+    {
+        $lecturerId = auth()->id();
+
+        $project = \App\Models\FinalProject::with('student', 'documents')
+            ->when(!$this->canManageAll(), function ($q) use ($lecturerId) {
+                $q->bySupervisor($lecturerId);
+            })->findOrFail($id);
+
+        $student = $project->student;
+        
+        $documentTypes = [];
+        $prefix = '';
+        if ($type === 'proposal') {
+            $documentTypes = ['proposal'];
+            $prefix = 'SEMPRO';
+        } elseif ($type === 'final') {
+            $documentTypes = ['final', 'presentation'];
+            $prefix = 'SIDANG';
+        } else {
+            return back()->with('error', 'Tipe dokumen tidak valid.');
+        }
+
+        $docs = $project->documents->whereIn('document_type', $documentTypes);
+
+        if ($docs->isEmpty()) {
+            return back()->with('error', 'Tidak ada dokumen untuk diunduh.');
+        }
+
+        $zip = new \ZipArchive();
+        $safeName = preg_replace('/[^A-Za-z0-9\- ]/', '', $student->nama_lengkap);
+        $safeProdi = preg_replace('/[^A-Za-z0-9\- ]/', '', $student->program_studi);
+        $zipFileName = "{$prefix} - {$safeName} - {$student->nim} - {$safeProdi}.zip";
+        $zipFilePath = storage_path('app/public/' . $zipFileName);
+
+        if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            $folderName = "{$prefix} - {$safeName} - {$student->nim} - {$safeProdi}";
+            $zip->addEmptyDir($folderName);
+
+            foreach ($docs as $doc) {
+                if (Storage::disk('public')->exists($doc->file_path)) {
+                    $filePath = Storage::disk('public')->path($doc->file_path);
+                    $fileName = $folderName . '/' . $doc->title . '_' . basename($doc->file_path);
+                    $zip->addFile($filePath, $fileName);
+                }
+            }
+            $zip->close();
+        } else {
+            return back()->with('error', 'Gagal membuat file ZIP.');
+        }
+
+        return response()->download($zipFilePath)->deleteFileAfterSend(true);
     }
 
     public function approve(Request $request, $id)

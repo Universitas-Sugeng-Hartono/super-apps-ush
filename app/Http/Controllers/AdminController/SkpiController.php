@@ -200,7 +200,7 @@ class SkpiController extends Controller
 
         $registration->update([
             'nomor_ijazah' => $request->nomor_ijazah,
-            'skpi_document' => null, // Hapus file lama agar admin wajib generate ulang dengan nomor baru
+            'skpi_document' => null, 
         ]);
 
         return redirect()

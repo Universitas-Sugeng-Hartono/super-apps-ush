@@ -192,68 +192,68 @@
 
 {{-- MODAL: Detail Prestasi --}}
 <div id="detailModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 400px; padding: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    <div class="modal-content modal-detail">
         <!-- Modal Header -->
-        <div style="background: #213158; border-bottom: 3px solid #d5b228; padding: 20px 24px; display: flex; justify-content: space-between; align-items: flex-start; color: white;">
+        <div class="modal-hdr">
             <div>
-                <h4 style="margin: 0 0 4px; font-size: 18px; font-weight: 700; color: white;">Detail Prestasi Mahasiswa</h4>
-                <p style="margin: 0; font-size: 13px; opacity: 0.8;" id="detail_nama"></p>
+                <h4 class="modal-hdr-title">Detail Prestasi Mahasiswa</h4>
+                <p class="modal-hdr-sub" id="detail_nama"></p>
             </div>
-            <button type="button" onclick="closeDetailModal()" style="background: rgba(255,255,255,0.1); border: none; font-size: 20px; color: white; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+            <button type="button" onclick="closeDetailModal()" class="modal-close-btn">
                 <i class="bi bi-x"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
-        <div style="padding: 24px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px;">
-                    <span style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 4px;">Kategori</span>
-                    <strong id="detail_kategori" style="font-size: 14px; color: #0F172A;"></strong>
+        <div class="modal-body-pad">
+            <div class="detail-info-grid">
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Kategori</span>
+                    <strong id="detail_kategori" class="detail-info-value"></strong>
                 </div>
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px;">
-                    <span style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 4px;">Jenis Kegiatan</span>
-                    <strong id="detail_kegiatan" style="font-size: 14px; color: #0F172A;"></strong>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Jenis Kegiatan</span>
+                    <strong id="detail_kegiatan" class="detail-info-value"></strong>
                 </div>
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px;">
-                    <span style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 4px;">Tingkat</span>
-                    <strong id="detail_tingkat" style="font-size: 14px; color: #0F172A;"></strong>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Tingkat</span>
+                    <strong id="detail_tingkat" class="detail-info-value"></strong>
                 </div>
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px;">
-                    <span style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 4px;">Peran / Jabatan</span>
-                    <strong id="detail_peran" style="font-size: 14px; color: #0F172A;"></strong>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Peran / Jabatan</span>
+                    <strong id="detail_peran" class="detail-info-value"></strong>
                 </div>
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px;">
-                    <span style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 4px;">Poin SKP</span>
-                    <strong id="detail_skp" style="font-size: 16px; color: #1565C0;"></strong>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Poin SKP</span>
+                    <strong id="detail_skp" class="detail-info-value skp-value"></strong>
                 </div>
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px;">
-                    <span style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 4px;">Tanggal Diajukan</span>
-                    <strong id="detail_tanggal" style="font-size: 14px; color: #0F172A;"></strong>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Tanggal Diajukan</span>
+                    <strong id="detail_tanggal" class="detail-info-value"></strong>
                 </div>
             </div>
 
-            <div style="margin-bottom: 24px;">
-                <span style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 10px;">File Bukti / Piagam</span>
-                <div id="detail_file_container" style="background: #F1F5F9; border: 1px dashed #CBD5E1; padding: 16px; border-radius: 12px; text-align: center;">
+            <div class="detail-section">
+                <span class="detail-section-label">File Bukti / Piagam</span>
+                <div id="detail_file_container" class="detail-file-box">
                     <!-- Diisi via JS -->
                 </div>
             </div>
 
-            <div style="margin-bottom: 8px;">
-                <span style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 10px;">Catatan Reviewer</span>
-                <div style="background: #FFFBEB; padding: 16px; border-radius: 12px; border: 1px solid #FDE68A;">
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <i class="bi bi-chat-left-text" style="color: #D97706; font-size: 16px; margin-top: 2px;"></i>
+            <div class="detail-section">
+                <span class="detail-section-label">Catatan Reviewer</span>
+                <div class="detail-notes-box">
+                    <div class="detail-notes-inner">
+                        <i class="bi bi-chat-left-text detail-notes-icon"></i>
                         <div>
-                            <p id="detail_catatan" style="margin: 0 0 6px; font-size: 14px; color: #92400E; line-height: 1.5;"></p>
-                            <p style="margin: 0; font-size: 12px; font-weight: 600; color: #B45309;">Reviewer: <span id="detail_reviewer" style="font-weight: 400;"></span></p>
+                            <p id="detail_catatan" class="detail-catatan-text"></p>
+                            <p class="detail-reviewer-text">Reviewer: <span id="detail_reviewer" style="font-weight: 400;"></span></p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="detail_action_container" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid #E2E8F0;">
+            <div id="detail_action_container" class="detail-action-bar">
                 <!-- Diisi via JS (Tombol Approve & Reject) -->
             </div>
         </div>
@@ -262,20 +262,20 @@
 
 {{-- MODAL 1: Daftar Prestasi Mahasiswa --}}
 <div id="studentAchievementsModal" class="modal" style="display: none; z-index: 9998;">
-    <div class="modal-content" style="max-width: 1700px; padding: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    <div class="modal-content modal-achievements">
         <!-- Modal Header -->
-        <div style="background: #213158; border-bottom: 3px solid #d5b228; padding: 20px 24px; display: flex; justify-content: space-between; align-items: flex-start; color: white;">
+        <div class="modal-hdr">
             <div>
-                <h4 style="margin: 0 0 4px; font-size: 18px; font-weight: 700; color: white;">Daftar Prestasi Mahasiswa</h4>
-                <p style="margin: 0; font-size: 13px; opacity: 0.8;" id="student_achievements_nama"></p>
+                <h4 class="modal-hdr-title">Daftar Prestasi Mahasiswa</h4>
+                <p class="modal-hdr-sub" id="student_achievements_nama"></p>
             </div>
-            <button type="button" onclick="closeStudentAchievementsModal()" style="background: rgba(255,255,255,0.1); border: none; font-size: 20px; color: white; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+            <button type="button" onclick="closeStudentAchievementsModal()" class="modal-close-btn">
                 <i class="bi bi-x"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
-        <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+        <div class="modal-body-scroll">
             <div class="table-responsive" id="achievements_table_container">
                 <!-- Diisi via JS -->
             </div>
@@ -284,7 +284,7 @@
 </div>
 
 <div id="approveModal" class="modal" style="display: none; z-index: 10000;">
-    <div class="modal-content">
+    <div class="modal-content modal-form">
         <h4>Approve Prestasi Mahasiswa</h4>
         <form id="approveForm" method="POST">
             @csrf
@@ -303,7 +303,7 @@
 </div>
 
 <div id="rejectModal" class="modal" style="display: none; z-index: 10000;">
-    <div class="modal-content">
+    <div class="modal-content modal-form">
         <h4>Reject Prestasi Mahasiswa</h4>
         <form id="rejectForm" method="POST">
             @csrf
@@ -320,11 +320,10 @@
         </form>
     </div>
 </div>
-</div>
 
 {{-- MODAL: Approve All --}}
 <div id="approveAllModal" class="modal" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content modal-form">
         <h4>Approve Semua Data Pending</h4>
         <p style="color:#6B7280; margin-bottom:16px;">Anda akan menyetujui <strong>{{ $stats['pending'] }}</strong> data prestasi mahasiswa yang berstatus pending sekaligus.</p>
         <form id="approveAllForm" method="POST" action="{{ route('admin.skpi.verifikasi-data.approve-all') }}">
@@ -345,537 +344,10 @@
 @endsection
 
 @push('css')
-<style>
-    .page-shell {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-    }
-
-    .btn-back {
-        background: #213158;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-        transition: all 0.2s;
-        border: 1px solid #d5b228;
-    }
-
-    .btn-back:hover {
-        background: #1a2542;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .hero-card,
-    .content-card,
-    .achievement-card,
-    .alert-success,
-    .empty-state {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: var(--shadow);
-    }
-
-    .hero-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        background: #213158;
-        border: 1px solid #d5b228;
-    }
-
-    .hero-badge {
-        display: inline-flex;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: #d5b228;
-        color: white;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .hero-card h3 {
-        margin: 10px 0 10px;
-        font-size: 28px;
-        font-weight: 700;
-        color: white;
-    }
-
-    .hero-card p {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.8);
-        line-height: 1.6;
-    }
-
-    .muted-copy,
-    .empty-state p {
-        margin: 0;
-        color: #6B7280;
-        line-height: 1.6;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(120px, 1fr));
-        gap: 12px;
-        width: min(560px, 100%);
-    }
-
-    .stat-card {
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid #F0E2D0;
-        border-radius: 16px;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .stat-card span {
-        font-size: 12px;
-        color: #8A94A6;
-    }
-
-    .stat-card strong {
-        font-size: 26px;
-        color: #213158;
-        line-height: 1;
-    }
-
-    .stat-card.warning strong {
-        color: #B76E00;
-    }
-
-    .stat-card.success strong {
-        color: #1E7A44;
-    }
-
-    .stat-card.danger strong {
-        color: #C23934;
-    }
-
-    .alert-success {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: #1E7A44;
-        background: #EDF9F0;
-        border: 1px solid #D7EEDC;
-    }
-
-    .filter-form {
-        display: grid;
-        grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(160px, 1fr)) auto;
-        gap: 16px;
-        align-items: end;
-    }
-
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .filter-group label,
-    .form-group label {
-        font-size: 14px;
-        font-weight: 700;
-        color: #374151;
-    }
-
-    .form-control {
-        width: 100%;
-        border: 1px solid #D9DEE8;
-        border-radius: 12px;
-        padding: 12px 14px;
-        font-size: 14px;
-        color: #1F2937;
-        font-family: inherit;
-        background: white;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: #d5b228;
-        box-shadow: 0 0 0 4px rgba(213, 178, 40, 0.12);
-    }
-
-    .filter-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .btn-filter,
-    .btn-reset,
-    .btn-approve,
-    .btn-reject,
-    .btn-cancel {
-        border: none;
-        border-radius: 12px;
-        padding: 12px 16px;
-        font-size: 14px;
-        font-weight: 700;
-        text-decoration: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: 0.2s ease;
-    }
-
-    .btn-filter {
-        background: #d5b228;
-        color: white;
-    }
-
-    .btn-filter:hover {
-        background: #bfa024;
-    }
-
-    .btn-reset,
-    .btn-cancel {
-        background: #EEF2F7;
-        color: #475569;
-    }
-
-    .btn-reset:hover,
-    .btn-cancel:hover {
-        background: #E2E8F0;
-    }
-
-    .list-stack {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-    }
-
-    .achievement-card {
-        border: 1px solid #ECE6DA;
-    }
-
-    .card-head,
-    .student-meta,
-    .action-row,
-    .modal-actions {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: center;
-    }
-
-    .student-meta {
-        justify-content: flex-start;
-    }
-
-    .card-head {
-        padding-bottom: 18px;
-        margin-bottom: 18px;
-        border-bottom: 1px dashed #E8DED0;
-        align-items: flex-start;
-    }
-
-    .card-head h4,
-    .empty-state h4,
-    .modal-content h4 {
-        margin: 0 0 8px;
-        font-size: 21px;
-        font-weight: 700;
-        color: #213158;
-    }
-
-    .card-head p,
-    .supporting-card p {
-        margin: 0;
-        color: #6B7280;
-    }
-
-    .submitted-meta {
-        text-align: right;
-    }
-
-    .submitted-meta span,
-    .detail-label {
-        display: block;
-        font-size: 12px;
-        color: #8A94A6;
-        margin-bottom: 6px;
-    }
-
-    .submitted-meta strong,
-    .detail-item strong {
-        color: #213158;
-        font-size: 15px;
-    }
-
-    .status-pill {
-        display: inline-flex;
-        padding: 7px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .status-pill.pending {
-        background: #FFF1DA;
-        color: #C46A00;
-    }
-
-    .status-pill.approved {
-        background: #E8F7EE;
-        color: #1E7A44;
-    }
-
-    .status-pill.rejected {
-        background: #FDE8E7;
-        color: #C23934;
-    }
-
-    .detail-grid,
-    .supporting-row {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 14px;
-    }
-
-    .supporting-row {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        margin-top: 14px;
-    }
-
-    .detail-item,
-    .supporting-card {
-        background: #FAFBFC;
-        border: 1px solid #EDF0F4;
-        border-radius: 14px;
-        padding: 16px;
-    }
-
-    .doc-link {
-        text-decoration: none;
-        color: #1D4ED8;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .action-row {
-        justify-content: flex-end;
-        margin-top: 18px;
-        padding-top: 18px;
-        border-top: 1px dashed #E8DED0;
-    }
-
-    .btn-approve {
-        background: #1E7A44;
-        color: white;
-    }
-
-    .btn-approve:hover {
-        background: #176238;
-    }
-
-    .btn-reject {
-        background: #C23934;
-        color: white;
-    }
-
-    .btn-reject:hover {
-        background: #A92F2B;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        background: #ffffffff;
-        border-radius: 10px;
-    }
-
-    .data-table th {
-        padding: 12px;
-        text-align: left;
-        background: #213158;
-        font-weight: 600;
-        color: #ffffffff;
-        font-size: 13px;
-
-    }
-
-
-    .data-table td {
-        padding: 15px 12px;
-        border-bottom: 1px solid #E0E0E0;
-        vertical-align: middle;
-
-    }
-
-    .data-table tr:hover {
-        background: #f0efefff;
-    }
-
-    .badge-year {
-        background: #E8F5E9;
-        color: #2E7D32;
-        padding: 5px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .badge-prodi {
-        background: #E3F2FD;
-        color: #1976D2;
-        padding: 5px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .status-badge {
-        padding: 5px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .status-badge.status-aktif {
-        background: #E8F5E9;
-        color: #2E7D32;
-    }
-
-    .status-badge.status-cuti {
-        background: #FFF3E0;
-        color: #F57C00;
-    }
-
-    .status-badge.status-nonaktif {
-        background: #FDE8E7;
-        color: #C23934;
-    }
-
-    .badge-count {
-        background: #E3F2FD;
-        color: #1565C0;
-        padding: 5px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .btn-view {
-        padding: 6px 12px;
-        background: #213158;
-        color: white;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 12px;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .btn-view:hover {
-        background: #1a2542;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .font-monospace {
-        font-family: 'Courier New', Courier, monospace;
-    }
-
-    .pagination-wrap {
-        display: flex;
-        justify-content: center;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 24px;
-    }
-
-    .empty-state i {
-        font-size: 64px;
-        color: #D1D5DB;
-        margin-bottom: 14px;
-    }
-
-    .modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.45);
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        z-index: 9999;
-        padding: 100px 20px;
-        /* Jarak atas diperlebar jadi 120px agar tidak 'lengket' */
-        overflow-y: auto;
-    }
-
-    .modal-content {
-        width: 100%;
-        /* Biarkan max-width yang menentukan lebar maksimalnya */
-        background: white;
-        border-radius: 18px;
-        padding: 26px;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    .textarea-control {
-        min-height: 120px;
-        resize: vertical;
-    }
-
-    @media (max-width: 1100px) {
-
-        .hero-card,
-        .card-head {
-            flex-direction: column;
-        }
-
-        .filter-form,
-        .stats-grid,
-        .detail-grid,
-        .supporting-row {
-            grid-template-columns: 1fr;
-        }
-
-        .submitted-meta,
-        .action-row {
-            width: 100%;
-            text-align: left;
-            justify-content: flex-start;
-        }
-    }
-
-    .skp-value {
-        color: #1565C0 !important;
-        font-size: 18px !important;
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('admin/css/skpi-verifikasi-data.css') }}">
 @endpush
+
+
 
 @push('scripts')
 <script>

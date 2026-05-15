@@ -206,34 +206,117 @@
         </div>
 
         @if($finalProject->documents->count() > 0)
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Jenis</th>
-                            <th>Judul</th>
-                            <th>Versi</th>
-                            <th>Status Review</th>
-                            <th>Diunggah</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($finalProject->documents as $doc)
+            @php
+                $proposalDocs = $finalProject->documents->where('document_type', 'proposal');
+                $defenseDocs = $finalProject->documents->whereIn('document_type', ['final', 'presentation']);
+                $otherDocs = $finalProject->documents->whereNotIn('document_type', ['proposal', 'final', 'presentation']);
+            @endphp
+
+            @if($proposalDocs->count() > 0)
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px;">
+                    <h4 style="margin: 0; font-size: 16px; color: var(--primary-orange);">Dokumen Proposal</h4>
+                    <a href="{{ route('admin.final-project.documents.zip', ['id' => $finalProject->id, 'type' => 'proposal']) }}" class="btn-download-zip-sm" style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.2);">
+                        <i class="bi bi-file-earmark-zip"></i> Download ZIP
+                    </a>
+                </div>
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <td>{{ ucfirst(str_replace('_', ' ', $doc->document_type)) }}</td>
-                                <td>{{ $doc->title }}</td>
-                                <td>v{{ $doc->version }}</td>
-                                <td>
-                                    <span class="status-badge status-{{ $doc->review_status }}">
-                                        {{ ucfirst(str_replace('_', ' ', $doc->review_status)) }}
-                                    </span>
-                                </td>
-                                <td>{{ optional($doc->uploaded_at)->format('d M Y') ?? '-' }}</td>
+                                <th style="width: 15%;">Jenis</th>
+                                <th style="width: 40%;">Judul</th>
+                                <th style="width: 10%;">Versi</th>
+                                <th style="width: 15%;">Status Review</th>
+                                <th style="width: 20%;">Diunggah</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach($proposalDocs as $doc)
+                                <tr>
+                                    <td>{{ ucfirst(str_replace('_', ' ', $doc->document_type)) }}</td>
+                                    <td>{{ $doc->title }}</td>
+                                    <td>v{{ $doc->version }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ $doc->review_status }}">
+                                            {{ ucfirst(str_replace('_', ' ', $doc->review_status)) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ optional($doc->uploaded_at)->format('d M Y') ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+            @if($defenseDocs->count() > 0)
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px;">
+                    <h4 style="margin: 0; font-size: 16px; color: var(--primary-orange);">Dokumen Sidang</h4>
+                    <a href="{{ route('admin.final-project.documents.zip', ['id' => $finalProject->id, 'type' => 'final']) }}" class="btn-download-zip-sm" style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.2);">
+                        <i class="bi bi-file-earmark-zip"></i> Download ZIP
+                    </a>
+                </div>
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Jenis</th>
+                                <th style="width: 40%;">Judul</th>
+                                <th style="width: 10%;">Versi</th>
+                                <th style="width: 15%;">Status Review</th>
+                                <th style="width: 20%;">Diunggah</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($defenseDocs as $doc)
+                                <tr>
+                                    <td>{{ ucfirst(str_replace('_', ' ', $doc->document_type)) }}</td>
+                                    <td>{{ $doc->title }}</td>
+                                    <td>v{{ $doc->version }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ $doc->review_status }}">
+                                            {{ ucfirst(str_replace('_', ' ', $doc->review_status)) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ optional($doc->uploaded_at)->format('d M Y') ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+            @if($otherDocs->count() > 0)
+                <h4 style="margin: 15px 0 10px; font-size: 16px; color: var(--primary-orange);">Lainnya</h4>
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Jenis</th>
+                                <th style="width: 40%;">Judul</th>
+                                <th style="width: 10%;">Versi</th>
+                                <th style="width: 15%;">Status Review</th>
+                                <th style="width: 20%;">Diunggah</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($otherDocs as $doc)
+                                <tr>
+                                    <td>{{ ucfirst(str_replace('_', ' ', $doc->document_type)) }}</td>
+                                    <td>{{ $doc->title }}</td>
+                                    <td>v{{ $doc->version }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ $doc->review_status }}">
+                                            {{ ucfirst(str_replace('_', ' ', $doc->review_status)) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ optional($doc->uploaded_at)->format('d M Y') ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         @else
             <div class="empty-state">
                 <i class="bi bi-inbox"></i>

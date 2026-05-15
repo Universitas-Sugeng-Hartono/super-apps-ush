@@ -80,33 +80,61 @@
 
     {{-- Dokumen --}}
     @php
-        $draftDoc = $defense->finalProject->documents
-            ->where('document_type', 'final')
-            ->where('title', 'Draft Final TA')
-            ->sortByDesc('version')
-            ->first();
-        $canEditDocument = $draftDoc && in_array($draftDoc->review_status, ['needs_revision', 'rejected'], true);
+        $defenseDocsKeys = [
+            'ukt_semester_8_file'          => 'Bebas UKT Semester 8',
+            'bebas_perpustakaan_file'      => 'Bebas Peminjaman Buku Perpustakaan',
+            'persetujuan_dospem_file'      => 'Form Persetujuan Dosen Pembimbing',
+            'lembar_konsultasi_file'       => 'Lembar Konsultasi TA',
+            'transkrip_nilai_file'         => 'Transkrip Nilai Sementara',
+            'turnitin_file'                => 'Hasil Turnitin',
+            'sertifikat_pkkmb_file'        => 'Sertifikat PKKMB',
+            'final_draft_file'             => 'Draft Final TA',
+            'dokumen_pendukung_prodi_file' => 'Dokumen Pendukung Prodi'
+        ];
+
+        $defenseDocs = collect();
+        $canEditDocument = false;
+
+        foreach ($defenseDocsKeys as $title) {
+            $doc = $defense->finalProject->documents
+                ->where('document_type', 'final')
+                ->where('title', $title)
+                ->sortByDesc('version')
+                ->first();
+                
+            if ($doc) {
+                $defenseDocs->push($doc);
+                if (in_array($doc->review_status, ['needs_revision', 'rejected'], true)) {
+                    $canEditDocument = true;
+                }
+            }
+        }
     @endphp
 
-    @if($draftDoc)
+    @if($defenseDocs->count() > 0)
         <div class="form-card">
             <h4>Dokumen Sidang</h4>
-            <div class="doc-item">
-                <div class="doc-left">
-                    <div class="doc-icon">
-                        <i class="bi bi-file-earmark-text"></i>
-                    </div>
-                    <div class="doc-meta">
-                        <div class="doc-title">Draft Final TA</div>
-                        <div class="doc-sub">
-                            Upload: {{ $draftDoc->uploaded_at?->translatedFormat('d M Y H:i') ?? '-' }}
-                            · v{{ $draftDoc->version }}
+            @foreach($defenseDocs as $doc)
+                <div class="doc-item" style="margin-bottom: 10px;">
+                    <div class="doc-left">
+                        <div class="doc-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="doc-meta">
+                            <div class="doc-title">{{ $doc->title }}</div>
+                            <div class="doc-sub">
+                                Upload: {{ $doc->uploaded_at?->translatedFormat('d M Y H:i') ?? '-' }}
+                                · v{{ $doc->version }}
+                                @if(in_array($doc->review_status, ['needs_revision', 'rejected']))
+                                    <span style="color: #E65100; font-weight: 700; margin-left: 5px;">(Perlu Revisi)</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
+                    <a class="doc-link" href="{{ asset('storage/' . ltrim($doc->file_path, '/')) }}"
+                       target="_blank">Lihat</a>
                 </div>
-                <a class="doc-link" href="{{ asset('storage/' . ltrim($draftDoc->file_path, '/')) }}"
-                   target="_blank">Lihat</a>
-            </div>
+            @endforeach
         </div>
     @endif
 

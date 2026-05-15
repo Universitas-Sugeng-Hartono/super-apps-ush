@@ -224,6 +224,8 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
 
         Route::prefix('proposals')->name('proposals.')->controller(\App\Http\Controllers\Admin\FinalProject\ProposalApprovalController::class)->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::get('/zip-sempro-sidang', 'bulkZip')->name('bulk-zip');
+            Route::post('/approve-all', 'approveAll')->name('approve-all');
             Route::get('/{id}', 'show')->name('show');
             Route::post('/{id}/approve', 'approve')->name('approve');
             Route::post('/{id}/reject', 'reject')->name('reject');
@@ -231,12 +233,14 @@ Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function
 
         Route::prefix('defenses')->name('defenses.')->controller(\App\Http\Controllers\Admin\FinalProject\DefenseApprovalController::class)->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::post('/approve-all', 'approveAll')->name('approve-all');
             Route::get('/{id}', 'show')->name('show');
             Route::post('/{id}/approve', 'approve')->name('approve');
             Route::post('/{id}/reject', 'reject')->name('reject');
         });
 
         Route::prefix('documents')->name('documents.')->controller(\App\Http\Controllers\Admin\FinalProject\DocumentReviewController::class)->group(function () {
+            Route::get('/{id}/zip/{type}', 'downloadZip')->name('zip');
             Route::post('/{id}/approve', 'approve')->name('approve');
             Route::post('/{id}/revision', 'revision')->name('revision');
             Route::post('/{id}/reject', 'reject')->name('reject');

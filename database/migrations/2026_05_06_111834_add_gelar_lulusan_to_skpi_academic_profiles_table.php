@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('skpi_academic_profiles', function (Blueprint $table) {
-            //
-        });
+        if (!Schema::hasColumn('skpi_academic_profiles', 'gelar_lulusan')) {
+            Schema::table('skpi_academic_profiles', function (Blueprint $table) {
+                $table->string('gelar_lulusan', 100)->nullable()->after('status_profesi');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('skpi_academic_profiles', function (Blueprint $table) {
-            //
-        });
+        if (Schema::hasColumn('skpi_academic_profiles', 'gelar_lulusan')) {
+            Schema::table('skpi_academic_profiles', function (Blueprint $table) {
+                $table->dropColumn('gelar_lulusan');
+            });
+        }
     }
 };

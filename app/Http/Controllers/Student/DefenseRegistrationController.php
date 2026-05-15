@@ -52,8 +52,22 @@ class DefenseRegistrationController extends Controller
         $studentId = decrypt(session('student_id'));
         $finalProject = FinalProject::where('student_id', $studentId)->firstOrFail();
 
+        // Prevent double submission
+        if (FinalProjectDefense::where('final_project_id', $finalProject->id)->where('status', 'pending')->exists()) {
+            return redirect()->route('student.final-project.index')
+                ->with('info', 'Anda sudah mendaftar sidang TA. Silakan tunggu persetujuan.');
+        }
+
         $request->validate([
-            'final_draft_file'  => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'final_draft_file'             => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'ukt_semester_8_file'          => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'bebas_perpustakaan_file'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'persetujuan_dospem_file'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'lembar_konsultasi_file'       => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'transkrip_nilai_file'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'turnitin_file'                => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'sertifikat_pkkmb_file'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'dokumen_pendukung_prodi_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'nik'               => ['required', 'digits:16'],
             'nisn'              => ['required', 'string', 'max:20'],
             'tempat_lahir'      => ['required', 'string', 'max:100'],
@@ -80,17 +94,53 @@ class DefenseRegistrationController extends Controller
                 'status'           => 'pending',
             ]);
 
-            if ($request->hasFile('final_draft_file')) {
-                $path = $request->file('final_draft_file')->store("final-projects/{$studentId}/defense", 'public');
-                $finalProject->documents()->create([
-                    'document_type' => 'final',
-                    'title'         => 'Draft Final TA',
-                    'file_path'     => $path,
-                    'version'       => 1,
-                    'uploaded_by'   => $studentId,
-                    'uploaded_at'   => now(),
-                    'review_status' => 'pending',
-                ]);
+            $defenseDocs = [
+                'final_draft_file'             => 'Draft Final TA',
+                'ukt_semester_8_file'          => 'Bebas UKT Semester 8',
+                'bebas_perpustakaan_file'      => 'Bebas Peminjaman Buku Perpustakaan',
+                'persetujuan_dospem_file'      => 'Form Persetujuan Dosen Pembimbing',
+                'lembar_konsultasi_file'       => 'Lembar Konsultasi TA',
+                'transkrip_nilai_file'         => 'Transkrip Nilai Sementara',
+                'turnitin_file'                => 'Hasil Turnitin',
+                'sertifikat_pkkmb_file'        => 'Sertifikat PKKMB',
+                'dokumen_pendukung_prodi_file' => 'Dokumen Pendukung Prodi'
+            ];
+
+            foreach ($defenseDocs as $inputName => $docTitle) {
+                if ($request->hasFile($inputName)) {
+                    $path = $request->file($inputName)->store("final-projects/{$studentId}/defense", 'public');
+                    
+                    $existingDoc = $finalProject->documents()
+                        ->where('document_type', 'final')
+                        ->where('title', $docTitle)
+                        ->orderByDesc('version')
+                        ->first();
+
+                    if ($existingDoc) {
+                        if (Storage::disk('public')->exists($existingDoc->file_path)) {
+                            Storage::disk('public')->delete($existingDoc->file_path);
+                        }
+                        $existingDoc->update([
+                            'file_path'     => $path,
+                            'version'       => $existingDoc->version + 1,
+                            'uploaded_at'   => now(),
+                            'review_status' => 'pending',
+                            'review_notes'  => null,
+                            'reviewed_at'   => null,
+                            'reviewer_id'   => null,
+                        ]);
+                    } else {
+                        $finalProject->documents()->create([
+                            'document_type' => 'final',
+                            'title'         => $docTitle,
+                            'file_path'     => $path,
+                            'version'       => 1,
+                            'uploaded_by'   => $studentId,
+                            'uploaded_at'   => now(),
+                            'review_status' => 'pending',
+                        ]);
+                    }
+                }
             }
 
             $finalProject->update(['status' => 'defense']);
@@ -134,7 +184,6 @@ class DefenseRegistrationController extends Controller
         // Cek needs_revision
         $hasNeedsRevision = $finalProject->documents()
             ->where('document_type', 'final')
-            ->where('title', 'Draft Final TA')
             ->whereIn('review_status', ['needs_revision', 'rejected'])
             ->exists();
 
@@ -144,14 +193,28 @@ class DefenseRegistrationController extends Controller
                 ->with('info', 'Tidak ada yang perlu diperbaiki.');
         }
 
-        // Ambil file draft final
-        $existingDraft = $finalProject->documents()
-            ->where('document_type', 'final')
-            ->where('title', 'Draft Final TA')
-            ->orderByDesc('version')
-            ->first();
+        $defenseDocsKeys = [
+            'ukt_semester_8_file'          => 'Bebas UKT Semester 8',
+            'bebas_perpustakaan_file'      => 'Bebas Peminjaman Buku Perpustakaan',
+            'persetujuan_dospem_file'      => 'Form Persetujuan Dosen Pembimbing',
+            'lembar_konsultasi_file'       => 'Lembar Konsultasi TA',
+            'transkrip_nilai_file'         => 'Transkrip Nilai Sementara',
+            'turnitin_file'                => 'Hasil Turnitin',
+            'sertifikat_pkkmb_file'        => 'Sertifikat PKKMB',
+            'final_draft_file'             => 'Draft Final TA',
+            'dokumen_pendukung_prodi_file' => 'Dokumen Pendukung Prodi'
+        ];
 
-        return view('students.final-project.defense.edit', compact('defense', 'finalProject', 'existingDraft', 'hasNeedsRevision'));
+        $existingDocs = [];
+        foreach ($defenseDocsKeys as $input => $title) {
+            $existingDocs[$input] = $finalProject->documents()
+                ->where('document_type', 'final')
+                ->where('title', $title)
+                ->orderByDesc('version')
+                ->first();
+        }
+
+        return view('students.final-project.defense.edit', compact('defense', 'finalProject', 'existingDocs', 'defenseDocsKeys', 'hasNeedsRevision'));
     }
 
     public function update(Request $request, $id)
@@ -166,17 +229,28 @@ class DefenseRegistrationController extends Controller
 
         $hasNeedsRevision = $finalProject->documents()
             ->where('document_type', 'final')
-            ->where('title', 'Draft Final TA')
             ->whereIn('review_status', ['needs_revision', 'rejected'])
             ->exists();
 
         if ($defense->status !== 'rejected' && !$hasNeedsRevision) {
+            $message = $defense->status === 'pending' 
+                ? 'Pendaftaran sidang Anda sedang menunggu persetujuan.' 
+                : 'Pendaftaran sidang tidak bisa diedit.';
+                
             return redirect()->route('student.final-project.defense.show', $defense->id)
-                ->with('error', 'Pendaftaran sidang tidak bisa diedit.');
+                ->with('info', $message);
         }
 
         $request->validate([
-            'final_draft_file'  => $hasNeedsRevision ? 'required|file|mimes:pdf,jpg,jpeg,png|max:10240' : 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'final_draft_file'             => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'ukt_semester_8_file'          => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'bebas_perpustakaan_file'      => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'persetujuan_dospem_file'      => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'lembar_konsultasi_file'       => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'transkrip_nilai_file'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'turnitin_file'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'sertifikat_pkkmb_file'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'dokumen_pendukung_prodi_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'nik'               => ['required', 'digits:16'],
             'nisn'              => ['required', 'string', 'max:20'],
             'tempat_lahir'      => ['required', 'string', 'max:100'],
@@ -196,39 +270,53 @@ class DefenseRegistrationController extends Controller
                 'no_telepon'       => $request->no_telepon,
             ]);
 
-            if ($request->hasFile('final_draft_file')) {
-                $path = $request->file('final_draft_file')
-                    ->store("final-projects/{$studentId}/defense", 'public');
+            $defenseDocs = [
+                'final_draft_file'             => 'Draft Final TA',
+                'ukt_semester_8_file'          => 'Bebas UKT Semester 8',
+                'bebas_perpustakaan_file'      => 'Bebas Peminjaman Buku Perpustakaan',
+                'persetujuan_dospem_file'      => 'Form Persetujuan Dosen Pembimbing',
+                'lembar_konsultasi_file'       => 'Lembar Konsultasi TA',
+                'transkrip_nilai_file'         => 'Transkrip Nilai Sementara',
+                'turnitin_file'                => 'Hasil Turnitin',
+                'sertifikat_pkkmb_file'        => 'Sertifikat PKKMB',
+                'dokumen_pendukung_prodi_file' => 'Dokumen Pendukung Prodi'
+            ];
 
-                $oldDoc = $finalProject->documents()
-                    ->where('document_type', 'final')
-                    ->where('title', 'Draft Final TA')
-                    ->orderByDesc('version')
-                    ->first();
+            foreach ($defenseDocs as $inputName => $docTitle) {
+                if ($request->hasFile($inputName)) {
+                    $path = $request->file($inputName)
+                        ->store("final-projects/{$studentId}/defense", 'public');
 
-                if ($oldDoc) {
-                    if (Storage::disk('public')->exists($oldDoc->file_path)) {
-                        Storage::disk('public')->delete($oldDoc->file_path);
+                    $oldDoc = $finalProject->documents()
+                        ->where('document_type', 'final')
+                        ->where('title', $docTitle)
+                        ->orderByDesc('version')
+                        ->first();
+
+                    if ($oldDoc) {
+                        if (Storage::disk('public')->exists($oldDoc->file_path)) {
+                            Storage::disk('public')->delete($oldDoc->file_path);
+                        }
+                        $oldDoc->update([
+                            'file_path'     => $path,
+                            'version'       => $oldDoc->version + 1,
+                            'uploaded_at'   => now(),
+                            'review_status' => 'pending',
+                            'review_notes'  => null,
+                            'reviewed_at'   => null,
+                            'reviewer_id'   => null,
+                        ]);
+                    } else {
+                        $finalProject->documents()->create([
+                            'document_type' => 'final',
+                            'title'         => $docTitle,
+                            'file_path'     => $path,
+                            'version'       => 1,
+                            'uploaded_by'   => $studentId,
+                            'uploaded_at'   => now(),
+                            'review_status' => 'pending',
+                        ]);
                     }
-                    $oldDoc->update([
-                        'file_path'     => $path,
-                        'version'       => $oldDoc->version + 1,
-                        'uploaded_at'   => now(),
-                        'review_status' => 'pending',
-                        'review_notes'  => null,
-                        'reviewed_at'   => null,
-                        'reviewer_id'   => null,
-                    ]);
-                } else {
-                    $finalProject->documents()->create([
-                        'document_type' => 'final',
-                        'title'         => 'Draft Final TA',
-                        'file_path'     => $path,
-                        'version'       => 1,
-                        'uploaded_by'   => $studentId,
-                        'uploaded_at'   => now(),
-                        'review_status' => 'pending',
-                    ]);
                 }
             }
 

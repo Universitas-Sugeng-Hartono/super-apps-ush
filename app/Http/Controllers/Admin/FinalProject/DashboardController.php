@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $lecturerId = auth()->id();
         $manageAll = $this->canManageAll();
 
-        $finalProjects = FinalProject::with(['student', 'proposal', 'defense'])
+        $finalProjects = FinalProject::with(['student', 'proposal', 'defense', 'guidanceLogs'])
             ->when(!$manageAll, fn ($q) => $q->bySupervisor($lecturerId))
             ->when($request->status, function($q) use ($request) {
                 $q->byStatus($request->status);

@@ -159,48 +159,66 @@
         {{-- Upload Dokumen --}}
         <div class="form-card">
             <h4>Dokumen Sidang</h4>
-            <div class="form-group {{ $hasNeedsRevision ? 'group-revision' : '' }}">
-                <label>
-                    Draft Final Tugas Akhir
-                    @if($hasNeedsRevision)
-                        <span class="badge-revision">Perlu Revisi</span>
+            @php
+                $labels = [
+                    'ukt_semester_8_file'          => '1. Bebas biaya pendidikan (UKT Semester 8) *',
+                    'bebas_perpustakaan_file'      => '2. Bebas peminjaman buku perpustakaan *',
+                    'persetujuan_dospem_file'      => '3. Formulir persetujuan Dosen Pembimbing TA *',
+                    'lembar_konsultasi_file'       => '4. Lembar Konsultasi TA (min. 8x konsultasi) *',
+                    'transkrip_nilai_file'         => '5. Transkrip Nilai Sementara USH (sudah disahkan) *',
+                    'turnitin_file'                => '6. Hasil Turnitin/plagiarism (maksimal 25%) *',
+                    'sertifikat_pkkmb_file'        => '7. Sertifikat PKKMB *',
+                    'final_draft_file'             => '8. Dokumen/Makalah TA *',
+                    'dokumen_pendukung_prodi_file' => '9. Dokumen pendukung Prodi (jika ada)'
+                ];
+            @endphp
+
+            @foreach($defenseDocsKeys as $inputName => $docTitle)
+                @php
+                    $docModel = $existingDocs[$inputName] ?? null;
+                    $docNeedsRevision = $docModel && in_array($docModel->review_status, ['needs_revision', 'rejected']);
+                @endphp
+                <div class="form-group {{ $docNeedsRevision ? 'group-revision' : '' }}" style="margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
+                    <label>
+                        {{ $labels[$inputName] }}
+                        @if($docNeedsRevision)
+                            <span class="badge-revision">Perlu Revisi</span>
+                        @endif
+                    </label>
+
+                    {{-- Catatan revisi dari dosen --}}
+                    @if($docNeedsRevision && $docModel?->review_notes)
+                        <div class="revision-note">
+                            <i class="bi bi-chat-left-text-fill"></i>
+                            <span>{{ $docModel->review_notes }}</span>
+                        </div>
                     @endif
-                </label>
 
-                {{-- Catatan revisi dari dosen --}}
-                @if($hasNeedsRevision && $existingDraft?->review_notes)
-                    <div class="revision-note">
-                        <i class="bi bi-chat-left-text-fill"></i>
-                        <span>{{ $existingDraft->review_notes }}</span>
-                    </div>
-                @endif
-
-                @if($existingDraft)
-                    <div class="existing-file {{ $hasNeedsRevision ? 'existing-file-revision' : '' }}">
-                        <i class="bi bi-file-earmark-{{ $hasNeedsRevision ? 'x' : 'check' }}"></i>
-                        <span>File saat ini tersimpan —</span>
-                        <a href="{{ asset('storage/' . ltrim($existingDraft->file_path, '/')) }}"
-                           target="_blank">Lihat File</a>
-                        <span class="file-version">v{{ $existingDraft->version }}</span>
-                    </div>
-                @endif
-
-                <input type="file" name="final_draft_file" class="form-control"
-                       accept=".pdf,.jpg,.jpeg,.png"
-                       {{ $hasNeedsRevision ? 'required' : '' }}>
-                <small>
-                    @if($hasNeedsRevision)
-                        <span style="color: #E65100; font-weight: 700;">
-                            <i class="bi bi-exclamation-circle"></i> Wajib upload ulang
-                        </span>
-                    @elseif($existingDraft)
-                        Kosongkan jika tidak ingin mengganti file lama
-                    @else
-                        File belum ada, harap upload
+                    @if($docModel)
+                        <div class="existing-file {{ $docNeedsRevision ? 'existing-file-revision' : '' }}">
+                            <i class="bi bi-file-earmark-{{ $docNeedsRevision ? 'x' : 'check' }}"></i>
+                            <span>File saat ini tersimpan —</span>
+                            <a href="{{ asset('storage/' . ltrim($docModel->file_path, '/')) }}"
+                               target="_blank">Lihat File</a>
+                            <span class="file-version">v{{ $docModel->version }}</span>
+                        </div>
                     @endif
-                </small>
-                @error('final_draft_file')<span class="error">{{ $message }}</span>@enderror
-            </div>
+
+                    <input type="file" name="{{ $inputName }}" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                    <small>
+                        @if($docNeedsRevision)
+                            <span style="color: #E65100; font-weight: 700;">
+                                <i class="bi bi-exclamation-circle"></i> Wajib upload ulang
+                            </span>
+                        @elseif($docModel)
+                            Kosongkan jika tidak ingin mengganti file lama
+                        @else
+                            File belum ada, harap upload
+                        @endif
+                    </small>
+                    @error($inputName)<span class="error">{{ $message }}</span>@enderror
+                </div>
+            @endforeach
         </div>
 
         <div class="form-actions">
