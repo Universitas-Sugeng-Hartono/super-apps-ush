@@ -16,7 +16,7 @@
         </div>
     @endif
 
-    <form action="{{ route('student.final-project.proposal.store') }}" method="POST" enctype="multipart/form-data">
+    <form id="registrationForm" action="{{ route('student.final-project.proposal.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         
         <div class="form-card">
@@ -79,7 +79,7 @@
         <div class="form-card">
             <h4>Upload Dokumen Sempro</h4>
             <p style="margin-top: -10px; font-size: 13px; color: #666;">
-                Format file: PDF/JPG/PNG. Maksimal ukuran file: 10MB per dokumen.
+                Format file: PDF/JPG/PNG. Maksimal ukuran file: 2MB per dokumen.
             </p>
 
             <div class="form-group">
@@ -127,10 +127,24 @@
 
         <div class="form-actions">
             <a href="{{ route('student.final-project.index') }}" class="btn-secondary">Batal</a>
-            <button type="submit" class="btn-primary">Submit Pendaftaran</button>
+            <button type="submit" class="btn-primary" id="submitBtn">Submit Pendaftaran</button>
         </div>
     </form>
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('registrationForm').addEventListener('submit', function() {
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mengunggah Dokumen... Mohon Tunggu';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.opacity = '0.8';
+        }
+    });
+</script>
+@endpush
 
 @push('css')
 <style>

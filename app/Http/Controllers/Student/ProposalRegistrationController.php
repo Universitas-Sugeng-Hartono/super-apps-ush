@@ -74,13 +74,13 @@ class ProposalRegistrationController extends Controller
         }
 
         $request->validate([
-            'proposal_file'                => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'eligibility_form_file'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'guidance_form_file'           => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'seminar_approval_form_file'   => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'seminar_attendance_form_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'krs_file'                     => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'transcript_file'              => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'proposal_file'                => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'eligibility_form_file'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'guidance_form_file'           => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'seminar_approval_form_file'   => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'seminar_attendance_form_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'krs_file'                     => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'transcript_file'              => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         try {
@@ -219,7 +219,7 @@ public function update(Request $request, $id)
             // Skip validasi untuk dokumen yang sudah approved
             if ($doc && $doc->review_status === 'approved') continue;
 
-            $validationRules[$field] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240';
+            $validationRules[$field] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048';
         }
 
         if (!empty($validationRules)) {

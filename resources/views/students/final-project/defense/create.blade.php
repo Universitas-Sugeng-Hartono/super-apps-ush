@@ -16,7 +16,7 @@
         </div>
     @endif
 
-    <form action="{{ route('student.final-project.defense.store') }}" method="POST" enctype="multipart/form-data">
+    <form id="registrationForm" action="{{ route('student.final-project.defense.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         
         <div class="form-card">
@@ -130,6 +130,9 @@
 
         <div class="form-card">
             <h4>Upload Dokumen</h4>
+            <p style="margin-top: -10px; font-size: 13px; color: #666; margin-bottom: 20px;">
+                Format file: PDF/JPG/PNG. Maksimal ukuran file: 2MB per dokumen.
+            </p>
 
             <div class="form-group">
                 <label for="ukt_semester_8_file">1. Bebas biaya pendidikan (UKT Semester 8) *</label>
@@ -188,10 +191,24 @@
 
         <div class="form-actions">
             <a href="{{ route('student.final-project.index') }}" class="btn-secondary">Batal</a>
-            <button type="submit" class="btn-primary">Submit Pendaftaran Sidang</button>
+            <button type="submit" class="btn-primary" id="submitBtn">Submit Pendaftaran Sidang</button>
         </div>
     </form>
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('registrationForm').addEventListener('submit', function() {
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mengunggah Dokumen... Mohon Tunggu';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.opacity = '0.8';
+        }
+    });
+</script>
+@endpush
 
 @push('css')
 <style>
