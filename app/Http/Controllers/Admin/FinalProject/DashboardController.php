@@ -25,14 +25,14 @@ class DashboardController extends Controller
         $manageAll = $this->canManageAll();
 
         $finalProjects = FinalProject::with(['student', 'proposal', 'defense', 'guidanceLogs'])
-            ->when(!$manageAll, fn ($q) => $q->bySupervisor($lecturerId))
-            ->when($request->status, function($q) use ($request) {
+            ->when(!$manageAll, fn($q) => $q->bySupervisor($lecturerId))
+            ->when($request->status, function ($q) use ($request) {
                 $q->byStatus($request->status);
             })
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        $statsQuery = FinalProject::query()->when(!$manageAll, fn ($q) => $q->bySupervisor($lecturerId));
+        $statsQuery = FinalProject::query()->when(!$manageAll, fn($q) => $q->bySupervisor($lecturerId));
         $stats = [
             'total' => (clone $statsQuery)->count(),
             'proposal' => (clone $statsQuery)->byStatus('proposal')->count(),
@@ -42,11 +42,11 @@ class DashboardController extends Controller
         ];
 
         $pendingProposals = FinalProjectProposal::when(!$manageAll, function ($q) use ($lecturerId) {
-            $q->whereHas('finalProject', fn ($qq) => $qq->bySupervisor($lecturerId));
+            $q->whereHas('finalProject', fn($qq) => $qq->bySupervisor($lecturerId));
         })->pending()->count();
 
         $pendingDefenses = FinalProjectDefense::when(!$manageAll, function ($q) use ($lecturerId) {
-            $q->whereHas('finalProject', fn ($qq) => $qq->bySupervisor($lecturerId));
+            $q->whereHas('finalProject', fn($qq) => $qq->bySupervisor($lecturerId));
         })->pending()->count();
 
         $pendingGuidance = FinalProjectGuidanceLog::when(!$manageAll, function ($q) use ($lecturerId) {
@@ -54,7 +54,7 @@ class DashboardController extends Controller
         })->pending()->count();
 
         $pendingDocuments = FinalProjectDocument::when(!$manageAll, function ($q) use ($lecturerId) {
-            $q->whereHas('finalProject', fn ($qq) => $qq->bySupervisor($lecturerId));
+            $q->whereHas('finalProject', fn($qq) => $qq->bySupervisor($lecturerId));
         })->pendingReview()->count();
 
         // Pending titles (all admins can see)
@@ -77,16 +77,16 @@ class DashboardController extends Controller
     {
         $lecturerId = auth()->id();
         $finalProject = FinalProject::with([
-            'student', 
-            'supervisor1', 
-            'supervisor2', 
-            'proposal', 
+            'student',
+            'supervisor1',
+            'supervisor2',
+            'proposal',
             'defense',
-            'guidanceLogs' => function($q) {
+            'guidanceLogs' => function ($q) {
                 $q->orderBy('guidance_date', 'desc');
             },
             'documents'
-        ])->when(!$this->canManageAll(), fn ($q) => $q->bySupervisor($lecturerId))->findOrFail($id);
+        ])->when(!$this->canManageAll(), fn($q) => $q->bySupervisor($lecturerId))->findOrFail($id);
 
         return view('admin.final-project.show', compact('finalProject'));
     }

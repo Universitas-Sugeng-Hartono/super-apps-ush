@@ -187,8 +187,12 @@ public function update(Request $request, $id)
         ->exists();
 
     if ($proposal->status !== 'rejected' && !$hasNeedsRevision) {
+        $message = $proposal->status === 'pending' 
+            ? 'Pendaftaran seminar proposal Anda sedang menunggu persetujuan.' 
+            : 'Proposal tidak bisa diedit.';
+
         return redirect()->route('student.final-project.proposal.show', $proposal->id)
-            ->with('error', 'Proposal tidak bisa diedit.');
+            ->with('info', $message);
     }
 
     // Cek apakah semua dokumen sudah approved

@@ -24,16 +24,6 @@ class DocumentReviewController extends Controller
         $availableProdis = \App\Models\User::whereNotNull('program_studi')->distinct()->pluck('program_studi');
 
         $documents = FinalProjectDocument::with(['finalProject.student', 'uploader'])
-            ->where(function ($q) {
-                $q->whereNotIn('document_type', ['proposal', 'presentation'])
-                  ->where(function ($sub) {
-                      $sub->where('document_type', '!=', 'final')
-                          ->orWhere(function ($finalQ) {
-                              $finalQ->where('document_type', 'final')
-                                     ->where('title', '!=', 'Draft Final TA');
-                          });
-                  });
-            })
             ->when($prodiFilter, function ($q) use ($prodiFilter) {
                 $q->whereHas('finalProject.student', function ($sq) use ($prodiFilter) {
                     $sq->where('program_studi', $prodiFilter);

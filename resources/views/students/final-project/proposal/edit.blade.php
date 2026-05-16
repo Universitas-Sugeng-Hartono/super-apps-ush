@@ -73,7 +73,7 @@
         </div>
     @endif
 
-    <form action="{{ route('student.final-project.proposal.update', $proposal->id) }}"
+    <form id="editForm" action="{{ route('student.final-project.proposal.update', $proposal->id) }}"
           method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
@@ -229,7 +229,7 @@
         <div class="form-actions">
             <a href="{{ route('student.final-project.proposal.show', $proposal->id) }}"
                class="btn-secondary">Batal</a>
-            <button type="submit" class="btn-primary">
+            <button type="submit" class="btn-primary" id="submitBtn">
                 @if($proposal->status === 'rejected')
                     Ajukan Ulang
                 @else
@@ -239,6 +239,20 @@
         </div>
     </form>
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('editForm').addEventListener('submit', function() {
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mengunggah Dokumen... Mohon Tunggu';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.opacity = '0.8';
+        }
+    });
+</script>
+@endpush
 
 @push('css')
 <style>
