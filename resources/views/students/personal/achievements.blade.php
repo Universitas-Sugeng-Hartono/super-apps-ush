@@ -109,7 +109,6 @@ break;
     {{-- MAIN CONTENT AREA --}}
     <div class="main-content-layout">
 
-        @if ($student->is_edited)
         {{-- EXCLUSIVE INPUT SECTION --}}
         <div class="exclusive-card input-section" id="skpiFormSection">
             <div class="exclusive-card-header">
@@ -231,13 +230,7 @@ break;
                 </div>
             </form>
         </div>
-        @else
-        <div class="locked-profile-card">
-            <div class="locked-icon"><i class="bi bi-shield-lock-fill"></i></div>
-            <h3>Data Profil Terkunci</h3>
-            <p>Menu input dinonaktifkan sementara karena data Anda sedang dalam proses verifikasi atau telah dikunci oleh bagian Akademik. Hubungi Dosen Pembimbing untuk instruksi lebih lanjut.</p>
-        </div>
-        @endif
+        
 
         {{-- HISTORY TABLE SECTION --}}
         <div class="exclusive-card table-section">
@@ -260,7 +253,7 @@ break;
                             <th>POIN</th>
                             <th>STATUS</th>
                             <th>BUKTI</th>
-                            @if ($student->is_edited)<th>AKSI</th>@endif
+                            <th>AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -319,7 +312,6 @@ break;
                                 <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            @if ($student->is_edited)
                             <td>
                                 <form action="{{ route('student.personal.achievement.delete', $achievement->id) }}" method="POST" onsubmit="return confirm('Hapus data prestasi ini?')">
                                     @csrf
@@ -327,7 +319,6 @@ break;
                                     <button type="submit" class="btn-table-action delete"><i class="bi bi-trash"></i></button>
                                 </form>
                             </td>
-                            @endif
                         </tr>
                         @empty
                         <tr>

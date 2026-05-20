@@ -1148,8 +1148,11 @@
             }
         }
 
-        waBtn.addEventListener('mousedown',  onPointerDown);
-        waBtn.addEventListener('touchstart', onPointerDown, { passive: true });
+        // Bind mousedown and touchstart only to the circle button (btnCircle)
+        // to prevent touch events on the open tooltip (like clicking the WA chat link)
+        // from triggering drag start and closing/hijacking the link on mobile touch devices.
+        btnCircle.addEventListener('mousedown',  onPointerDown);
+        btnCircle.addEventListener('touchstart', onPointerDown, { passive: true });
 
         /* ── Toggle Tooltip on Click / Tap ── */
         btnCircle.addEventListener('click', function (e) {
