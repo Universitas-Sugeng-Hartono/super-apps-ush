@@ -434,6 +434,18 @@ class StudentsController extends Controller
             'certificate.max'        => 'Ukuran file maksimal 5 MB.',
         ]);
 
+        // Cek duplikasi input prestasi (kegiatan, tingkat, dan peran yang sama)
+        $isDuplicate = StudentAchievement::where('student_id', $student->id)
+            ->where('category', $request->category)
+            ->where('activity_type', $request->activity_type)
+            ->where('level', $request->level)
+            ->where('participation_role', $request->participation_role)
+            ->exists();
+
+        if ($isDuplicate) {
+            return back()->withInput()->with('error', 'Gagal! Anda sudah pernah menginput data prestasi dengan jenis kegiatan, tingkat, dan peran yang sama.');
+        }
+
         try {
             $skpPoints = SkpPointCalculator::calculate(
                 $request->category,
@@ -512,6 +524,19 @@ class StudentsController extends Controller
             'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
             'certificate.max'        => 'Ukuran file maksimal 5 MB.',
         ]);
+
+        // Cek duplikasi input prestasi (kegiatan, tingkat, dan peran yang sama selain data ini sendiri)
+        $isDuplicate = StudentAchievement::where('student_id', $achievement->student_id)
+            ->where('category', $request->category)
+            ->where('activity_type', $request->activity_type)
+            ->where('level', $request->level)
+            ->where('participation_role', $request->participation_role)
+            ->where('id', '!=', $id)
+            ->exists();
+
+        if ($isDuplicate) {
+            return back()->withInput()->with('error', 'Gagal! Anda sudah pernah menginput data prestasi dengan jenis kegiatan, tingkat, dan peran yang sama.');
+        }
 
         try {
             $skpPoints = SkpPointCalculator::calculate(

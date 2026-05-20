@@ -1615,6 +1615,20 @@ break;
                     e.preventDefault();
                     $actSearch.focus();
                     renderActivityResults($actSearch.value);
+                    return;
+                }
+
+                // Prevent double clicks (disable submit button and show loading state)
+                const submitBtn = this.querySelector('.btn-exclusive-submit');
+                if (submitBtn) {
+                    if (submitBtn.disabled) {
+                        e.preventDefault();
+                        return;
+                    }
+                    setTimeout(() => {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...';
+                    }, 0);
                 }
             });
 

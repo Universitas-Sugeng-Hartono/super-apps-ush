@@ -372,7 +372,6 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary btn-add-point" data-target="#repeater-sikap" data-name="cp_sikap" data-name-en="cp_sikap_en">
                                     <i class="bi bi-plus-circle"></i> Tambah Poin Sikap
                                 </button>
-                                <div class="mt-2" style="font-size: 13px; color: #64748B;">Placeholder Word: <code>${CP_SIKAP}</code> dan <code>${CP_SIKAP_EN}</code></div>
                             </div>
 
                             {{-- Kategori 2: Kemampuan Kerja & Pengetahuan --}}
@@ -408,7 +407,6 @@
                                 <button type="button" class="btn btn-sm btn-outline-success btn-add-point" data-target="#repeater-pengetahuan" data-name="cp_pengetahuan" data-name-en="cp_pengetahuan_en">
                                     <i class="bi bi-plus-circle"></i> Tambah Poin Kemampuan Kerja
                                 </button>
-                                <div class="mt-2" style="font-size: 13px; color: #64748B;">Placeholder Word: <code>${CP_PENGETAHUAN}</code> dan <code>${CP_PENGETAHUAN_EN}</code></div>
                             </div>
                         </div>
 

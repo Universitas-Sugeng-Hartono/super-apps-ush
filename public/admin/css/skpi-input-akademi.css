@@ -746,6 +746,12 @@
     flex-direction: column;
 }
 
+/* Fix btn-remove-point hover overriding inline background */
+.btn-remove-point:hover {
+    background-color: #EF4444 !important;
+    color: white !important;
+}
+
 /* =============================================================
    RESPONSIVE
    ============================================================= */
