@@ -892,84 +892,152 @@
                         @method('PUT')
                         <input type="hidden" name="form_type" value="text">
 
+                        <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-person-badge me-2"></i>Data Identitas Mahasiswa</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label">
-                                        <i class="bi bi-people me-1"></i>
-                                        Nama Orangtua
-                                    </label>
-                                    <input type="text" name="nama_orangtua" class="form-control"
-                                        value="{{ old('nama_orangtua', $student->nama_orangtua) }}"
-                                        @readonly(!$student->is_edited)
-                                        placeholder="Masukkan nama orangtua">
+                                    <label class="form-label"><i class="bi bi-person-fill me-1"></i>Nama Lengkap (Sesuai Ijazah Terakhir)</label>
+                                    <input type="text" name="nama_lengkap" class="form-control" value="{{ old('nama_lengkap', $student->nama_lengkap) }}" @readonly(!$student->is_edited) placeholder="Masukkan Nama Lengkap">
                                 </div>
                             </div>
-
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label">
-                                        <i class="bi bi-gender-ambiguous me-1"></i>
-                                        Jenis Kelamin
-                                    </label>
+                                    <label class="form-label"><i class="bi bi-card-text me-1"></i>NIM</label>
+                                    <input type="text" class="form-control" value="{{ $student->nim }}" readonly style="background-color: #f8f9fa;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-mortarboard me-1"></i>Program Studi</label>
+                                    <input type="text" name="program_studi" class="form-control" value="{{ old('program_studi', $student->program_studi) }}" @readonly(!$student->is_edited) placeholder="Contoh: Teknik Informatika">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-calendar-event me-1"></i>Angkatan</label>
+                                    <input type="number" name="angkatan" class="form-control" value="{{ old('angkatan', $student->angkatan) }}" @readonly(!$student->is_edited) placeholder="Contoh: 2022">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-building me-1"></i>Fakultas</label>
+                                    <input type="text" name="fakultas" class="form-control" value="{{ old('fakultas', $student->fakultas) }}" @readonly(!$student->is_edited) placeholder="Contoh: FST">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>NIK</label>
+                                    <input type="text" name="nik" class="form-control" value="{{ old('nik', $student->nik) }}" @readonly(!$student->is_edited) placeholder="Masukkan NIK">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>NISN</label>
+                                    <input type="text" name="nisn" class="form-control" value="{{ old('nisn', $student->nisn) }}" @readonly(!$student->is_edited) placeholder="Masukkan NISN">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-gender-ambiguous me-1"></i>Jenis Kelamin</label>
                                     <select name="jenis_kelamin" class="form-control" @disabled(!$student->is_edited)>
                                         <option value="L" @selected($student->jenis_kelamin == 'L')>Laki-laki</option>
                                         <option value="P" @selected($student->jenis_kelamin == 'P')>Perempuan</option>
                                     </select>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-geo-alt me-1"></i>Tempat Lahir</label>
+                                    <input type="text" name="tempat_lahir" class="form-control" value="{{ old('tempat_lahir', $student->tempat_lahir) }}" @readonly(!$student->is_edited) placeholder="Masukkan tempat lahir">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-calendar me-1"></i>Tanggal Lahir</label>
+                                    <input type="date" name="tanggal_lahir" class="form-control" value="{{ old('tanggal_lahir', $student->tanggal_lahir ? \Carbon\Carbon::parse($student->tanggal_lahir)->format('Y-m-d') : '') }}" @readonly(!$student->is_edited)>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-award me-1"></i>Gelar Lulusan (Otomatis dari Prodi)</label>
+                                    <input type="text" class="form-control" style="background-color: #f8f9fa;" value="{{ $gelarFromProfile ?? 'Belum diatur oleh Prodi' }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-people me-2"></i>Data Orang Tua</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-person me-1"></i>Nama Orangtua / Ayah</label>
+                                    <input type="text" name="nama_orangtua" class="form-control" value="{{ old('nama_orangtua', $student->nama_orangtua) }}" @readonly(!$student->is_edited) placeholder="Masukkan nama orangtua">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-person-hearts me-1"></i>Nama Ibu Kandung</label>
+                                    <input type="text" name="nama_ibu_kandung" class="form-control" value="{{ old('nama_ibu_kandung', $student->nama_ibu_kandung) }}" @readonly(!$student->is_edited) placeholder="Masukkan nama ibu kandung">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-telephone-fill me-1"></i>No. HP Orang Tua</label>
+                                    <input type="text" name="no_telepon_orangtua" class="form-control" value="{{ old('no_telepon_orangtua', $student->no_telepon_orangtua) }}" @readonly(!$student->is_edited) placeholder="08xxxxxxxxxx">
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-book me-2"></i>Data Akademik</h6>
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label">
-                                        <i class="bi bi-calendar me-1"></i>
-                                        Tanggal Lahir
-                                    </label>
-                                    <input type="date" name="tanggal_lahir" class="form-control"
-                                        value="{{ $student->tanggal_lahir }}" @readonly(!$student->is_edited)>
+                                    <label class="form-label"><i class="bi bi-trophy me-1"></i>IPK (Indeks Prestasi Kumulatif)</label>
+                                    <input type="number" name="ipk" class="form-control" value="{{ old('ipk', $student->ipk) }}" @readonly(!$student->is_edited) step="0.01" min="0" max="4" placeholder="contoh: 3.75">
+                                    <small class="text-muted">Skala 0.00 - 4.00</small>
                                 </div>
                             </div>
-
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-journal-bookmark-fill me-1"></i>SKS (Satuan Kredit Semester)</label>
+                                    <input type="number" name="sks" class="form-control" value="{{ old('sks', $student->sks) }}" @readonly(!$student->is_edited) min="0" max="200" placeholder="contoh: 120">
+                                    <small class="text-muted">Total SKS yang telah ditempuh</small>
+                                </div>
+                            </div>
                         </div>
 
-                        @if ($student->is_edited)
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">
-                                            <i class="bi bi-key me-1"></i>
-                                            Password Baru
-                                        </label>
-                                        <input type="password" name="password" id="password" class="form-control"
-                                            minlength="8" placeholder="Minimal 8 karakter">
-                                        <small class="text-muted">Kosongkan jika tidak ingin mengubah password</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">
-                                            <i class="bi bi-key-fill me-1"></i>
-                                            Konfirmasi Password
-                                        </label>
-                                        <input type="password" name="password_confirmation" id="password_confirmation" class="form-control"
-                                            minlength="8" placeholder="Ulangi password baru">
-                                    </div>
+                        <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-house-door me-2"></i>Kontak & Tempat Tinggal</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-phone me-1"></i>No. HP (WhatsApp)</label>
+                                    <input type="text" name="no_telepon" class="form-control" value="{{ old('no_telepon', $student->no_telepon) }}" @readonly(!$student->is_edited) placeholder="08xxxxxxxxxx">
                                 </div>
                             </div>
-                        @endif
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label"><i class="bi bi-envelope me-1"></i>Email</label>
+                                    <input type="email" name="email" class="form-control" value="{{ old('email', $student->email) }}" @readonly(!$student->is_edited) placeholder="email@example.com">
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="form-group">
-                            <label class="form-label">
-                                <i class="bi bi-geo-alt me-1"></i>
-                                Alamat Lengkap
-                            </label>
-                            <textarea name="alamat" rows="3" class="form-control" @readonly(!$student->is_edited)
-                                placeholder="Masukkan alamat lengkap">{{ old('alamat', $student->alamat) }}</textarea>
+                            <label class="form-label"><i class="bi bi-geo-alt-fill me-1"></i>Alamat Lengkap</label>
+                            <textarea name="alamat" rows="3" class="form-control" @readonly(!$student->is_edited) placeholder="Masukkan alamat lengkap">{{ old('alamat', $student->alamat) }}</textarea>
                         </div>
 
-                        {{-- Lokasi Maps --}}
                         @if ($student->is_edited)
                             <div class="form-group">
                                 <label class="form-label">
@@ -998,76 +1066,24 @@
                             @endif
                         @endif
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        <i class="bi bi-phone me-1"></i>
-                                        No. HP
-                                    </label>
-                                    <input type="text" name="no_telepon" class="form-control"
-                                        value="{{ old('no_telepon', $student->no_telepon) }}"
-                                        @readonly(!$student->is_edited)
-                                        placeholder="08xxxxxxxxxx">
+                        @if ($student->is_edited)
+                            <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-shield-lock me-2"></i>Keamanan Akun</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label"><i class="bi bi-key me-1"></i>Password Baru</label>
+                                        <input type="password" name="password" id="password" class="form-control" minlength="8" placeholder="Minimal 8 karakter">
+                                        <small class="text-muted">Kosongkan jika tidak ingin mengubah password</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label"><i class="bi bi-key-fill me-1"></i>Konfirmasi Password</label>
+                                        <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" minlength="8" placeholder="Ulangi password baru">
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        <i class="bi bi-phone-fill me-1"></i>
-                                        No. HP Orang Tua
-                                    </label>
-                                    <input type="text" name="no_telepon_orangtua" class="form-control"
-                                        value="{{ old('no_telepon_orangtua', $student->no_telepon_orangtua) }}"
-                                        @readonly(!$student->is_edited)
-                                        placeholder="08xxxxxxxxxx">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="bi bi-envelope me-1"></i>
-                                Email
-                            </label>
-                            <input type="email" name="email" class="form-control"
-                                value="{{ old('email', $student->email) }}"
-                                @readonly(!$student->is_edited)
-                                placeholder="email@example.com">
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        <i class="bi bi-trophy me-1"></i>
-                                        IPK (Indeks Prestasi Kumulatif)
-                                    </label>
-                                    <input type="number" name="ipk" class="form-control"
-                                        value="{{ old('ipk', $student->ipk) }}"
-                                        @readonly(!$student->is_edited)
-                                        step="0.01" min="0" max="4"
-                                        placeholder="contoh: 3.75">
-                                    <small class="text-muted">Skala 0.00 - 4.00</small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        <i class="bi bi-book me-1"></i>
-                                        SKS (Satuan Kredit Semester)
-                                    </label>
-                                    <input type="number" name="sks" class="form-control"
-                                        value="{{ old('sks', $student->sks) }}"
-                                        @readonly(!$student->is_edited)
-                                        min="0" max="200"
-                                        placeholder="contoh: 120">
-                                    <small class="text-muted">Total SKS yang telah ditempuh</small>
-                                </div>
-                            </div>
-                        </div>
+                        @endif
 
                         @if ($student->is_edited)
                             <div class="text-end mt-4">
@@ -1086,7 +1102,9 @@
                                 </div>
                             </div>
                         @endif
-                    </form>
+                    
+
+                        </form>
                 </div>
             </div>
 

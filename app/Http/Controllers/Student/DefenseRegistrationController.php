@@ -67,25 +67,10 @@ class DefenseRegistrationController extends Controller
             'transkrip_nilai_file'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'turnitin_file'                => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'sertifikat_pkkmb_file'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'dokumen_pendukung_prodi_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'nik'               => ['required', 'digits:16'],
-            'nisn'              => ['required', 'string', 'max:20'],
-            'tempat_lahir'      => ['required', 'string', 'max:100'],
-            'tanggal_lahir'     => ['required', 'date'],
-            'nama_ibu_kandung'  => ['required', 'string', 'max:200'],
-            'no_telepon'        => ['required', 'string', 'max:15'],
         ]);
 
         try {
             $student = Student::findOrFail($studentId);
-            $student->update([
-                'nik'              => $request->nik,
-                'nisn'             => $request->nisn,
-                'tempat_lahir'     => $request->tempat_lahir,
-                'tanggal_lahir'    => $request->tanggal_lahir,
-                'nama_ibu_kandung' => $request->nama_ibu_kandung,
-                'no_telepon'       => $request->no_telepon,
-            ]);
 
             $defense = FinalProjectDefense::create([
                 'final_project_id' => $finalProject->id,
@@ -250,25 +235,10 @@ class DefenseRegistrationController extends Controller
             'transkrip_nilai_file'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'turnitin_file'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'sertifikat_pkkmb_file'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'dokumen_pendukung_prodi_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'nik'               => ['required', 'digits:16'],
-            'nisn'              => ['required', 'string', 'max:20'],
-            'tempat_lahir'      => ['required', 'string', 'max:100'],
-            'tanggal_lahir'     => ['required', 'date'],
-            'nama_ibu_kandung'  => ['required', 'string', 'max:200'],
-            'no_telepon'        => ['required', 'string', 'max:15'],
         ]);
 
         try {
             $student = Student::findOrFail($studentId);
-            $student->update([
-                'nik'              => $request->nik,
-                'nisn'             => $request->nisn,
-                'tempat_lahir'     => $request->tempat_lahir,
-                'tanggal_lahir'    => $request->tanggal_lahir,
-                'nama_ibu_kandung' => $request->nama_ibu_kandung,
-                'no_telepon'       => $request->no_telepon,
-            ]);
 
             $defenseDocs = [
                 'final_draft_file'             => 'Draft Final TA',

@@ -38,63 +38,6 @@
         </div>
 
         <div class="form-card">
-            <h4>Data Pribadi</h4>
-            <p class="hint">
-                Lengkapi biodata berikut sesuai data resmi. Data ini akan disimpan ke profil Anda.
-            </p>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="nik">NIK (sesuai KTP - 16 digit) *</label>
-                    <input id="nik" type="text" name="nik" class="form-control"
-                        value="{{ old('nik', auth()->guard('student')->user()->nik ?? '') }}"
-                        inputmode="numeric" maxlength="16" placeholder="Contoh: 3574xxxxxxxxxxxx" required>
-                    @error('nik')<span class="error">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group">
-                    <label for="nisn">NISN *</label>
-                    <input id="nisn" type="text" name="nisn" class="form-control"
-                        value="{{ old('nisn', auth()->guard('student')->user()->nisn ?? '') }}"
-                        inputmode="numeric" maxlength="20" placeholder="Masukkan NISN" required>
-                    @error('nisn')<span class="error">{{ $message }}</span>@enderror
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="tempatLahir">Tempat Lahir *</label>
-                    <input id="tempatLahir" type="text" name="tempat_lahir" class="form-control"
-                        value="{{ old('tempat_lahir', auth()->guard('student')->user()->tempat_lahir ?? '') }}"
-                        placeholder="Contoh: Surabaya" required>
-                    @error('tempat_lahir')<span class="error">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group">
-                    <label for="tanggalLahir">Tanggal Lahir *</label>
-                    <input id="tanggalLahir" type="date" name="tanggal_lahir" class="form-control"
-                        value="{{ old('tanggal_lahir', optional(auth()->guard('student')->user()->tanggal_lahir)->format('Y-m-d')) }}"
-                        required>
-                    @error('tanggal_lahir')<span class="error">{{ $message }}</span>@enderror
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="namaIbu">Nama Ibu Kandung *</label>
-                    <input id="namaIbu" type="text" name="nama_ibu_kandung" class="form-control"
-                        value="{{ old('nama_ibu_kandung', auth()->guard('student')->user()->nama_ibu_kandung ?? '') }}"
-                        placeholder="Masukkan nama ibu kandung" required>
-                    @error('nama_ibu_kandung')<span class="error">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group">
-                    <label for="noTelepon">No. Telp Aktif *</label>
-                    <input id="noTelepon" type="text" name="no_telepon" class="form-control"
-                        value="{{ old('no_telepon', auth()->guard('student')->user()->no_telepon ?? '') }}"
-                        inputmode="tel" placeholder="Contoh: 08xxxxxxxxxx" required>
-                    @error('no_telepon')<span class="error">{{ $message }}</span>@enderror
-                </div>
-            </div>
-        </div>
-
-        <div class="form-card">
             <h4>Informasi Tugas Akhir</h4>
             <div class="form-group">
                 <label for="judulTa">Judul Tugas Akhir (Bahasa Indonesia)</label>

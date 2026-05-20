@@ -49,24 +49,28 @@ class SkpPointCalculator
                 'types' => [
                     'entrepreneurship_day' => [
                         'label' => 'Entepreunership Day',
+                        'bukti' => 'Sert/SK',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta' => 'Peserta'],
                         'points' => ['-' => ['Peserta' => 25]]
                     ],
                     'pkkmb' => [
                         'label' => 'Universitas (PKKMB)',
+                        'bukti' => 'Sert/SK',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta' => 'Peserta'],
                         'points' => ['-' => ['Peserta' => 20]]
                     ],
                     'ujian_kompetensi' => [
                         'label' => 'TOEFL/TDA/Ujian Kompetensi',
+                        'bukti' => 'Sert/SK',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta' => 'Peserta'],
                         'points' => ['-' => ['Peserta' => 20]]
                     ],
                     'kuliah_pakar' => [
                         'label' => 'Kuliah pakar',
+                        'bukti' => 'Sert/SK',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta' => 'Peserta'],
                         'points' => ['-' => ['Peserta' => 20]]
@@ -78,6 +82,7 @@ class SkpPointCalculator
                 'types' => [
                     'pengurus_organisasi' => [
                         'label' => 'Pengurus Organisasi',
+                        'bukti' => 'Sertifikat/ SK dan Surat Tugas',
                         'levels' => $levelsStd,
                         'roles' => [
                             'Ketua' => 'Ketua',
@@ -100,14 +105,23 @@ class SkpPointCalculator
                     ],
                     'pelatihan_kepemimpinan' => [
                         'label' => 'Mengikuti Pelatihan Kepemimpinan',
-                        'levels' => ['Lanjut'=>'Lanjut', 'Menengah'=>'Menengah', 'Dasar'=>'Dasar', 'Lainnya'=>'Lainnya'],
+                        'bukti' => 'Sertifikat/ SK dan Surat Tugas',
+                        'levels' => ['Lanjut'=>'Lanjut', 'Menengah'=>'Menengah', 'Dasar'=>'Dasar'],
                         'roles' => ['Peserta' => 'Peserta'],
                         'points' => [
-                            'Lanjut' => ['Peserta'=>45], 'Menengah' => ['Peserta'=>40], 'Dasar' => ['Peserta'=>35], 'Lainnya' => ['Peserta'=>25]
+                            'Lanjut' => ['Peserta'=>45], 'Menengah' => ['Peserta'=>40], 'Dasar' => ['Peserta'=>35]
                         ]
+                    ],
+                    'latihan_kepemimpinan_lain' => [
+                        'label' => 'Latihan Kepemimpinan Lainnya',
+                        'bukti' => 'Sertifikat/ SK dan Surat Tugas',
+                        'levels' => ['-' => '-'],
+                        'roles' => ['Peserta' => 'Peserta'],
+                        'points' => ['-' => ['Peserta' => 25]]
                     ],
                     'panitia_kegiatan' => [
                         'label' => 'Panitia dalam Suatu Kegiatan Kemahasiswaan',
+                        'bukti' => 'Sertifikat/ SK dan Surat Tugas',
                         'levels' => $levelsStd,
                         'roles' => ['Panitia' => 'Panitia'],
                         'points' => [
@@ -116,12 +130,14 @@ class SkpPointCalculator
                     ],
                     'calon_organisasi_intra' => [
                         'label' => 'Calon Ketua/Anggota Organisasi Intra',
+                        'bukti' => 'Presensi/ Kartu Pemilih',
                         'levels' => ['Universitas'=>'Universitas', 'Fakultas'=>'Fakultas', 'Prodi'=>'Prodi'],
                         'roles' => ['Calon/Anggota' => 'Calon/Anggota'],
                         'points' => ['Universitas' => ['Calon/Anggota'=>35], 'Fakultas' => ['Calon/Anggota'=>30], 'Prodi' => ['Calon/Anggota'=>25]]
                     ],
                     'calon_organisasi_ekstra' => [
                         'label' => 'Calon Ketua/Anggota Organisasi Ekstra Universitas',
+                        'bukti' => 'Presensi/ Kartu Pemilih',
                         'levels' => ['Internasional'=>'Internasional', 'Nasional'=>'Nasional', 'Lokal'=>'Lokal'],
                         'roles' => ['Calon/Anggota' => 'Calon/Anggota'],
                         'points' => ['Internasional' => ['Calon/Anggota'=>45], 'Nasional' => ['Calon/Anggota'=>35], 'Lokal' => ['Calon/Anggota'=>30]]
@@ -132,7 +148,8 @@ class SkpPointCalculator
                 'label' => 'Bidang Penalaran dan Keilmuan',
                 'types' => [
                     'lomba_ilmiah' => [
-                        'label' => 'Memperoleh Prestasi Lomba Karya Ilmiah dsb.',
+                        'label' => 'Memperoleh prestasi dalam Lomba Karya Ilmiah/Lingkungan Hidup/Kreativitas/Inovatif/Pemikiran Kritis/Populer/Enterpreneurs',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => $levelsStd,
                         'roles' => $roleJuara,
                         'points' => [
@@ -145,7 +162,8 @@ class SkpPointCalculator
                         ]
                     ],
                     'ikut_lomba' => [
-                        'label' => 'Mengikuti Kegiatan Lomba (Peserta)',
+                        'label' => 'Mengikuti Kegiatan Lomba',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => $levelsStd, // as extracted
                         'roles' => ['Peserta' => 'Peserta'],
                         'points' => [
@@ -158,7 +176,8 @@ class SkpPointCalculator
                         ]
                     ],
                     'forum_ilmiah' => [
-                        'label' => 'Mengikuti Kegiatan / Forum Ilmiah',
+                        'label' => 'Mengikuti kegiatan/ forum ilmiah (seminar, Lokakarya, workshop, pameran)',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => array_merge($levelsStd, ['Jurusan/Program Studi' => 'Jurusan/Program Studi']), // Jurusan/Program Studi in table
                         'roles' => ['Pembicara'=>'Pembicara', 'Moderator'=>'Moderator', 'Peserta'=>'Peserta'],
                         'points' => [
@@ -172,12 +191,14 @@ class SkpPointCalculator
                     ],
                     'paten' => [
                         'label' => 'Menghasilkan Penemuan Inovasi yang Dipatenkan',
+                        'bukti' => 'Sert/SK/Patent',
                         'levels' => ['-' => '-'],
                         'roles' => ['Penemu/Kreator' => 'Penemu/Kreator'],
                         'points' => ['-' => ['Penemu/Kreator'=> 150]]
                     ],
                     'karya_ilmiah' => [
-                        'label' => 'Karya Ilmiah / Jurnal Dipublikasikan',
+                        'label' => 'Menghasilkan karya ilmiah yang dipublikasikan dalam majalah ilmiah',
+                        'bukti' => 'Fotokopi Karya',
                         'levels' => ['Internasional'=>'Internasional', 'Nasional Akreditasi'=>'Nasional Akreditasi', 'Tidak Terakreditasi'=>'Tidak Terakreditasi'],
                         'roles' => ['Ketua/Penulis Utama'=>'Ketua/Penulis Utama', 'Anggota/Penulis Anggota'=>'Anggota/Penulis Anggota'],
                         'points' => [
@@ -187,7 +208,8 @@ class SkpPointCalculator
                         ]
                     ],
                     'karya_populer' => [
-                        'label' => 'Karya Ilmiah Populer di Media Massa',
+                        'label' => 'Menghasilkan karya populer yg diterbitkan di surat kabar/majalah/ media lainnya',
+                        'bukti' => 'Fotokopi Karya',
                         'levels' => ['Internasional'=>'Internasional', 'Nasional'=>'Nasional', 'Daerah/Regional'=>'Daerah/Regional', 'Universitas'=>'Universitas'],
                         'roles' => ['Ketua'=>'Ketua', 'Anggota'=>'Anggota'],
                         'points' => [
@@ -198,31 +220,36 @@ class SkpPointCalculator
                         ]
                     ],
                     'karya_didanai' => [
-                        'label' => 'Menghasilkan Karya yang Didanai Pihak Lain',
+                        'label' => 'Menghasilkan karya yang didanai oleh pemerintah atau pihak lain',
+                        'bukti' => 'SK/SP',
                         'levels' => ['-' => '-'],
                         'roles' => ['Ketua'=>'Ketua', 'Anggota'=>'Anggota'],
                         'points' => ['-' => ['Ketua'=> 20, 'Anggota'=>10]]
                     ],
                     'berikan_pelatihan' => [
-                        'label' => 'Memberikan Pelatihan Penyusunan Karya Tulis',
+                        'label' => 'Memberikan pelatihan atau bimbingan dalam penyusunan karya tulis',
+                        'bukti' => 'Sertifikat',
                         'levels' => ['-' => '-'],
                         'roles' => ['Pemateri'=>'Pemateri'],
                         'points' => ['-' => ['Pemateri'=> 25]]
                     ],
                     'kuliah_tamu' => [
-                        'label' => 'Mengikuti Kuliah Tamu/Umum',
+                        'label' => 'Mengikuti kuliah tamu/umum',
+                        'bukti' => 'Daftar Hadir/Sertifikat',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta'=>'Peserta'],
                         'points' => ['-' => ['Peserta'=> 10]]
                     ],
                     'penelitian_dosen' => [
-                        'label' => 'Terlibat Dalam Penelitian Dosen',
+                        'label' => 'Terlibat dalam penelitian dosen/pihak lain',
+                        'bukti' => 'SK/SP',
                         'levels' => ['-' => '-'],
                         'roles' => ['Asisten/Anggota'=>'Asisten/Anggota'],
                         'points' => ['-' => ['Asisten/Anggota'=> 20]]
                     ],
                     'pilmapres_debat' => [
-                        'label' => 'Pemilihan Mahasiswa Berprestasi (Pilmapres) / Debat',
+                        'label' => 'Pemilihan Mahasiswa Berprestasi (Pilmapres), Debat Bahasa Inggris',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => $levelsNoJurusan,
                         'roles' => $roleJuara,
                         'points' => [
@@ -234,7 +261,8 @@ class SkpPointCalculator
                         ]
                     ],
                     'pelatihan_softskill' => [
-                        'label' => 'Pelatihan / Pembinaan Softskills',
+                        'label' => 'Pelatihan/ Pembinaan Softskills/ Ketrampilan',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => $levelsSingkat,
                         'roles' => ['Peserta' => 'Peserta'],
                         'points' => [
@@ -247,7 +275,8 @@ class SkpPointCalculator
                 'label' => 'Bidang Minat dan Bakat',
                 'types' => [
                     'prestasi_minat_bakat' => [
-                        'label' => 'Prestasi Minat dan Bakat (Olahraga, Seni, dll)',
+                        'label' => 'Memperoleh prestasi dalam kegiatan minat dan bakat (olahraga, seni, dan kerohanian)',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => $levelsNoJurusan,
                         'roles' => $roleJuara,
                         'points' => [
@@ -259,7 +288,8 @@ class SkpPointCalculator
                         ]
                     ],
                     'ikut_minat_bakat' => [
-                        'label' => 'Mengikuti Kegiatan Minat dan Bakat',
+                        'label' => 'Mengikuti kegiatan minat dan bakat (olahraga, seni, dan kerohanian)',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => $levelsNoJurusan,
                         'roles' => ['Delegasi'=>'Delegasi', 'Peserta Undangan'=>'Peserta Undangan', 'Peserta Biasa'=>'Peserta Biasa'],
                         'points' => [
@@ -271,31 +301,36 @@ class SkpPointCalculator
                         ]
                     ],
                     'pelatih_minat_bakat' => [
-                        'label' => 'Menjadi Pelatih/Pembimbing Kegiatan Minat Bakat',
+                        'label' => 'Menjadi Pelatih/ Pembimbing/ pendamping Kegiatan Minat dan Bakat',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => ['Nasional'=>'Nasional', 'Daerah/Regional'=>'Daerah/Regional', 'Universitas'=>'Universitas', 'Fakultas'=>'Fakultas', 'Lainnya'=>'Lainnya'],
                         'roles' => ['Pelatih/Pembimbing'=>'Pelatih/Pembimbing'],
                         'points' => ['Nasional'=>['Pelatih/Pembimbing'=>100], 'Daerah/Regional'=>['Pelatih/Pembimbing'=>75], 'Universitas'=>['Pelatih/Pembimbing'=>40], 'Fakultas'=>['Pelatih/Pembimbing'=>30], 'Lainnya'=>['Pelatih/Pembimbing'=>10]]
                     ],
                     'pembinaan_khusus' => [
-                        'label' => 'Melaksanakan Pembinaan Khusus Minat Bakat',
+                        'label' => 'Melaksanakan aktivitas pembinaan khusus berkaitan dengan kegiatan minat dan bakat',
+                        'bukti' => 'Sert/Daftar Hadir',
                         'levels' => ['-' => '-'],
                         'roles' => ['Pembina'=>'Pembina'],
                         'points' => ['-'=>['Pembina'=>35]]
                     ],
                     'mitra_tanding' => [
-                        'label' => 'Menjadi Mitra Tanding',
+                        'label' => 'Menjadi mitra tanding pada kegiatan minat dan bakat',
+                        'bukti' => 'Sert/SK',
                         'levels' => ['-' => '-'],
                         'roles' => ['Mitra Tanding'=>'Mitra Tanding'],
                         'points' => ['-'=>['Mitra Tanding'=>25]]
                     ],
                     'karya_seni' => [
-                        'label' => 'Menghasilkan Karya Seni (Konser, Pameran, dll)',
+                        'label' => 'Menghasilkan karya seni (konser, pameran seni, puisi, fotografi, teater, dll)',
+                        'bukti' => 'Hasil Karya/Sert',
                         'levels' => ['Internasional'=>'Internasional', 'Nasional'=>'Nasional', 'Regional'=>'Regional', 'Universitas'=>'Universitas', 'Fakultas'=>'Fakultas', 'Prodi'=>'Prodi'],
                         'roles' => ['Kreator/Seniman'=>'Kreator/Seniman'],
                         'points' => ['Internasional'=>['Kreator/Seniman'=>150], 'Nasional'=>['Kreator/Seniman'=>100], 'Regional'=>['Kreator/Seniman'=>80], 'Universitas'=>['Kreator/Seniman'=>60], 'Fakultas'=>['Kreator/Seniman'=>40], 'Prodi'=>['Kreator/Seniman'=>30]]
                     ],
                     'wirausaha' => [
                         'label' => 'Mengelola Kewirausahaan',
+                        'bukti' => 'SK/Sert',
                         'levels' => ['Mandiri'=>'Mandiri', 'Kemitraan'=>'Kemitraan'],
                         'roles' => ['Pengelola'=>'Pengelola'],
                         'points' => ['Mandiri'=>['Pengelola'=>30], 'Kemitraan'=>['Pengelola'=>20]]
@@ -307,6 +342,7 @@ class SkpPointCalculator
                 'types' => [
                     'bakti_sosial' => [
                         'label' => 'Mengikuti Pelaksanaan Bakti Sosial',
+                        'bukti' => 'Sert/SK/SP',
                         'levels' => ['Internasional'=>'Internasional', 'Nasional'=>'Nasional', 'Regional'=>'Regional', 'Universitas'=>'Universitas', 'Fakultas'=>'Fakultas', 'Jurusan/Prodi'=>'Jurusan/Prodi'],
                         'roles' => ['Peserta/Relawan'=>'Peserta/Relawan'],
                         'points' => [
@@ -320,18 +356,21 @@ class SkpPointCalculator
                     ],
                     'penanganan_bencana' => [
                         'label' => 'Penanganan Bencana',
+                        'bukti' => 'SK/Sert/Dok',
                         'levels' => ['-' => '-'],
                         'roles' => ['Relawan'=>'Relawan'],
                         'points' => ['-' => ['Relawan'=>35]]
                     ],
                     'bimbingan_rutin' => [
-                        'label' => 'Bimbingan Rutin (Sekolah, Pengajian, TPA, PAUD)',
+                        'label' => 'Bantuan pembimbingan rutin (sekolah, Pengajian, TPA, PAUD)',
+                        'bukti' => 'SK/Sert/Dok',
                         'levels' => ['-' => '-'],
                         'roles' => ['Pembimbing'=>'Pembimbing'],
                         'points' => ['-' => ['Pembimbing'=>25]]
                     ],
                     'kegiatan_sosial_lain' => [
                         'label' => 'Kegiatan Sosial Individual Lainnya',
+                        'bukti' => 'SK/Sert/Dok',
                         'levels' => ['-' => '-'],
                         'roles' => ['Pelaku'=>'Pelaku'],
                         'points' => ['-' => ['Pelaku'=>10]]
@@ -343,24 +382,28 @@ class SkpPointCalculator
                 'types' => [
                     'upacara_apel' => [
                         'label' => 'Upacara / Apel',
+                        'bukti' => 'Daftar Hadir',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta'=>'Peserta'],
                         'points' => ['-' => ['Peserta'=>5]]
                     ],
                     'organisasi_alumni' => [
-                        'label' => 'Berpartisipasi dalam Organisasi Alumni',
+                        'label' => 'Berpartisipasi dalam kegiatan organisasi alumni',
+                        'bukti' => 'Sert/Daftar Hadir',
                         'levels' => ['-' => '-'],
                         'roles' => ['Anggota'=>'Anggota'],
                         'points' => ['-' => ['Anggota'=>15]]
                     ],
                     'studi_banding' => [
-                        'label' => 'Kunjungan / Studi Banding',
+                        'label' => 'Melakukan kunjungan/studi banding',
+                        'bukti' => 'Sert/Daftar Hadir',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta'=>'Peserta'],
                         'points' => ['-' => ['Peserta'=>20]]
                     ],
                     'magang_non_akademik' => [
-                        'label' => 'Magang Kerja Non-Akademik',
+                        'label' => 'Magang kerja nonakademik',
+                        'bukti' => 'Sert/Surat Keterangan',
                         'levels' => ['-' => '-'],
                         'roles' => ['Peserta Magang'=>'Peserta Magang'],
                         'points' => ['-' => ['Peserta Magang'=>50]]
@@ -371,25 +414,29 @@ class SkpPointCalculator
                 'label' => 'Volunteer Mahasiswa',
                 'types' => [
                     'pmb' => [
-                        'label' => 'Penerimaan Mahasiswa Baru / Ekspo PMB',
+                        'label' => 'Penerimaan mahasiswa baru',
+                        'bukti' => 'Sertifikat',
                         'levels' => ['Universitas'=>'Universitas'],
                         'roles' => ['Volunteer'=>'Volunteer'],
                         'points' => ['Universitas' => ['Volunteer'=>75]]
                     ],
                     'dies_natalis' => [
                         'label' => 'Dies Natalis',
+                        'bukti' => 'Sertifikat',
                         'levels' => ['Universitas'=>'Universitas'],
                         'roles' => ['Volunteer'=>'Volunteer'],
                         'points' => ['Universitas' => ['Volunteer'=>75]]
                     ],
                     'panitia_pkkmb' => [
                         'label' => 'Panitia PKKMB',
+                        'bukti' => 'Sertifikat/SK',
                         'levels' => ['Universitas'=>'Universitas'],
                         'roles' => ['Panitia'=>'Panitia'],
                         'points' => ['Universitas' => ['Panitia'=>75]]
                     ],
                     'asisten_dosen' => [
                         'label' => 'Asisten Dosen',
+                        'bukti' => 'Sertifikat/SK',
                         'levels' => ['Universitas'=>'Universitas'],
                         'roles' => ['Asisten'=>'Asisten'],
                         'points' => ['Universitas' => ['Asisten'=>100]]

@@ -75,60 +75,6 @@
             </div>
         </div>
 
-        {{-- Data Pribadi --}}
-        <div class="form-card">
-            <h4>Data Pribadi</h4>
-            <p class="hint">Periksa dan perbaiki data berikut jika diperlukan.</p>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>NIK (16 digit) *</label>
-                    <input type="text" name="nik" class="form-control"
-                           value="{{ old('nik', auth()->guard('student')->user()->nik ?? '') }}"
-                           inputmode="numeric" maxlength="16" required>
-                    @error('nik')<span class="error">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group">
-                    <label>NISN *</label>
-                    <input type="text" name="nisn" class="form-control"
-                           value="{{ old('nisn', auth()->guard('student')->user()->nisn ?? '') }}"
-                           maxlength="20" required>
-                    @error('nisn')<span class="error">{{ $message }}</span>@enderror
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Tempat Lahir *</label>
-                    <input type="text" name="tempat_lahir" class="form-control"
-                           value="{{ old('tempat_lahir', auth()->guard('student')->user()->tempat_lahir ?? '') }}"
-                           required>
-                    @error('tempat_lahir')<span class="error">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group">
-                    <label>Tanggal Lahir *</label>
-                    <input type="date" name="tanggal_lahir" class="form-control"
-                           value="{{ old('tanggal_lahir', optional(auth()->guard('student')->user()->tanggal_lahir)->format('Y-m-d')) }}"
-                           required>
-                    @error('tanggal_lahir')<span class="error">{{ $message }}</span>@enderror
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Nama Ibu Kandung *</label>
-                    <input type="text" name="nama_ibu_kandung" class="form-control"
-                           value="{{ old('nama_ibu_kandung', auth()->guard('student')->user()->nama_ibu_kandung ?? '') }}"
-                           required>
-                    @error('nama_ibu_kandung')<span class="error">{{ $message }}</span>@enderror
-                </div>
-                <div class="form-group">
-                    <label>No. Telp Aktif *</label>
-                    <input type="text" name="no_telepon" class="form-control"
-                           value="{{ old('no_telepon', auth()->guard('student')->user()->no_telepon ?? '') }}"
-                           required>
-                    @error('no_telepon')<span class="error">{{ $message }}</span>@enderror
-                </div>
-            </div>
-        </div>
-
         {{-- Informasi TA --}}
         <div class="form-card">
             <h4>Informasi Tugas Akhir</h4>

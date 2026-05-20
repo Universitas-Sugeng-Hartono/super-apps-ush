@@ -174,9 +174,17 @@ class StudentsController extends Controller
         $student = Student::with(['dosenPA', 'skpiRegistration'])->findOrFail(decrypt(session('student_id')));
         $isDefaultPassword = \Hash::check('12345678', $student->password);
 
+        $studyProgram = \App\Models\StudyProgram::where('name', $student->program_studi)->first();
+        $gelarFromProfile = null;
+        if ($studyProgram) {
+            $academicProfile = \App\Models\SkpiAcademicProfile::where('study_program_id', $studyProgram->id)->first();
+            $gelarFromProfile = $academicProfile?->gelar_lulusan;
+        }
+
         return view('students.personal.edit', compact(
             'student',
-            'isDefaultPassword'
+            'isDefaultPassword',
+            'gelarFromProfile'
         ));
     }
 
@@ -207,6 +215,7 @@ class StudentsController extends Controller
         $roleOptions = [];
         $typeCategoryMap = [];
         $pointsTable = [];
+        $buktiTable = [];
 
         foreach ($dict as $catKey => $catData) {
             foreach ($catData['types'] as $typeKey => $typeData) {
@@ -215,6 +224,7 @@ class StudentsController extends Controller
                 $roleOptions[$typeKey] = $typeData['roles'];
                 $typeCategoryMap[$typeKey] = $catKey;
                 $pointsTable[$typeKey] = $typeData['points'];
+                $buktiTable[$typeKey] = $typeData['bukti'] ?? 'Dokumen Pendukung';
             }
         }
 
@@ -225,7 +235,8 @@ class StudentsController extends Controller
             'levelOptions',
             'roleOptions',
             'typeCategoryMap',
-            'pointsTable'
+            'pointsTable',
+            'buktiTable'
         ));
     }
 
@@ -235,7 +246,15 @@ class StudentsController extends Controller
 
         // Validation rules
         $request->validate([
+            'nama_lengkap'         => 'nullable|string|max:255',
+            'nik'                  => 'nullable|string|max:50',
+            'nisn'                 => 'nullable|string|max:50',
+            'program_studi'        => 'nullable|string|max:50',
+            'angkatan'             => 'nullable|string|max:20',
+            'fakultas'             => 'nullable|string|max:50',
+            'nama_ibu_kandung'     => 'nullable|string|max:255',
             'nama_orangtua'        => 'nullable|string|max:255',
+            'tempat_lahir'         => 'nullable|string|max:100',
             'jenis_kelamin'        => 'nullable|in:L,P',
             'tanggal_lahir'        => 'nullable|date',
             'password'             => 'nullable|string|min:8|max:20|confirmed',
@@ -251,6 +270,7 @@ class StudentsController extends Controller
             'foto'                 => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'ttd'                  => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ], [
+            'nama_lengkap.string'  => 'Gunakan Nama Lengkap sesuai dengan ijasah terakhir',
             'nama_orangtua.string' => 'Parent’s name must be text.',
             'nama_orangtua.max'    => 'Parent’s name cannot be longer than 255 characters.',
 
@@ -307,7 +327,15 @@ class StudentsController extends Controller
                     $student->ttd = $request->file('ttd')->store('students/ttd/' . $student->id, 'public');
                 } else {
                     // Update field text
+                    if ($request->filled('nama_lengkap')) $student->nama_lengkap = $request->nama_lengkap;
+                    if ($request->filled('nik')) $student->nik = $request->nik;
+                    if ($request->filled('nisn')) $student->nisn = $request->nisn;
+                    if ($request->filled('program_studi')) $student->program_studi = $request->program_studi;
+                    if ($request->filled('angkatan')) $student->angkatan = $request->angkatan;
+                    if ($request->filled('fakultas')) $student->fakultas = $request->fakultas;
+                    if ($request->filled('nama_ibu_kandung')) $student->nama_ibu_kandung = $request->nama_ibu_kandung;
                     if ($request->filled('nama_orangtua')) $student->nama_orangtua = $request->nama_orangtua;
+                    if ($request->filled('tempat_lahir')) $student->tempat_lahir = $request->tempat_lahir;
                     if ($request->filled('jenis_kelamin')) $student->jenis_kelamin = $request->jenis_kelamin;
                     if ($request->filled('tanggal_lahir')) $student->tanggal_lahir = $request->tanggal_lahir;
                     if ($request->filled('alamat')) $student->alamat = $request->alamat;
@@ -328,7 +356,15 @@ class StudentsController extends Controller
 
                 // === Cek kelengkapan data ===
                 $requiredFields = [
+                    'nama_lengkap',
+                    'nik',
+                    'nisn',
+                    'program_studi',
+                    'angkatan',
+                    'fakultas',
+                    'nama_ibu_kandung',
                     'nama_orangtua',
+                    'tempat_lahir',
                     'jenis_kelamin',
                     'tanggal_lahir',
                     'alamat',
@@ -386,12 +422,14 @@ class StudentsController extends Controller
             'category'           => "required|string|in:{$categoryKeys}",
             'activity_type'      => 'required|string|max:100',
             'level'              => 'required|string|max:100',
-            'participation_role' => 'nullable|string|max:100',
-            'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'participation_role' => 'required|string|max:100',
+            'certificate'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
             'category.required'      => 'Kategori SKPI harus dipilih.',
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
             'level.required'         => 'Tingkat kegiatan harus dipilih.',
+            'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
+            'certificate.required'   => 'Bukti fisik wajib diunggah.',
             'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
             'certificate.max'        => 'Ukuran file maksimal 5 MB.',
         ]);
@@ -464,8 +502,15 @@ class StudentsController extends Controller
             'category'           => "required|string|in:{$categoryKeys}",
             'activity_type'      => 'required|string|max:100',
             'level'              => 'required|string|max:100',
-            'participation_role' => 'nullable|string|max:100',
+            'participation_role' => 'required|string|max:100',
             'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ], [
+            'category.required'      => 'Kategori SKPI harus dipilih.',
+            'activity_type.required' => 'Jenis kegiatan harus dipilih.',
+            'level.required'         => 'Tingkat kegiatan harus dipilih.',
+            'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
+            'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
+            'certificate.max'        => 'Ukuran file maksimal 5 MB.',
         ]);
 
         try {

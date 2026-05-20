@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminController\CounselingController;
 use App\Http\Controllers\AdminController\AnnouncementController;
 use App\Http\Controllers\AdminController\SkpiController;
 use App\Http\Controllers\AdminController\SkpiWordController;
+use App\Http\Controllers\AdminController\AppSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,6 +107,12 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
         Route::post('/generate-skpi/metadata', 'storeGenerateMetadata')->name('generate-skpi.metadata.store');
         Route::match(['get', 'post'], '/generate-skpi/download-all', [SkpiWordController::class, 'downloadAllApproved'])->name('generate-skpi.download-all');
         Route::get('/generate-skpi/{id}/download-saved', 'downloadSavedSkpi')->name('generate-skpi.download-saved');
+    });
+
+    // Pengaturan Aplikasi (WhatsApp Button, dll)
+    Route::prefix('admin/settings')->name('admin.settings.')->controller(AppSettingController::class)->group(function () {
+        Route::get('/whatsapp', 'waSettings')->name('whatsapp');
+        Route::post('/whatsapp', 'saveWaSettings')->name('whatsapp.save');
     });
 });
 

@@ -188,52 +188,147 @@ class SkpiWordController extends Controller
                 'Asisten'             => 'Assistant',
             ];
 
-            // Label kategori -> terjemahan Inggris untuk activity_type_label
+            // Kategori Excel (untuk Point 3 SKPI)
+            $excelCategoryMap = [
+                'lomba_ilmiah' => '3.1',
+                'ikut_lomba' => '3.1',
+                'paten' => '3.1',
+                'karya_ilmiah' => '3.1',
+                'karya_populer' => '3.1',
+                'karya_didanai' => '3.1',
+                'pilmapres_debat' => '3.1',
+                'prestasi_minat_bakat' => '3.1',
+                'karya_seni' => '3.1',
+                'wirausaha' => '3.1',
+
+                'entrepreneurship_day' => '3.2',
+                'pengurus_organisasi' => '3.2',
+                'panitia_kegiatan' => '3.2',
+                'calon_organisasi_intra' => '3.2',
+                'calon_organisasi_ekstra' => '3.2',
+                'ikut_minat_bakat' => '3.2',
+                'pelatih_minat_bakat' => '3.2',
+                'pembinaan_khusus' => '3.2',
+                'mitra_tanding' => '3.2',
+                'bakti_sosial' => '3.2',
+                'penanganan_bencana' => '3.2',
+                'bimbingan_rutin' => '3.2',
+                'kegiatan_sosial_lain' => '3.2',
+                'upacara_apel' => '3.2',
+                'organisasi_alumni' => '3.2',
+                'studi_banding' => '3.2',
+                'pmb' => '3.2',
+
+                'magang_non_akademik' => '3.3',
+
+                'pkkmb' => '3.4',
+                'kuliah_pakar' => '3.4',
+                'pelatihan_kepemimpinan' => '3.4',
+                'latihan_kepemimpinan_lain' => '3.4',
+                'forum_ilmiah' => '3.4',
+                'berikan_pelatihan' => '3.4',
+                'kuliah_tamu' => '3.4',
+                'penelitian_dosen' => '3.4',
+                'dies_natalis' => '3.4',
+                'panitia_pkkmb' => '3.4',
+
+                'ujian_kompetensi' => '3.5',
+                'pelatihan_softskill' => '3.5',
+                'asisten_dosen' => '3.5',
+            ];
+
+            // Nama kegiatan disesuaikan dengan Excel
+            $excelLabelMap = [
+                'entrepreneurship_day' => 'Entepreunership Day',
+                'pkkmb' => 'Universitas (PKKMB)',
+                'ujian_kompetensi' => 'TOEFL/TDA/Ujian Kompetensi',
+                'kuliah_pakar' => 'Kuliah pakar',
+                'pengurus_organisasi' => 'Pengurus Organisasi',
+                'pelatihan_kepemimpinan' => 'Mengikuti Pelatihan Kepemimpinan',
+                'latihan_kepemimpinan_lain' => 'Latihan Kepemimpinan Lainnya',
+                'panitia_kegiatan' => 'Panitia dalam Suatu Kegiatan Kemahasiswaan',
+                'lomba_ilmiah' => 'Memperoleh prestasi dalam Lomba Karya Ilmiah/Lingkungan Hidup/Kreativitas/Inovatif/Pemikiran Kritis/Populer/Enterpreneurs',
+                'ikut_lomba' => 'Mengikuti Kegiatan Lomba',
+                'forum_ilmiah' => 'Mengikuti kegiatan/ forum ilmiah (seminar, Lokakarya, workshop, pameran)',
+                'paten' => 'Menghasilkan temuan inovasi yang dipatenkan',
+                'karya_ilmiah' => 'Menghasilkan karya ilmiah yang dipublikasikan dalam majalah ilmiah',
+                'karya_populer' => 'Menghasilkan karya populer yg diterbitkan di surat kabar/majalah/ media lainnya',
+                'karya_didanai' => 'Menghasilkan karya yang didanai oleh pemerintah atau pihak lain',
+                'berikan_pelatihan' => 'Memberikan pelatihan atau bimbingan dalam penyusunan karya tulis',
+                'kuliah_tamu' => 'Mengikuti kuliah tamu/umum',
+                'penelitian_dosen' => 'Terlibat dalam penelitian dosen/pihak lain',
+                'pilmapres_debat' => 'Pemilihan Mahasiswa Berprestasi (Pilmapres), Debat Bahasa Inggris',
+                'pelatihan_softskill' => 'Pelatihan/ Pembinaan Softskills/ Ketrampilan',
+                'prestasi_minat_bakat' => 'Memperoleh prestasi dalam kegiatan minat dan bakat (olahraga, seni, dan kerohanian)',
+                'ikut_minat_bakat' => 'Mengikuti kegiatan minat dan bakat (olahraga, seni, dan kerohanian)',
+                'pelatih_minat_bakat' => 'Menjadi Pelatih/ Pembimbing/ pendamping Kegiatan Minat dan Bakat',
+                'pembinaan_khusus' => 'Melaksanakan aktivitas pembinaan khusus berkaitan dengan kegiatan minat dan bakat',
+                'mitra_tanding' => 'Menjadi mitra tanding pada kegiatan minat dan bakat',
+                'karya_seni' => 'Menghasilkan karya seni (konser, pameran seni, puisi, fotografi, teater, dll)',
+                'wirausaha' => 'Mengelola Kewirausahaan',
+                'bakti_sosial' => 'Mengikuti pelaksanaan Bakti Sosial',
+                'penanganan_bencana' => 'Penanganan Bencana',
+                'bimbingan_rutin' => 'Bantuan pembimbingan rutin (sekolah, Pengajian, TPA, PAUD)',
+                'kegiatan_sosial_lain' => 'Kegiatan lain individual sosial',
+                'upacara_apel' => 'Upacara/Apel',
+                'organisasi_alumni' => 'Berpartisipasi dalam kegiatan organisasi alumni',
+                'studi_banding' => 'Melakukan kunjungan/studi banding',
+                'magang_non_akademik' => 'Magang kerja nonakademik',
+                'pmb' => 'Penerimaan mahasiswa baru',
+                'dies_natalis' => 'Dies Natalis',
+                'panitia_pkkmb' => 'Panitia PKKMB',
+                'asisten_dosen' => 'Asisten dosen',
+                'calon_organisasi_intra' => 'Calon Ketua/Anggota Organisasi Intra',
+                'calon_organisasi_ekstra' => 'Calon Ketua/Anggota Organisasi Ekstra Universitas',
+            ];
+
+            // Terjemahan Inggris berdasarkan activity_type
             $activityEnMap = [
-                'Memperoleh Prestasi Lomba Karya Ilmiah dsb.'  => 'Achievement in Scientific Competition etc.',
-                'Mengikuti Kegiatan Lomba (Peserta)'           => 'Participating in Competition (Participant)',
-                'Mengikuti Kegiatan / Forum Ilmiah'            => 'Participating in Scientific Forum/Event',
-                'Menghasilkan Penemuan Inovasi yang Dipatenkan' => 'Innovation/Invention with Patent',
-                'Karya Ilmiah / Jurnal Dipublikasikan'         => 'Published Scientific Work/Journal',
-                'Karya Ilmiah Populer di Media Massa'          => 'Popular Scientific Work in Mass Media',
-                'Menghasilkan Karya yang Didanai Pihak Lain'   => 'Externally Funded Work',
-                'Memberikan Pelatihan Penyusunan Karya Tulis'  => 'Providing Academic Writing Training',
-                'Mengikuti Kuliah Tamu/Umum'                   => 'Attending Guest/Public Lecture',
-                'Terlibat Dalam Penelitian Dosen'              => 'Involved in Lecturer Research',
-                'Pemilihan Mahasiswa Berprestasi (Pilmapres) / Debat' => 'Outstanding Student Selection/Debate',
-                'Pelatihan / Pembinaan Softskills'             => 'Softskills Training/Development',
-                'Pengurus Organisasi'                          => 'Organization Board Member',
-                'Mengikuti Pelatihan Kepemimpinan'             => 'Leadership Training',
-                'Panitia dalam Suatu Kegiatan Kemahasiswaan'   => 'Committee in Student Activity',
-                'Calon Ketua/Anggota Organisasi Intra'         => 'Candidate/Member of Intra-Campus Organization',
-                'Calon Ketua/Anggota Organisasi Ekstra Universitas' => 'Candidate/Member of Extra-Campus Organization',
-                'Prestasi Minat dan Bakat (Olahraga, Seni, dll)' => 'Achievement in Interest and Talent (Sports, Arts, etc.)',
-                'Mengikuti Kegiatan Minat dan Bakat'           => 'Participating in Interest and Talent Activity',
-                'Menjadi Pelatih/Pembimbing Kegiatan Minat Bakat' => 'Coaching/Mentoring Interest and Talent Activity',
-                'Melaksanakan Pembinaan Khusus Minat Bakat'    => 'Special Coaching in Interest and Talent',
-                'Menjadi Mitra Tanding'                        => 'Serving as Sparring Partner',
-                'Menghasilkan Karya Seni (Konser, Pameran, dll)' => 'Producing Artwork (Concert, Exhibition, etc.)',
-                'Mengelola Kewirausahaan'                      => 'Managing Entrepreneurship',
-                'Mengikuti Pelaksanaan Bakti Sosial'           => 'Participating in Social Service',
-                'Penanganan Bencana'                           => 'Disaster Relief',
-                'Bimbingan Rutin (Sekolah, Pengajian, TPA, PAUD)' => 'Regular Mentoring (School, Religious, Early Childhood)',
-                'Kegiatan Sosial Individual Lainnya'           => 'Other Individual Social Activities',
-                'Entepreunership Day'                          => 'Entrepreneurship Day',
-                'Universitas (PKKMB)'                          => 'University Orientation (PKKMB)',
-                'TOEFL/TDA/Ujian Kompetensi'                   => 'TOEFL/TDA/Competency Test',
-                'Kuliah pakar'                                 => 'Expert Lecture',
-                'Upacara / Apel'                               => 'Ceremony/Assembly',
-                'Berpartisipasi dalam Organisasi Alumni'       => 'Participating in Alumni Organization',
-                'Kunjungan / Studi Banding'                    => 'Study Visit/Benchmarking',
-                'Magang Kerja Non-Akademik'                    => 'Non-Academic Internship',
-                'Penerimaan Mahasiswa Baru / Ekspo PMB'        => 'New Student Admission/Expo',
-                'Dies Natalis'                                 => 'Dies Natalis',
-                'Panitia PKKMB'                                => 'PKKMB Committee',
-                'Asisten Dosen'                                => 'Lecturer Assistant',
+                'lomba_ilmiah' => 'Achievement in Scientific/Creative Competition',
+                'ikut_lomba' => 'Participating in Competition (Participant)',
+                'forum_ilmiah' => 'Participating in Scientific Forum/Event (Seminar, Workshop, etc.)',
+                'paten' => 'Innovation/Invention with Patent',
+                'karya_ilmiah' => 'Published Scientific Work in Academic Journal',
+                'karya_populer' => 'Popular Scientific Work in Mass Media',
+                'karya_didanai' => 'Externally Funded Work (Government/Others)',
+                'berikan_pelatihan' => 'Providing Training/Guidance on Academic Writing',
+                'kuliah_tamu' => 'Attending Guest/Public Lecture',
+                'penelitian_dosen' => 'Involved in Lecturer/Third Party Research',
+                'pilmapres_debat' => 'Outstanding Student Selection (Pilmapres) / English Debate',
+                'pelatihan_softskill' => 'Softskills/Skills Training',
+                'pengurus_organisasi' => 'Organization Board Member',
+                'pelatihan_kepemimpinan' => 'Leadership Training',
+                'latihan_kepemimpinan_lain' => 'Other Leadership Training',
+                'panitia_kegiatan' => 'Committee in Student Activity',
+                'calon_organisasi_intra' => 'Candidate/Member of Intra-Campus Organization',
+                'calon_organisasi_ekstra' => 'Candidate/Member of Extra-Campus Organization',
+                'prestasi_minat_bakat' => 'Achievement in Interest and Talent (Sports, Arts, Religion)',
+                'ikut_minat_bakat' => 'Participating in Interest and Talent Activity (Sports, Arts, Religion)',
+                'pelatih_minat_bakat' => 'Coaching/Mentoring/Accompanying Interest and Talent Activity',
+                'pembinaan_khusus' => 'Special Coaching Activity Related to Interest and Talent',
+                'mitra_tanding' => 'Serving as Sparring Partner in Interest and Talent Activity',
+                'karya_seni' => 'Producing Artwork (Concert, Exhibition, Poetry, Photography, Theatre, etc.)',
+                'wirausaha' => 'Managing Entrepreneurship',
+                'bakti_sosial' => 'Participating in Social Service',
+                'penanganan_bencana' => 'Disaster Relief',
+                'bimbingan_rutin' => 'Regular Assistance/Mentoring (School, Religious, TPA, PAUD)',
+                'kegiatan_sosial_lain' => 'Other Individual Social Activities',
+                'entrepreneurship_day' => 'Entrepreneurship Day',
+                'pkkmb' => 'University Orientation (PKKMB)',
+                'ujian_kompetensi' => 'TOEFL/TDA/Competency Test',
+                'kuliah_pakar' => 'Expert Lecture',
+                'upacara_apel' => 'Ceremony/Assembly',
+                'organisasi_alumni' => 'Participating in Alumni Organization Activity',
+                'studi_banding' => 'Study Visit/Benchmarking',
+                'magang_non_akademik' => 'Non-Academic Internship',
+                'pmb' => 'New Student Admission',
+                'dies_natalis' => 'Dies Natalis',
+                'panitia_pkkmb' => 'PKKMB Committee',
+                'asisten_dosen' => 'Lecturer Assistant',
             ];
 
             // Bangun tabel item prestasi — hanya isi, tanpa judul kategori
-            $buildAchievementBlock = function (array $items) use ($tableStyle, $levelEnMap, $roleEnMap, $activityEnMap): ?\PhpOffice\PhpWord\Element\Table {
+            $buildAchievementBlock = function (array $items) use ($tableStyle, $levelEnMap, $roleEnMap, $activityEnMap, $excelLabelMap): ?\PhpOffice\PhpWord\Element\Table {
                 $table = new \PhpOffice\PhpWord\Element\Table($tableStyle);
 
                 if (empty($items)) {
@@ -242,7 +337,8 @@ class SkpiWordController extends Controller
                 }
 
                 foreach ($items as $item) {
-                    $labelId = $item->activity_type_label ?? $item->activity_type;
+                    $actType = $item->activity_type;
+                    $labelId = $excelLabelMap[$actType] ?? $item->activity_type_label ?? $actType;
 
                     // Teks Indonesia
                     $textId = $labelId;
@@ -254,7 +350,7 @@ class SkpiWordController extends Controller
                     }
 
                     // Bahasa Inggris
-                    $labelEn = $activityEnMap[$labelId] ?? $labelId;
+                    $labelEn = $activityEnMap[$actType] ?? $item->activity_type_label ?? $actType;
                     $textEn  = $labelEn;
                     if (filled($item->level) && $item->level !== '-') {
                         $textEn .= ' (' . ($levelEnMap[$item->level] ?? $item->level) . ')';
@@ -298,29 +394,29 @@ class SkpiWordController extends Controller
                 return $table;
             };
 
-            // ─── Mapping & Grouping Kategori ke Placeholder Template (Point 1) ──
-            // Agar semua kategori di sistem (minat bakat, volunteer, dll) muncul di Word.
+            // ─── Mapping Kategori berdasarkan Excel (Point 3) ──
+            $excelGroups = [
+                '3.1' => [],
+                '3.2' => [],
+                '3.3' => [],
+                '3.4' => [],
+                '3.5' => [],
+            ];
 
-            // 1. Prestasi: Penalaran + Minat Bakat
-            $prestasiItems = array_merge(
-                $groupedByCategory['penalaran'] ?? [],
-                $groupedByCategory['minat_bakat'] ?? []
-            );
+            foreach ($approvedAchievements as $achievement) {
+                $actType = $achievement->activity_type;
+                $cat = $excelCategoryMap[$actType] ?? null;
 
-            // 2. Organisasi: Organisasi
-            $organisasiItems = $groupedByCategory['organisasi'] ?? [];
+                if ($cat && isset($excelGroups[$cat])) {
+                    $excelGroups[$cat][] = $achievement;
+                }
+            }
 
-            // 3. Magang: Lainnya (Magang) + Volunteer
-            $magangItems = array_merge(
-                $groupedByCategory['lainnya'] ?? [],
-                $groupedByCategory['volunteer'] ?? []
-            );
-
-            // 4. Pelatihan: Kepedulian Sosial (atau bisa juga memecah penalaran non-lomba di sini)
-            $pelatihanItems = $groupedByCategory['kepedulian_sosial'] ?? [];
-
-            // 5. Sertifikat: Wajib (TOEFL, Kompetensi, dll)
-            $sertifikatItems = $groupedByCategory['wajib'] ?? [];
+            $prestasiItems   = $excelGroups['3.1'];
+            $organisasiItems = $excelGroups['3.2'];
+            $magangItems     = $excelGroups['3.3'];
+            $pelatihanItems  = $excelGroups['3.4'];
+            $sertifikatItems = $excelGroups['3.5'];
 
             $prestasiList   = $buildAchievementBlock($prestasiItems);
             $organisasiList = $buildAchievementBlock($organisasiItems);
@@ -525,7 +621,8 @@ class SkpiWordController extends Controller
                 foreach ($l3WajibItems as $wi => $wItem) {
                     $lr = $l3WajibTable->addRow($l3RowH);
                     $lr->addCell($l3ColNo,   $l3BorderStyle)->addText((string)($wi + 1), ['size' => 9], ['alignment' => $Jc::CENTER]);
-                    $lr->addCell($l3ColKrit, $l3BorderStyle)->addText(htmlspecialchars($wItem->activity_type_label ?? $wItem->activity_type ?? '-'), ['size' => 9]);
+                    $label = $excelLabelMap[$wItem->activity_type] ?? $wItem->activity_type_label ?? $wItem->activity_type ?? '-';
+                    $lr->addCell($l3ColKrit, $l3BorderStyle)->addText(htmlspecialchars($label), ['size' => 9]);
                     $lr->addCell($l3ColSkp,  $l3BorderStyle)->addText((string)($wItem->skp_points ?? 0), ['size' => 9], ['alignment' => $Jc::CENTER]);
                 }
             }
@@ -565,7 +662,7 @@ class SkpiWordController extends Controller
             ]);
 
             // Closure: buat tabel rincian untuk satu kategori + label judul
-            $buildRincianBlock = function (array $items, string $label) use ($cellBorder, $rincianTableStyle, $l4RowH): \PhpOffice\PhpWord\Element\Table {
+            $buildRincianBlock = function (array $items, string $label) use ($cellBorder, $rincianTableStyle, $l4RowH, $excelLabelMap): \PhpOffice\PhpWord\Element\Table {
                 $table = new \PhpOffice\PhpWord\Element\Table($rincianTableStyle);
                 $fnt9  = ['size' => 9];
                 $fnt9b = ['size' => 9, 'bold' => true];
@@ -622,11 +719,24 @@ class SkpiWordController extends Controller
                 foreach ($items as $i => $item) {
                     $r = $table->addRow($l4RowH);
                     $r->addCell($cNo,    $cellBorder)->addText((string)($i + 1), $fnt9, $mid);
-                    $r->addCell($cNama,  $cellBorderWrap)->addText(htmlspecialchars($item->activity_type_label ?? $item->activity_type ?? '-'), $fnt9, $left);
+                    $labelName = $excelLabelMap[$item->activity_type] ?? $item->activity_type_label ?? $item->activity_type ?? '-';
+                    if (filled($item->participation_role) && $item->participation_role !== '-') {
+                        $labelName .= ' - ' . $item->participation_role;
+                    }
+                    $r->addCell($cNama,  $cellBorderWrap)->addText(htmlspecialchars($labelName), $fnt9, $left);
                     $r->addCell($cTmpat, $cellBorder)->addText(htmlspecialchars($item->level ?? '-'), $fnt9, $mid);
                     $r->addCell($cThn,   $cellBorder)->addText($item->created_at ? $item->created_at->format('Y') : '-', $fnt9, $mid);
                     $r->addCell($cSkp,   $cellBorder)->addText((string)($item->skp_points ?? 0), $fnt9, $mid);
-                    $r->addCell($cBukti, $cellBorder)->addText(!empty($item->certificate) ? 'Terlampir' : '-', $fnt9, $mid);
+                    $skpDict = \App\Services\SkpPointCalculator::getDictionary();
+                    $buktiText = '-';
+                    $cat = $item->category;
+                    $type = $item->activity_type;
+                    if (isset($skpDict[$cat]['types'][$type]['bukti'])) {
+                        $buktiText = $skpDict[$cat]['types'][$type]['bukti'];
+                    } else {
+                        $buktiText = !empty($item->certificate) ? 'Terlampir' : '-';
+                    }
+                    $r->addCell($cBukti, $cellBorder)->addText(htmlspecialchars($buktiText), $fnt9, $mid);
                 }
 
                 // Footer total

@@ -169,4 +169,39 @@ class Student extends Authenticatable
 
         return max(1, $semester); // Minimal semester 1
     }
+
+    /**
+     * Mengecek apakah profil mahasiswa sudah lengkap
+     *
+     * @return bool
+     */
+    public function isProfileComplete(): bool
+    {
+        $requiredFields = [
+            'nama_lengkap',
+            'nik',
+            'nisn',
+            'program_studi',
+            'angkatan',
+            'fakultas',
+            'nama_ibu_kandung',
+            'nama_orangtua',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'alamat',
+            'alamat_lat',
+            'alamat_lng',
+            'no_telepon',
+            'foto',
+            'ttd',
+        ];
+
+        foreach ($requiredFields as $field) {
+            if (empty($this->$field)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

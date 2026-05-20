@@ -144,7 +144,7 @@
                         <i class="bi bi-exclamation-triangle-fill"></i>
                         <div>
                             <strong>Belum Bisa Mengajukan</strong>
-                            <p>Lengkapi semua Prasyarat Sistem terlebih dahulu (termasuk Form Identitas) agar tombol pengajuan aktif.</p>
+                            <p>Lengkapi semua Prasyarat Sistem terlebih dahulu (termasuk kelengkapan Profil) agar tombol pengajuan aktif.</p>
                         </div>
                     </div>
                 </div>
@@ -161,13 +161,13 @@
             <div class="ush-card no-padding bg-transparent shadow-none border-0">
                 <h4 class="side-title">Menu Utama</h4>
                 
-                <a href="{{ route('student.skpi.daftar.create') }}" class="ush-action-card">
+                <a href="{{ route('student.personal.editDataIndex') }}" class="ush-action-card">
                     <div class="action-icon orange">
                         <i class="bi bi-person-vcard"></i>
                     </div>
                     <div class="action-text">
-                        <h5>{{ $skpiRegistration ? ($canEditRegistration ? 'Update Form Identitas' : 'Lihat Form Identitas') : 'Isi Form Identitas' }}</h5>
-                        <p>Kelola Nama, NIM, Nomor Ijazah, dan Gelar.</p>
+                        <h5>Lengkapi Profil Mahasiswa</h5>
+                        <p>Kelola Nama, Tempat/Tanggal Lahir, NIM, dan lainnya.</p>
                     </div>
                     <i class="bi bi-chevron-right action-arrow"></i>
                 </a>
@@ -194,8 +194,8 @@
                         <strong>{{ $registrationMeta['completed_count'] }}/{{ $registrationMeta['required_count'] }}</strong>
                     </div>
                     <div class="stat-row">
-                        <span>Form Identitas</span>
-                        <strong>{{ $holderMeta['filled_count'] }}/{{ $holderMeta['total_count'] }}</strong>
+                        <span>Data Identitas</span>
+                        <strong>{{ $birthIdentityComplete ? 'Lengkap' : 'Belum Lengkap' }}</strong>
                     </div>
                     <div class="stat-row">
                         <span>Prestasi Valid</span>

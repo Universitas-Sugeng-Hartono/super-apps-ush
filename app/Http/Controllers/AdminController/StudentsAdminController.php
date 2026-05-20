@@ -504,12 +504,16 @@ class StudentsAdminController extends Controller
         $studentData = $validator->validated();
         $studentData['status_mahasiswa'] = 'Aktif';
 
-        // Update id_lecturer jika dari management route
-        if (request()->routeIs('admin.management.students.*') && isset($request->id_lecturer)) {
+        // Update id_lecturer jika user adalah superadmin/masteradmin dan request memiliki id_lecturer
+        if (in_array(auth()->user()->role, ['superadmin', 'masteradmin']) && $request->has('id_lecturer')) {
             $studentData['id_lecturer'] = $request->id_lecturer;
+        } else {
+            // Pastikan id_lecturer tidak diubah/dihapus jika tidak diinput atau jika user tidak berwenang
+            unset($studentData['id_lecturer']);
         }
 
-        Student::where('id', $id)->update($studentData);
+        $student = Student::findOrFail($id);
+        $student->update($studentData);
 
         // Redirect berdasarkan route yang dipanggil
         if (request()->routeIs('admin.management.students.*')) {

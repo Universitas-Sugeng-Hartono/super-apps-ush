@@ -48,7 +48,7 @@ class SkpiController extends Controller
                 'href' => route('student.final-project.index'),
             ],
             [
-                'title' => 'Foto & Tanda Tangan',
+                'title' => 'Profile',
                 'description' => 'Lengkapi foto profil dan tanda tangan agar dokumen pendukung SKPI siap digunakan saat proses akhir.',
                 'icon' => 'bi bi-pencil-square',
                 'badge' => $registrationChecklist[3]['ready'] ? 'Lengkap' : '2 Dokumen',
@@ -78,8 +78,13 @@ class SkpiController extends Controller
 
         $registrationChecklist = $this->buildRegistrationChecklist($student);
         $registrationMeta = $this->buildRegistrationMeta($registrationChecklist);
-        $holderFields = $this->buildHolderFields($this->buildHolderData($student, $skpiRegistration));
-        $holderMeta = $this->buildHolderMeta($holderFields);
+        
+        $birthIdentityComplete = filled($student->nama_lengkap) 
+            && filled($student->tempat_lahir) 
+            && filled($student->tanggal_lahir)
+            && filled($student->nim)
+            && filled($student->angkatan);
+
         $registrationStatus = $this->buildStatusMeta($skpiRegistration?->status);
         $canEditRegistration = $this->canEditRegistration($skpiRegistration);
 
@@ -89,102 +94,16 @@ class SkpiController extends Controller
 
             'registrationChecklist',
             'registrationMeta',
-            'holderFields',
-            'holderMeta',
+            'birthIdentityComplete',
             'registrationStatus',
             'canEditRegistration'
         ));
-    }
-
-    public function daftarCreate(Request $request)
-    {
-        $student = $this->getStudent();
-        $skpiRegistration = $student->skpiRegistration;
-
-
-
-        $holderData = $this->buildHolderData($student, $skpiRegistration, $request);
-        $holderFields = $this->buildHolderFields($holderData);
-        $holderMeta = $this->buildHolderMeta($holderFields);
-        $registrationStatus = $this->buildStatusMeta($skpiRegistration?->status);
-        $canEditRegistration = $this->canEditRegistration($skpiRegistration);
-
-        return view('students.skpi.daftar.create', compact(
-            'student',
-            'skpiRegistration',
-            'holderData',
-            'holderFields',
-            'holderMeta',
-            'registrationStatus',
-            'canEditRegistration'
-        ));
-    }
-
-    public function daftarStore(Request $request)
-    {
-        $student = $this->getStudent();
-        $skpiRegistration = $student->skpiRegistration;
-
-
-
-
-        // Server-side: Hapus cek prasyarat di sini karena ini hanya simpan draft Identitas
-
-        if ($skpiRegistration && !$this->canEditRegistration($skpiRegistration)) {
-            return redirect()
-                ->route('student.skpi.daftar.show')
-                ->with('error', 'Pendaftaran SKPI dengan status saat ini tidak dapat diubah.');
-        }
-
-        $validated = $request->validate([
-            'nama_lengkap' => 'required|string|max:200',
-            'tempat_lahir' => 'required|string|max:100',
-            'tanggal_lahir' => 'required|date',
-            'nim' => 'required|string|max:20',
-            'angkatan' => 'required|integer|min:1900|max:2100',
-            'gelar' => 'nullable|string|max:100',
-        ], [
-            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
-            'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
-            'tanggal_lahir.required' => 'Tanggal lahir wajib diisi.',
-            'nim.required' => 'NIM wajib diisi.',
-            'angkatan.required' => 'Tahun masuk wajib diisi.',
-        ]);
-
-        // Ambil gelar otomatis dari prodi (Selalu prioritaskan dari profil akademik prodi terbaru)
-        $studyProgram = \App\Models\StudyProgram::where('name', $student->program_studi)->first();
-        $gelarFromProfile = null;
-        if ($studyProgram) {
-            $academicProfile = \App\Models\SkpiAcademicProfile::where('study_program_id', $studyProgram->id)->first();
-            $gelarFromProfile = $academicProfile?->gelar_lulusan;
-        }
-
-        $gelar = $gelarFromProfile ?? $validated['gelar'] ?? null;
-        $status = $skpiRegistration ? $skpiRegistration->status : 'draft';
-
-        $registration = SkpiRegistration::updateOrCreate(
-            ['student_id' => $student->id],
-            array_merge($validated, [
-                'gelar' => $gelar,
-                'status' => $status,
-            ])
-        );
-
-        return redirect()
-            ->route('student.skpi.daftar.index')
-            ->with('success', 'Data Identitas Pemegang SKPI berhasil disimpan.');
     }
 
     public function daftarSubmit(Request $request)
     {
         $student = $this->getStudent();
         $skpiRegistration = $student->skpiRegistration;
-
-        if (!$skpiRegistration) {
-            return redirect()
-                ->route('student.skpi.daftar.index')
-                ->with('error', 'Anda belum mengisi Form Identitas Pemegang SKPI.');
-        }
 
         $registrationChecklist = $this->buildRegistrationChecklist($student);
         $registrationMeta = $this->buildRegistrationMeta($registrationChecklist);
@@ -195,19 +114,39 @@ class SkpiController extends Controller
                 ->with('error', 'Gagal mengirim pengajuan! Anda belum memenuhi semua Prasyarat Sistem.');
         }
 
-        if (!$this->canEditRegistration($skpiRegistration)) {
+        if ($skpiRegistration && !$this->canEditRegistration($skpiRegistration)) {
             return redirect()
                 ->route('student.skpi.daftar.index')
                 ->with('error', 'Pendaftaran SKPI dengan status saat ini tidak dapat diajukan ulang.');
         }
-
-        $skpiRegistration->update([
+        
+        // Ambil gelar otomatis dari prodi
+        $studyProgram = \App\Models\StudyProgram::where('name', $student->program_studi)->first();
+        $gelar = null;
+        if ($studyProgram) {
+            $academicProfile = \App\Models\SkpiAcademicProfile::where('study_program_id', $studyProgram->id)->first();
+            $gelar = $academicProfile?->gelar_lulusan;
+        }
+        
+        $registrationData = [
+            'nama_lengkap' => $student->nama_lengkap,
+            'tempat_lahir' => $student->tempat_lahir,
+            'tanggal_lahir' => $student->tanggal_lahir,
+            'nim' => $student->nim,
+            'angkatan' => $student->angkatan,
+            'gelar' => $gelar,
             'status' => 'pending',
             'submitted_at' => now(),
             'approval_notes' => null,
             'approved_by' => null,
             'approved_at' => null,
-        ]);
+        ];
+
+        if ($skpiRegistration) {
+            $skpiRegistration->update($registrationData);
+        } else {
+            $skpiRegistration = $student->skpiRegistration()->create($registrationData);
+        }
 
         $recipientIds = NotificationHelper::kaprodiAndSuperuserUserIdsForProdi(
             NotificationHelper::prodiFromStudent($student)
@@ -234,8 +173,8 @@ class SkpiController extends Controller
 
         if (!$skpiRegistration) {
             return redirect()
-                ->route('student.skpi.daftar.create')
-                ->with('error', 'Anda belum memiliki draft pendaftaran SKPI. Silakan isi form terlebih dahulu.');
+                ->route('student.skpi.daftar.index')
+                ->with('error', 'Anda belum mengajukan pendaftaran SKPI.');
         }
 
         $holderFields = $this->buildHolderFields($this->buildHolderData($student, $skpiRegistration));
@@ -264,12 +203,12 @@ class SkpiController extends Controller
         }
 
         if ($registration->status !== 'approved') {
-            return redirect()->route('student.skpi.daftar.show')
+            return redirect()->route('student.skpi.daftar.index')
                 ->with('error', 'Dokumen SKPI baru bisa diunduh setelah pengajuan Anda disetujui.');
         }
 
         if (!$registration->hasGeneratedDocument()) {
-            return redirect()->route('student.skpi.daftar.show')
+            return redirect()->route('student.skpi.daftar.index')
                 ->with('error', 'Dokumen SKPI Anda belum siap. Mohon hubungi Admin agar dokumen segera di-generate.');
         }
 
@@ -277,7 +216,7 @@ class SkpiController extends Controller
             $decrypted = SkpiDocumentEncryption::decrypt($registration->skpi_document);
         } catch (\Throwable $e) {
             \Log::error('[StudentSkpi] Gagal dekripsi SKPI NIM=' . $registration->nim . ': ' . $e->getMessage());
-            return redirect()->route('student.skpi.daftar.show')
+            return redirect()->route('student.skpi.daftar.index')
                 ->with('error', 'Dokumen SKPI tidak dapat dibaca. Silakan hubungi Admin.');
         }
 
@@ -329,9 +268,12 @@ class SkpiController extends Controller
 
     private function buildRegistrationChecklist(Student $student): array
     {
-        $registration = $student->skpiRegistration;
-        $holderData = $this->buildHolderData($student, $registration);
-        $birthIdentityComplete = filled($holderData['tempat_lahir']) && filled($holderData['tanggal_lahir']);
+        $birthIdentityComplete = filled($student->nama_lengkap) 
+            && filled($student->tempat_lahir) 
+            && filled($student->tanggal_lahir)
+            && filled($student->nim)
+            && filled($student->angkatan);
+            
         $hasAcademicProfile = filled($student->ipk) && filled($student->sks);
         
         $finalProject = $student->finalProject;
@@ -345,7 +287,7 @@ class SkpiController extends Controller
         return [
             [
                 'title' => 'Data Pemegang SKPI',
-                'description' => 'Identitas dasar seperti nama, tempat lahir, tanggal lahir, dan NIM.',
+                'description' => 'Identitas dasar (nama, tempat/tanggal lahir, NIM) harus lengkap di profil.',
                 'ready' => $birthIdentityComplete,
                 'required' => true,
             ],

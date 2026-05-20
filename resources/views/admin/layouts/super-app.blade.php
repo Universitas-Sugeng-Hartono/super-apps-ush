@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+@php
+    $adminRole   = auth()->user() ? auth()->user()->role : null;
+    $isWaEnabled = $adminRole ? \App\Models\AppSetting::isWaVisibleForRole($adminRole) : false;
+    $waNumber    = \App\Models\AppSetting::get('wa_number', '6289613942890');
+    $waTemplate  = \App\Models\AppSetting::get('wa_message_template', 'Halo Admin USH, saya ingin bertanya mengenai...');
+    $waTitle     = \App\Models\AppSetting::get('wa_tooltip_title', 'Butuh bantuan? 👋');
+    $waMessage   = \App\Models\AppSetting::get('wa_tooltip_message', "Halo! Ada yang bisa kami bantu?\nSilakan chat langsung dengan Admin lewat WhatsApp. ✨");
+@endphp
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -518,6 +526,213 @@
             margin-left: 280px;
             transition: margin-left var(--transition-normal);
         }
+
+        /* ========================================
+           FLOATING WHATSAPP BUTTON
+           ======================================== */
+        #wa-float-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            z-index: 10060;
+            cursor: grab;
+            user-select: none;
+            /* touch-action dibiarkan default agar tap mobile tidak terblokir */
+            -webkit-tap-highlight-color: transparent;
+        }
+        #wa-float-btn:active {
+            cursor: grabbing;
+        }
+        .wa-btn-circle {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 24px rgba(37,211,102,0.45), 0 2px 8px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+        .wa-btn-circle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 32px rgba(37,211,102,0.55), 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .wa-btn-circle svg {
+            width: 32px;
+            height: 32px;
+            fill: white;
+        }
+        /* Pulse ring animation */
+        .wa-pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            border: 3px solid rgba(37,211,102,0.6);
+            animation: wa-pulse 2s ease-out infinite;
+            pointer-events: none;
+        }
+        @keyframes wa-pulse {
+            0%   { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+        }
+        /* Tooltip popup */
+        .wa-tooltip {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            padding: 16px 18px;
+            width: 230px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px) scale(0.95);
+            transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events: none;
+        }
+        .wa-tooltip.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+        /* Tooltip arrow */
+        .wa-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            right: 22px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            transform: rotate(45deg);
+            box-shadow: 3px 3px 5px rgba(0,0,0,0.06);
+        }
+        .wa-tooltip-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .wa-tooltip-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .wa-tooltip-avatar svg {
+            width: 22px;
+            height: 22px;
+            fill: white;
+        }
+        .wa-tooltip-info small {
+            display: block;
+            font-size: 10px;
+            color: #25D366;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .wa-tooltip-info p {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2C3E50;
+            line-height: 1.2;
+        }
+        .wa-tooltip-msg {
+            background: #f0fdf4;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 12.5px;
+            color: #374151;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            border-left: 3px solid #25D366;
+        }
+        .wa-chat-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: filter 0.2s ease, transform 0.15s ease;
+            box-shadow: 0 4px 14px rgba(37,211,102,0.35);
+        }
+        .wa-chat-btn:hover {
+            filter: brightness(1.08);
+            color: white;
+            transform: translateY(-1px);
+        }
+        .wa-chat-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+        /* Close tooltip button */
+        .wa-tooltip-close {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #9CA3AF;
+            cursor: pointer;
+            line-height: 1;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .wa-tooltip-close:hover {
+            color: #374151;
+            background: #f3f4f6;
+        }
+        /* Badge notif dot */
+        .wa-notif-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            background: #FF5252;
+            border-radius: 50%;
+            border: 2px solid white;
+            animation: wa-dot-bounce 1.5s ease infinite;
+        }
+        @keyframes wa-dot-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+        @media (max-width: 768px) {
+            #wa-float-btn {
+                bottom: 90px;
+                right: 16px;
+                /* Pastikan selalu terlihat di mobile */
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -605,6 +820,14 @@
                 </div>
                 <span>Pengumuman</span>
             </a>
+            @if(auth()->user()->role === 'masteradmin')
+            <a href="{{ route('admin.settings.whatsapp') }}" class="nav-item {{ request()->routeIs('admin.settings.whatsapp') ? 'active' : '' }}">
+                <div class="nav-icon">
+                    <i class="bi bi-whatsapp"></i>
+                </div>
+                <span>Seting WA</span>
+            </a>
+            @endif
             <a href="{{ route('user.admin.index') }}" class="nav-item {{ request()->routeIs('user.admin.index') ? 'active' : '' }}">
                 <div class="nav-icon">
                     <i class="bi bi-person-circle"></i>
@@ -637,12 +860,12 @@
             </div>
             <span>Notif</span>
         </a>
-        <a href="{{ route('admin.announcements.index') }}" class="nav-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">
+        <!-- <a href="{{ route('admin.announcements.index') }}" class="nav-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">
             <div class="nav-icon">
                 <i class="bi bi-bell-fill"></i>
             </div>
             <span>Pengumuman</span>
-        </a>
+        </a> -->
 
         @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'masteradmin')
         <a href="{{ route('user.admin.main') }}" class="nav-item {{ request()->routeIs('user.admin.main') ? 'active' : '' }}">
@@ -652,6 +875,14 @@
             <span>Dosen</span>
         </a>
         @endif
+        @if(auth()->user()->role === 'masteradmin')
+        <a href="{{ route('admin.settings.whatsapp') }}" class="nav-item {{ request()->routeIs('admin.settings.whatsapp') ? 'active' : '' }}">
+            <div class="nav-icon">
+                <i class="bi bi-whatsapp"></i>
+            </div>
+            <span>Seting WA</span>
+        </a>
+        @endif
         <a href="{{ route('user.admin.index') }}" class="nav-item {{ request()->routeIs('user.admin.index') ? 'active' : '' }}">
             <div class="nav-icon">
                 <i class="bi bi-person-circle"></i>
@@ -659,6 +890,49 @@
             <span>Profile</span>
         </a>
     </nav>
+
+    <!-- ============================================
+         FLOATING WHATSAPP BUTTON
+         ============================================ -->
+    @if($isWaEnabled)
+    <div id="wa-float-btn" title="Chat dengan Admin">
+        <!-- Pulse ring -->
+        <div class="wa-pulse-ring"></div>
+
+        <!-- Tooltip Popup -->
+        <div class="wa-tooltip" id="waTooltip">
+            <button class="wa-tooltip-close" id="waTooltipClose" title="Tutup">&times;</button>
+            <div class="wa-tooltip-header">
+                <div class="wa-tooltip-avatar">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                </div>
+                <div class="wa-tooltip-info">
+                    <small>Admin USH</small>
+                    <p>{{ $waTitle }}</p>
+                </div>
+            </div>
+            <div class="wa-tooltip-msg">
+                {!! nl2br(e($waMessage)) !!}
+            </div>
+            <a
+                href="https://wa.me/{{ $waNumber }}?text={{ urlencode($waTemplate) }}"
+                target="_blank"
+                rel="noopener"
+                class="wa-chat-btn"
+                id="waChatLink"
+            >
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                Chat Sekarang
+            </a>
+        </div>
+
+        <!-- Main Button -->
+        <div class="wa-btn-circle" id="waBtnCircle">
+            <div class="wa-notif-dot"></div>
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </div>
+    </div>
+    @endif
 
     <!-- Main Content -->
     <div class="container">
@@ -737,5 +1011,212 @@
             });
         }
     </script>
+
+    <!-- ============================================
+         WHATSAPP FLOAT BUTTON SCRIPT
+         ============================================ -->
+    @if($isWaEnabled)
+    <script>
+    (function () {
+        const waBtn     = document.getElementById('wa-float-btn');
+        const tooltip   = document.getElementById('waTooltip');
+        const closeBtn  = document.getElementById('waTooltipClose');
+        const btnCircle = document.getElementById('waBtnCircle');
+
+        if (!waBtn) return;
+
+        /* ── Helpers ── */
+        var isMobile = function () { return window.innerWidth <= 768; };
+
+        // Viewport key: simpan viewport width agar posisi desktop tidak dipakai di mobile
+        var currentVpKey = (window.innerWidth <= 768 ? 'mobile' : 'desktop');
+
+        /* ── Clamp posisi agar selalu dalam viewport ── */
+        function clampPos(left, top) {
+            var maxLeft = window.innerWidth  - waBtn.offsetWidth;
+            var maxTop  = window.innerHeight - waBtn.offsetHeight;
+            return {
+                left: Math.max(4, Math.min(left, maxLeft - 4)),
+                top:  Math.max(4, Math.min(top,  maxTop  - 4))
+            };
+        }
+
+        /* ── Restore last position dari localStorage ── */
+        function restorePosition() {
+            try {
+                var saved = JSON.parse(localStorage.getItem('wa_btn_pos') || 'null');
+                // Hanya pakai posisi jika disimpan pada viewport yang sama (mobile/desktop)
+                if (saved && saved.vpKey === currentVpKey) {
+                    var clamped = clampPos(saved.left, saved.top);
+                    waBtn.style.right  = 'auto';
+                    waBtn.style.bottom = 'auto';
+                    waBtn.style.left   = clamped.left + 'px';
+                    waBtn.style.top    = clamped.top  + 'px';
+                } else {
+                    // Hapus posisi lama dari viewport berbeda
+                    localStorage.removeItem('wa_btn_pos');
+                }
+            } catch (err) {
+                localStorage.removeItem('wa_btn_pos');
+            }
+        }
+
+        // Tunggu hingga elemen rendered agar offsetWidth tersedia
+        window.addEventListener('load', restorePosition);
+
+        /* ── Draggable Logic ── */
+        var isDragging = false;
+        var hasDragged = false;
+        var startX, startY, startLeft, startTop;
+        var touchMoved = false;
+
+        function getInitialPos() {
+            var rect = waBtn.getBoundingClientRect();
+            return { left: rect.left, top: rect.top };
+        }
+
+        function onPointerDown(e) {
+            // Hanya tombol kiri mouse
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            isDragging = true;
+            hasDragged = false;
+            touchMoved = false;
+
+            var pos = getInitialPos();
+            startLeft = pos.left;
+            startTop  = pos.top;
+
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX - startLeft;
+            startY = clientY - startTop;
+
+            waBtn.style.right  = 'auto';
+            waBtn.style.bottom = 'auto';
+            waBtn.style.left   = startLeft + 'px';
+            waBtn.style.top    = startTop  + 'px';
+
+            document.addEventListener('mousemove', onPointerMove);
+            document.addEventListener('mouseup',   onPointerUp);
+            document.addEventListener('touchmove', onPointerMove, { passive: false });
+            document.addEventListener('touchend',  onPointerUp);
+        }
+
+        function onPointerMove(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            var newLeft = clientX - startX;
+            var newTop  = clientY - startY;
+
+            var clamped = clampPos(newLeft, newTop);
+            waBtn.style.left = clamped.left + 'px';
+            waBtn.style.top  = clamped.top  + 'px';
+
+            // Anggap drag jika bergerak > 8px
+            if (Math.abs(clientX - (startX + startLeft)) > 8 ||
+                Math.abs(clientY - (startY + startTop))  > 8) {
+                hasDragged = true;
+                touchMoved = true;
+            }
+        }
+
+        function onPointerUp(e) {
+            if (!isDragging) return;
+            isDragging = false;
+
+            document.removeEventListener('mousemove', onPointerMove);
+            document.removeEventListener('mouseup',   onPointerUp);
+            document.removeEventListener('touchmove', onPointerMove);
+            document.removeEventListener('touchend',  onPointerUp);
+
+            // Simpan posisi beserta info viewport
+            var rect = waBtn.getBoundingClientRect();
+            localStorage.setItem('wa_btn_pos', JSON.stringify({
+                left:  rect.left,
+                top:   rect.top,
+                vpKey: currentVpKey
+            }));
+
+            // Jika ini touchend dan TIDAK ada gerakan → toggle tooltip (mobile tap)
+            if (e && e.type === 'touchend' && !touchMoved) {
+                tooltip.classList.toggle('open');
+                hasDragged = false; // reset agar click event berikutnya juga bisa
+            }
+        }
+
+        waBtn.addEventListener('mousedown',  onPointerDown);
+        waBtn.addEventListener('touchstart', onPointerDown, { passive: true });
+
+        /* ── Toggle Tooltip on Click / Tap ── */
+        btnCircle.addEventListener('click', function (e) {
+            if (hasDragged) {
+                hasDragged = false;
+                return;
+            }
+            tooltip.classList.toggle('open');
+        });
+
+        /* ── Close Tooltip ── */
+        closeBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            tooltip.classList.remove('open');
+        });
+        closeBtn.addEventListener('touchend', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            tooltip.classList.remove('open');
+        });
+
+        /* ── Close when clicking/tapping outside ── */
+        document.addEventListener('click', function (e) {
+            if (!waBtn.contains(e.target)) {
+                tooltip.classList.remove('open');
+            }
+        });
+        document.addEventListener('touchend', function (e) {
+            if (!waBtn.contains(e.target)) {
+                tooltip.classList.remove('open');
+            }
+        });
+
+        /* ── Re-clamp saat window di-resize ── */
+        window.addEventListener('resize', function () {
+            var newVpKey = (window.innerWidth <= 768 ? 'mobile' : 'desktop');
+            if (newVpKey !== currentVpKey) {
+                // Viewport type berubah → reset ke posisi CSS default
+                currentVpKey = newVpKey;
+                localStorage.removeItem('wa_btn_pos');
+                waBtn.style.left   = '';
+                waBtn.style.top    = '';
+                waBtn.style.right  = '';
+                waBtn.style.bottom = '';
+            } else {
+                // Viewport type sama → clamp posisi current
+                var rect = waBtn.getBoundingClientRect();
+                var clamped = clampPos(rect.left, rect.top);
+                waBtn.style.right  = 'auto';
+                waBtn.style.bottom = 'auto';
+                waBtn.style.left   = clamped.left + 'px';
+                waBtn.style.top    = clamped.top  + 'px';
+            }
+        });
+
+        /* ── Auto-show tooltip hint setelah 4 detik (hanya kunjungan pertama) ── */
+        if (!localStorage.getItem('wa_hint_shown')) {
+            setTimeout(function () {
+                tooltip.classList.add('open');
+                localStorage.setItem('wa_hint_shown', '1');
+                setTimeout(function () {
+                    tooltip.classList.remove('open');
+                }, 6000);
+            }, 4000);
+        }
+    })();
+    </script>
+    @endif
 </body>
 </html>

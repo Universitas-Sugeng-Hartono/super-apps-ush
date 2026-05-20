@@ -45,4 +45,13 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Nomor WhatsApp Admin
+    |--------------------------------------------------------------------------
+    | Format: kode negara + nomor tanpa tanda + (contoh: 6281234567890)
+    | Ubah di file .env dengan key ADMIN_WA_NUMBER
+    */
+    'admin_wa_number' => env('ADMIN_WA_NUMBER', '6289613942890'),
+
 ];

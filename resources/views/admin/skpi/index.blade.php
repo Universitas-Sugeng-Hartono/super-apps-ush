@@ -9,7 +9,7 @@ $menus = [
 'description' => 'Konfigurasi data institusi, program studi, dan informasi akademik dasar.',
 'icon' => 'bi bi-journal-text',
 'route' => 'admin.skpi.input-data-akademi.index',
-'badge' => 'Setup',
+'badge' => 'Setup Data Akademik',
 'color' => '#2196F3',
 'gradient' => 'linear-gradient(135deg, #2196F3, #64B5F6)'
 ],
@@ -19,7 +19,7 @@ $menus = [
 'description' => 'Validasi prestasi dan aktivitas mahasiswa sebelum masuk ke draf SKPI.',
 'icon' => 'bi bi-patch-check',
 'route' => 'admin.skpi.verifikasi-data.index',
-'badge' => 'Approval',
+'badge' => 'Approval Prestasi Mahasiswa',
 'color' => '#FF9800',
 'gradient' => 'linear-gradient(135deg, #FF9800, #FFB347)'
 ],
@@ -29,7 +29,7 @@ $menus = [
 'description' => 'Kelola antrean pengajuan pendaftaran SKPI dan status verifikasi akhir.',
 'icon' => 'bi bi-people',
 'route' => 'admin.skpi.daftar-skpi.index',
-'badge' => 'Queue',
+'badge' => 'Approval Pendaftar SKPI',
 'color' => '#4CAF50',
 'gradient' => 'linear-gradient(135deg, #4CAF50, #81C784)'
 ],
@@ -39,7 +39,7 @@ $menus = [
 'description' => 'Proses akhir pembuatan dokumen Word/PDF dan penomoran resmi.',
 'icon' => 'bi bi-file-earmark-pdf',
 'route' => 'admin.skpi.generate-skpi.index',
-'badge' => 'Final',
+'badge' => 'Generate Final SKPI Mahasiswa',
 'color' => '#E91E63',
 'gradient' => 'linear-gradient(135deg, #E91E63, #F06292)'
 ],

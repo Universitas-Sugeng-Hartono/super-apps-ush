@@ -1,6 +1,7 @@
 @extends('students.layouts.super-app')
 
 @section('content')
+
     <!-- Upcoming Schedule Reminder -->
     @if(($upcomingSchedules ?? collect())->isNotEmpty())
         @foreach($upcomingSchedules as $schedule)
@@ -588,6 +589,16 @@
             gap: 20px;
         }
     }
+
+
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+    });
+</script>
 @endpush
 

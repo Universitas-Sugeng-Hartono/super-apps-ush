@@ -187,7 +187,7 @@ break;
                     <div class="col-md-6" id="rowJabatan">
                         <div class="form-floating-custom">
                             <label class="custom-label" id="jabatanLabel">Jabatan / Peran / Prestasi</label>
-                            <select id="participation_role" name="participation_role" class="custom-select">
+                            <select id="participation_role" name="participation_role" class="custom-select" required>
                                 <option value="">— Pilih —</option>
                             </select>
                         </div>
@@ -195,11 +195,12 @@ break;
 
                     <div class="col-md-12">
                         <div class="upload-container-exclusive" id="uploadArea">
-                            <input type="file" id="certificate" name="certificate" accept=".pdf,.jpg,.jpeg,.png" onchange="previewFile(this)">
+                            <input type="file" id="certificate" name="certificate" accept=".pdf,.jpg,.jpeg,.png" onchange="previewFile(this)" required>
                             <div class="upload-overlay" id="uploadPlaceholder">
                                 <div class="pulse-icon"><i class="bi bi-cloud-arrow-up"></i></div>
                                 <h4>Unggah Bukti Pendukung</h4>
-                                <p>Tarik file ke sini atau klik untuk mencari file</p>
+                                <p id="buktiHintText" style="color:#d97706; font-weight:600; margin-bottom:5px;">Pilih Jenis Kegiatan untuk melihat jenis bukti</p>
+                                <p style="font-size:0.85rem; margin-top:0;">Tarik file ke sini atau klik untuk mencari file</p>
                                 <div class="upload-types">PDF, JPG, PNG (Maks. 5 MB)</div>
                             </div>
                             <div class="upload-result-exclusive" id="uploadPreview" style="display:none">
@@ -1448,6 +1449,7 @@ break;
         const ROLE_OPTIONS = @json($roleOptions);
         const JS_POINTS_TABLE = @json($pointsTable);
         const TYPE_CATEGORY = @json($typeCategoryMap);
+        const BUKTI_TABLE = @json($buktiTable ?? []);
         const ACTIVITY_GROUPS = @json($activityTypes);
         const CATEGORY_LABELS = @json(\App\Models\StudentAchievement::manualCategoryOptions());
 
@@ -1549,11 +1551,16 @@ break;
 
         function fillSelect(el, options, placeholder) {
             el.innerHTML = `<option value="">${placeholder}</option>`;
+            const keys = Object.keys(options);
             for (const [val, label] of Object.entries(options)) {
                 const opt = document.createElement('option');
                 opt.value = val;
                 opt.textContent = label;
                 el.appendChild(opt);
+            }
+            if (keys.length === 1) {
+                el.value = keys[0];
+                el.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
 
@@ -1582,8 +1589,15 @@ break;
             $actSearch.addEventListener('input', function() {
                 $actType.value = '';
                 $catInput.value = '';
-                $level.innerHTML = '<option value="">â€” Pilih Tingkat â€”</option>';
-                $role.innerHTML = '<option value="">â€” Pilih â€”</option>';
+
+                // Reset bukti hint
+                const $buktiHintText = document.getElementById('buktiHintText');
+                if ($buktiHintText) {
+                    $buktiHintText.textContent = 'Pilih Jenis Kegiatan untuk melihat jenis bukti';
+                }
+
+                $level.innerHTML = '<option value="">— Pilih Tingkat —</option>';
+                $role.innerHTML = '<option value="">— Pilih —</option>';
                 $skpBox.style.display = 'none';
                 s1.classList.remove('done');
                 s2.classList.remove('active', 'done');
@@ -1623,6 +1637,20 @@ break;
         if ($actType) {
             $actType.addEventListener('change', function() {
                 const type = this.value;
+                const cat = TYPE_CATEGORY[type];
+                if (cat) $catInput.value = cat;
+
+                // Update bukti hint
+                const $buktiHintText = document.getElementById('buktiHintText');
+                if ($buktiHintText) {
+                    if (type && BUKTI_TABLE[type]) {
+                        $buktiHintText.innerHTML = `<i class="bi bi-info-circle"></i> Wajib melampirkan: <b>${escapeHtml(BUKTI_TABLE[type])}</b>`;
+                    } else {
+                        $buktiHintText.textContent = 'Pilih Jenis Kegiatan untuk melihat jenis bukti';
+                    }
+                }
+
+                // reset
                 $level.innerHTML = '<option value="">— Pilih Tingkat —</option>';
                 $role.innerHTML = '<option value="">— Pilih —</option>';
                 s1.classList.add('done');
