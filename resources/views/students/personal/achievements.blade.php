@@ -299,7 +299,6 @@ break;
                                 </div>
                                 @if ($achievement->approval_notes)
                                 <div class="approval-note-exclusive" title="{{ $achievement->approval_notes }}">
-                                    <i class="bi bi-info-circle"></i> Catatan Review
                                 </div>
                                 @endif
                             </td>
@@ -313,11 +312,19 @@ break;
                                 @endif
                             </td>
                             <td>
-                                <form action="{{ route('student.personal.achievement.delete', $achievement->id) }}" method="POST" onsubmit="return confirm('Hapus data prestasi ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-table-action delete"><i class="bi bi-trash"></i></button>
-                                </form>
+                                <div style="display: flex; gap: 8px;">
+                                    @if($achievement->status === 'rejected')
+                                    <button type="button" class="btn-table-action" style="color: #FF9800; background: rgba(255,152,0,0.1);" data-bs-toggle="modal" data-bs-target="#editAchievementModal-{{ $achievement->id }}" title="Perbaiki & Re-upload">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    @endif
+                                    
+                                    <form action="{{ route('student.personal.achievement.delete', $achievement->id) }}" method="POST" onsubmit="return confirm('Hapus data prestasi ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn-table-action delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty
@@ -335,6 +342,52 @@ break;
         </div>
     </div>
 </div>
+
+{{-- MODAL UNTUK MENGUP ULANG REJECTED ACHIEVEMENTS --}}
+@foreach($student->achievements as $achievement)
+    @if($achievement->status === 'rejected')
+    <div class="modal fade" id="editAchievementModal-{{ $achievement->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <form action="{{ route('student.personal.achievement.update', $achievement->id) }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-orange), #FFB347); color: white; border-radius: 16px 16px 0 0;">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-arrow-repeat"></i> Upload Ulang Prestasi</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert alert-danger" style="border-radius: 12px; font-size: 14px;">
+                            <strong><i class="bi bi-exclamation-triangle-fill"></i> Catatan Penolakan:</strong><br>
+                            {{ $achievement->approval_notes ?? 'Berkas tidak valid.' }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Jenis Kegiatan</label>
+                            <input type="text" class="form-control" value="{{ $achievement->activity_type_label ?? $achievement->activity_type }}" disabled style="background-color: #f8f9fa;">
+                            <input type="hidden" name="category" value="{{ $achievement->category }}">
+                            <input type="hidden" name="activity_type" value="{{ $achievement->activity_type }}">
+                            <input type="hidden" name="level" value="{{ $achievement->level }}">
+                            <input type="hidden" name="participation_role" value="{{ $achievement->participation_role }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Unggah Berkas Baru <span class="text-danger">*</span></label>
+                            <input type="file" name="certificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted"><i class="bi bi-info-circle"></i> Format: PDF/JPG/PNG max 5MB.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px;">Batal</button>
+                        <button type="submit" class="btn btn-primary" style="background: var(--primary-orange); border: none; border-radius: 8px;">Kirim Ulang</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
+
 @endsection
 
 @push('css')

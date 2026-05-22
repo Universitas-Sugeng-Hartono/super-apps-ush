@@ -126,8 +126,12 @@
                     @forelse($registrations as $reg)
                     @php
                     $s = $reg->student;
-                    $hasProfile = filled($s->ipk) && filled($s->sks) && filled($s->foto) && filled($s->ttd);
-                    $hasFinalProject = filled(optional($s->finalProject)->title);
+                    $ipk = $reg->ipk ?: $s->ipk;
+                    $sks = $reg->sks ?: $s->sks;
+                    $judulTa = $reg->judul_ta_indo ?: optional($s->finalProject)->title;
+
+                    $hasProfile = filled($ipk) && filled($sks) && filled($s->foto) && filled($s->ttd);
+                    $hasFinalProject = filled($judulTa) || $s->is_skpi_unlocked;
                     $allReady = $hasProfile && $hasFinalProject;
                     @endphp
                     <tr>
@@ -145,11 +149,16 @@
                         <td>
                             <div class="prereq-container">
                                 @php
-                                    $profileTitle = "IPK: " . ($s->ipk ?? '-') . " " . ($s->ipk ? '✓' : '✗') . " | " .
-                                                   "SKS: " . ($s->sks ?? '-') . " " . ($s->sks ? '✓' : '✗') . " | " .
+                                    $profileTitle = "IPK: " . ($ipk ?? '-') . " " . ($ipk ? '✓' : '✗') . " | " .
+                                                   "SKS: " . ($sks ?? '-') . " " . ($sks ? '✓' : '✗') . " | " .
                                                    "Foto: " . ($s->foto ? '✓' : '✗') . " | " .
                                                    "TTD: " . ($s->ttd ? '✓' : '✗');
-                                    $taTitle = $s->finalProject ? "Judul: " . $s->finalProject->title : "Judul TA Belum Diinput";
+                                    
+                                    if ($s->is_skpi_unlocked) {
+                                        $taTitle = "Akses SKPI Dibuka Superuser" . ($judulTa ? " (Judul: " . $judulTa . ")" : "");
+                                    } else {
+                                        $taTitle = $judulTa ? "Judul: " . $judulTa : "Judul TA Belum Diinput";
+                                    }
                                 @endphp
                                 <div class="prereq-badge {{ $hasProfile ? 'done' : 'missing' }}" 
                                      data-bs-toggle="tooltip" 

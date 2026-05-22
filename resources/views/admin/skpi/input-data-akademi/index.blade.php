@@ -1,4 +1,4 @@
-﻿@extends('admin.layouts.super-app')
+@extends('admin.layouts.super-app')
 
 @section('content')
 <div class="skpi-setup-shell">
@@ -189,8 +189,8 @@
                                 <div class="form-group">
                                     <label>Lama Studi</label>
                                     <input type="text" name="lama_studi" class="form-control"
-                                        value="{{ old('lama_studi', $academicProfile->lama_studi) }}"
-                                        placeholder="4 tahun / 8 semester">
+                                        value="Diambil Otomatis dari Data Mahasiswa" readonly>
+                                    <small class="text-muted"><i class="bi bi-info-circle"></i> Tidak bisa diedit karena mengikuti hasil perhitungan otomatis masa studi tiap mahasiswa.</small>
                                 </div>
                                 <div class="form-group">
                                     <label>Bahasa Pengantar</label>

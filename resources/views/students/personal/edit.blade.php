@@ -999,23 +999,7 @@
                             </div>
                         </div>
 
-                        <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-book me-2"></i>Data Akademik</h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label"><i class="bi bi-trophy me-1"></i>IPK (Indeks Prestasi Kumulatif)</label>
-                                    <input type="number" name="ipk" class="form-control" value="{{ old('ipk', $student->ipk) }}" @readonly(!$student->is_edited) step="0.01" min="0" max="4" placeholder="contoh: 3.75">
-                                    <small class="text-muted">Skala 0.00 - 4.00</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label"><i class="bi bi-journal-bookmark-fill me-1"></i>SKS (Satuan Kredit Semester)</label>
-                                    <input type="number" name="sks" class="form-control" value="{{ old('sks', $student->sks) }}" @readonly(!$student->is_edited) min="0" max="200" placeholder="contoh: 120">
-                                    <small class="text-muted">Total SKS yang telah ditempuh</small>
-                                </div>
-                            </div>
-                        </div>
+
 
                         <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-house-door me-2"></i>Kontak & Tempat Tinggal</h6>
                         <div class="row">
@@ -1038,13 +1022,13 @@
                             <textarea name="alamat" rows="3" class="form-control" @readonly(!$student->is_edited) placeholder="Masukkan alamat lengkap">{{ old('alamat', $student->alamat) }}</textarea>
                         </div>
 
-                        @if ($student->is_edited)
-                            <div class="form-group">
+                        <!-- @if ($student->is_edited)
+                            <div class="form-group" type="hiden">
                                 <label class="form-label">
                                     <i class="bi bi-map me-1"></i>
                                     Lokasi di Peta
                                 </label>
-                                <div id="map"></div>
+                                <div id="map" type="hiden"></div>
                                 <input type="hidden" name="alamat_lat" id="alamat_lat"
                                     value="{{ old('alamat_lat', $student->alamat_lat) }}">
                                 <input type="hidden" name="alamat_lng" id="alamat_lng"
@@ -1054,8 +1038,8 @@
                                     Seret pin untuk menyesuaikan lokasi Anda
                                 </small>
                             </div>
-                        @else
-                            @if ($student->alamat_lat && $student->alamat_lng)
+                        @else -->
+                            <!-- @if ($student->alamat_lat && $student->alamat_lng)
                                 <div class="form-group">
                                     <a href="https://www.google.com/maps?q={{ $student->alamat_lat }},{{ $student->alamat_lng }}"
                                         target="_blank" class="btn btn-outline-primary">
@@ -1063,7 +1047,7 @@
                                         Lihat Lokasi di Google Maps
                                     </a>
                                 </div>
-                            @endif
+                            @endif -->
                         @endif
 
                         @if ($student->is_edited)

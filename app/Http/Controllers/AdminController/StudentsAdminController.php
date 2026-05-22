@@ -386,7 +386,7 @@ class StudentsAdminController extends Controller
         $validator = Validator::make($request->all(), [
             'full_name' => 'required|string|max:100',
             'nim'       => 'required|string|unique:students,nim|max:12',
-            'batch'     => 'required|integer|min:1900|max:2100',
+            'periode_masuk' => 'required|date_format:Y-m',
             'program_studi' => 'required|string|in:' . implode(',', $validPrograms),
             'gender'    => 'nullable|in:L,P',
             'address'   => 'nullable|string|max:500',
@@ -398,7 +398,8 @@ class StudentsAdminController extends Controller
             'full_name.required' => 'Full name cannot be empty.',
             'nim.required'       => 'NIM cannot be empty.',
             'nim.unique'         => 'This NIM is already registered, please use another one.',
-            'batch.required'     => 'Batch cannot be empty.',
+            'periode_masuk.required' => 'Periode Masuk cannot be empty.',
+            'periode_masuk.date_format' => 'Format Periode Masuk tidak valid.',
             'program_studi.required' => 'Program Studi harus dipilih.',
             'program_studi.in'    => 'Program Studi tidak valid.',
         ]);
@@ -420,7 +421,7 @@ class StudentsAdminController extends Controller
             'nama_lengkap'     => $request->full_name,
             'nim'              => $request->nim,
             'password'         => Hash::make('12345678'),
-            'angkatan'         => $request->batch,
+            'angkatan'         => substr($request->periode_masuk, 0, 4),
             'program_studi'    => $request->program_studi ?? ($defaultProdi ? $defaultProdi->name : 'Bisnis Digital'),
             'email'            => $request->email,
             'no_telepon'       => $request->phone,
@@ -429,7 +430,7 @@ class StudentsAdminController extends Controller
             'alamat'           => $request->address,
             'is_edited'        => 1,
             'status_mahasiswa' => 'Aktif',
-            'tanggal_masuk'    => now(),
+            'tanggal_masuk'    => $request->periode_masuk . '-01',
         ];
 
         Student::create($studentData);
@@ -484,7 +485,7 @@ class StudentsAdminController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_lengkap' => 'required|string|max:100',
             'nim'          => 'required|string|max:12|unique:students,nim,' . $id,
-            'angkatan'     => 'required|integer|min:1900|max:2100',
+            'periode_masuk'=> 'required|date_format:Y-m',
             'program_studi'=> 'required|string|max:50',
             'fakultas'     => 'nullable|string|max:100',
             'jenis_kelamin'=> 'required|in:L,P',
@@ -502,6 +503,9 @@ class StudentsAdminController extends Controller
         }
 
         $studentData = $validator->validated();
+        $studentData['angkatan'] = substr($request->periode_masuk, 0, 4);
+        $studentData['tanggal_masuk'] = $request->periode_masuk . '-01';
+        unset($studentData['periode_masuk']);
         $studentData['status_mahasiswa'] = 'Aktif';
 
         // Update id_lecturer jika user adalah superadmin/masteradmin dan request memiliki id_lecturer
@@ -634,6 +638,29 @@ class StudentsAdminController extends Controller
             'success' => true,
             'message' => "Akses edit profil untuk {$student->nama_lengkap} telah {$status}.",
             'is_edited' => $student->is_edited
+        ]);
+    }
+
+    /**
+     * Toggle is_skpi_unlocked untuk satu mahasiswa
+     */
+    public function toggleSkpiAkses(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+
+        if ($request->has('is_skpi_unlocked')) {
+            $student->is_skpi_unlocked = $request->is_skpi_unlocked ? 1 : 0;
+        } else {
+            $student->is_skpi_unlocked = $student->is_skpi_unlocked ? 0 : 1;
+        }
+
+        $student->save();
+
+        $status = $student->is_skpi_unlocked ? 'dibuka' : 'dikunci';
+        return response()->json([
+            'success' => true,
+            'message' => "Akses SKPI untuk {$student->nama_lengkap} telah {$status}.",
+            'is_skpi_unlocked' => $student->is_skpi_unlocked
         ]);
     }
 

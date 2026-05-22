@@ -25,8 +25,10 @@ class SkpiController extends Controller
         $achievementMeta = $this->buildAchievementMeta($student);
         $skpiRegistration = $student->skpiRegistration;
         $registrationStatus = $this->buildStatusMeta($skpiRegistration?->status);
-        // Cek apakah tugas akhir sudah siap (checklist index 2 sekarang setelah dipisah)
-        $tugasAkhirReady = $registrationChecklist[2]['ready'];
+        // Cek apakah tugas akhir sudah siap langsung dari relasi finalProject
+        $tugasAkhirReady = $student->finalProject && filled($student->finalProject->title) && $student->finalProject->defense?->status === 'approved';
+
+        $hasDocumentSupport = filled($student->foto) && filled($student->ttd);
 
         $menus = [
             [
@@ -43,16 +45,16 @@ class SkpiController extends Controller
                     ? $student->finalProject->title . ($student->finalProject->title_en ? ' (' . $student->finalProject->title_en . ')' : '')
                     : 'Pastikan Anda sudah menyelesaikan Tugas Akhir/Skripsi.',
                 'icon' => 'bi bi-journal-check',
-                'badge' => $registrationChecklist[2]['ready'] ? 'Siap' : 'Cek Data',
-                'badge_class' => $registrationChecklist[2]['ready'] ? 'active' : 'info',
+                'badge' => $tugasAkhirReady ? 'Siap' : 'Cek Data',
+                'badge_class' => $tugasAkhirReady ? 'active' : 'info',
                 'href' => route('student.final-project.index'),
             ],
             [
                 'title' => 'Profile',
                 'description' => 'Lengkapi foto profil dan tanda tangan agar dokumen pendukung SKPI siap digunakan saat proses akhir.',
                 'icon' => 'bi bi-pencil-square',
-                'badge' => $registrationChecklist[3]['ready'] ? 'Lengkap' : '2 Dokumen',
-                'badge_class' => $registrationChecklist[3]['ready'] ? 'active' : 'warning',
+                'badge' => $hasDocumentSupport ? 'Lengkap' : '2 Dokumen',
+                'badge_class' => $hasDocumentSupport ? 'active' : 'warning',
                 'href' => route('student.personal.editDataIndex'),
             ],
         ];
@@ -100,6 +102,87 @@ class SkpiController extends Controller
         ));
     }
 
+    public function daftarCreate()
+    {
+        $student = $this->getStudent();
+        $skpiRegistration = $student->skpiRegistration;
+
+        $holderData = $this->buildHolderData($student, $skpiRegistration);
+        $holderFields = $this->buildHolderFields($holderData);
+        $holderMeta = $this->buildHolderMeta($holderFields);
+        $registrationStatus = $this->buildStatusMeta($skpiRegistration?->status);
+        $canEditRegistration = $this->canEditRegistration($skpiRegistration);
+
+        return view('students.skpi.daftar.create', compact(
+            'student',
+            'skpiRegistration',
+            'holderData',
+            'holderFields',
+            'holderMeta',
+            'registrationStatus',
+            'canEditRegistration'
+        ));
+    }
+
+    public function daftarStore(Request $request)
+    {
+        $student = $this->getStudent();
+        $skpiRegistration = $student->skpiRegistration;
+
+        if ($skpiRegistration && !$this->canEditRegistration($skpiRegistration)) {
+            return redirect()
+                ->route('student.skpi.daftar.index')
+                ->with('error', 'Data identitas tidak dapat diubah karena status pengajuan saat ini tidak mengizinkan pengeditan.');
+        }
+
+        $validated = $request->validate([
+            'ipk'          => 'required|numeric|min:0|max:4',
+            'sks'          => 'required|integer|min:0',
+            'judul_ta_indo'=> 'required|string|max:500',
+            'judul_ta_inggris'=> 'nullable|string|max:500',
+            'periode_lulus'=> 'required|date_format:Y-m',
+            'lama_studi'   => 'required|string|max:255',
+        ]);
+
+        // Ambil gelar otomatis dari profil prodi
+        $studyProgram = \App\Models\StudyProgram::where('name', $student->program_studi)->first();
+        $gelar = null;
+        if ($studyProgram) {
+            $academicProfile = \App\Models\SkpiAcademicProfile::where('study_program_id', $studyProgram->id)->first();
+            $gelar = $academicProfile?->gelar_lulusan;
+        }
+
+        $finalProject = $student->finalProject;
+
+        $lamaStudiStr = $validated['lama_studi'];
+
+        $registrationData = [
+            'nama_lengkap' => $student->nama_lengkap,
+            'nim'          => $student->nim,
+            'tempat_lahir' => $student->tempat_lahir,
+            'tanggal_lahir'=> $student->tanggal_lahir,
+            'angkatan'     => $student->angkatan,
+            'gelar'        => $gelar,
+            'status'       => 'draft',
+            'ipk'          => $validated['ipk'],
+            'sks'          => $validated['sks'],
+            'judul_ta_indo'=> $validated['judul_ta_indo'],
+            'judul_ta_inggris'=> $validated['judul_ta_inggris'] ?? null,
+            'periode_lulus'=> $validated['periode_lulus'],
+            'lama_studi'   => $lamaStudiStr,
+        ];
+
+        if ($skpiRegistration) {
+            $skpiRegistration->update($registrationData);
+        } else {
+            $student->skpiRegistration()->create($registrationData);
+        }
+
+        return redirect()
+            ->route('student.skpi.daftar.index')
+            ->with('success', 'Data identitas SKPI berhasil disimpan sebagai draft.');
+    }
+
     public function daftarSubmit(Request $request)
     {
         $student = $this->getStudent();
@@ -119,33 +202,18 @@ class SkpiController extends Controller
                 ->route('student.skpi.daftar.index')
                 ->with('error', 'Pendaftaran SKPI dengan status saat ini tidak dapat diajukan ulang.');
         }
-        
-        // Ambil gelar otomatis dari prodi
-        $studyProgram = \App\Models\StudyProgram::where('name', $student->program_studi)->first();
-        $gelar = null;
-        if ($studyProgram) {
-            $academicProfile = \App\Models\SkpiAcademicProfile::where('study_program_id', $studyProgram->id)->first();
-            $gelar = $academicProfile?->gelar_lulusan;
-        }
-        
-        $registrationData = [
-            'nama_lengkap' => $student->nama_lengkap,
-            'tempat_lahir' => $student->tempat_lahir,
-            'tanggal_lahir' => $student->tanggal_lahir,
-            'nim' => $student->nim,
-            'angkatan' => $student->angkatan,
-            'gelar' => $gelar,
-            'status' => 'pending',
-            'submitted_at' => now(),
-            'approval_notes' => null,
-            'approved_by' => null,
-            'approved_at' => null,
-        ];
-
         if ($skpiRegistration) {
-            $skpiRegistration->update($registrationData);
+            $skpiRegistration->update([
+                'status' => 'pending',
+                'submitted_at' => now(),
+                'approval_notes' => null,
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
         } else {
-            $skpiRegistration = $student->skpiRegistration()->create($registrationData);
+            return redirect()
+                ->route('student.skpi.daftar.index')
+                ->with('error', 'Gagal mengirim pengajuan! Simpan form identitas SKPI terlebih dahulu.');
         }
 
         $recipientIds = NotificationHelper::kaprodiAndSuperuserUserIdsForProdi(
@@ -274,12 +342,13 @@ class SkpiController extends Controller
             && filled($student->nim)
             && filled($student->angkatan);
             
-        $hasAcademicProfile = filled($student->ipk) && filled($student->sks);
-        
-        $finalProject = $student->finalProject;
-        // title_en bersifat opsional — tidak memblokir jika judul Indonesia sudah ada dan sidang sudah approved
-        // Ini agar mahasiswa lama yang belum mengisi title_en tidak terblokir
-        $hasFinalProjectData = $finalProject && filled($finalProject->title) && $finalProject->defense?->status === 'approved';
+        $skpiRegistration = $student->skpiRegistration;
+        $formIdentitasLengkap = $skpiRegistration 
+            && filled($skpiRegistration->ipk) 
+            && filled($skpiRegistration->sks) 
+            && filled($skpiRegistration->judul_ta_indo) 
+            && filled($skpiRegistration->periode_lulus)
+            && filled($skpiRegistration->lama_studi);
         
         $hasDocumentSupport = filled($student->foto) && filled($student->ttd);
         $hasApprovedAchievements = ($student->approved_achievements_count ?? 0) > 0;
@@ -292,15 +361,9 @@ class SkpiController extends Controller
                 'required' => true,
             ],
             [
-                'title' => 'Profil Akademik',
-                'description' => 'Data IPK dan SKS harus sudah tersedia di sistem.',
-                'ready' => $hasAcademicProfile,
-                'required' => true,
-            ],
-            [
-                'title' => 'Tugas Akhir',
-                'description' => 'Judul Tugas Akhir versi Indonesia dan Inggris sudah ada dan Pendaftaran Sidang telah di-approve.',
-                'ready' => $hasFinalProjectData,
+                'title' => 'Form Identitas SKPI',
+                'description' => 'Data IPK, SKS, Judul Tugas Akhir, dan Periode Lulus sudah dilengkapi dan disimpan pada form.',
+                'ready' => (bool)$formIdentitasLengkap,
                 'required' => true,
             ],
             [
@@ -384,6 +447,8 @@ class SkpiController extends Controller
             $gelarFromProfile = $academicProfile?->gelar_lulusan;
         }
 
+        $finalProject = $student->finalProject;
+
         $defaults = [
             'nama_lengkap' => $registration?->nama_lengkap ?? $student->nama_lengkap,
             'tempat_lahir' => $registration?->tempat_lahir ?? $student->tempat_lahir,
@@ -391,6 +456,12 @@ class SkpiController extends Controller
             'nim' => $registration?->nim ?? $student->nim,
             'angkatan' => $registration?->angkatan ?? $student->angkatan,
             'gelar' => $gelarFromProfile ?? $registration?->gelar,
+            'ipk' => $registration?->ipk ?? $student->ipk,
+            'sks' => $registration?->sks ?? $student->sks,
+            'judul_ta_indo' => $registration?->judul_ta_indo ?? $finalProject?->title,
+            'judul_ta_inggris' => $registration?->judul_ta_inggris ?? $finalProject?->title_en,
+            'periode_lulus' => $registration?->periode_lulus,
+            'lama_studi' => $registration?->lama_studi,
         ];
 
         return [
@@ -400,6 +471,12 @@ class SkpiController extends Controller
             'nim' => old('nim', $request?->input('nim', $defaults['nim']) ?? $defaults['nim']),
             'angkatan' => old('angkatan', $request?->input('angkatan', $defaults['angkatan']) ?? $defaults['angkatan']),
             'gelar' => old('gelar', $request?->input('gelar', $defaults['gelar']) ?? $defaults['gelar']),
+            'ipk' => old('ipk', $request?->input('ipk', $defaults['ipk']) ?? $defaults['ipk']),
+            'sks' => old('sks', $request?->input('sks', $defaults['sks']) ?? $defaults['sks']),
+            'judul_ta_indo' => old('judul_ta_indo', $request?->input('judul_ta_indo', $defaults['judul_ta_indo']) ?? $defaults['judul_ta_indo']),
+            'judul_ta_inggris' => old('judul_ta_inggris', $request?->input('judul_ta_inggris', $defaults['judul_ta_inggris']) ?? $defaults['judul_ta_inggris']),
+            'periode_lulus' => old('periode_lulus', $request?->input('periode_lulus', $defaults['periode_lulus']) ?? $defaults['periode_lulus']),
+            'lama_studi' => old('lama_studi', $request?->input('lama_studi', $defaults['lama_studi']) ?? $defaults['lama_studi']),
         ];
     }
 
@@ -443,6 +520,44 @@ class SkpiController extends Controller
                 'label' => 'Gelar',
                 'value' => $holderData['gelar'] ?? null,
                 'display' => $holderData['gelar'] ?? null,
+            ],
+            [
+                'key' => 'ipk',
+                'label' => 'IPK',
+                'value' => $holderData['ipk'] ?? null,
+                'display' => $holderData['ipk'] ?? null,
+            ],
+            [
+                'key' => 'sks',
+                'label' => 'Total SKS',
+                'value' => $holderData['sks'] ?? null,
+                'display' => $holderData['sks'] ?? null,
+            ],
+            [
+                'key' => 'judul_ta_indo',
+                'label' => 'Judul Tugas Akhir (Indonesia)',
+                'value' => $holderData['judul_ta_indo'] ?? null,
+                'display' => $holderData['judul_ta_indo'] ?? null,
+            ],
+            [
+                'key' => 'judul_ta_inggris',
+                'label' => 'Judul Tugas Akhir (Inggris)',
+                'value' => $holderData['judul_ta_inggris'] ?? null,
+                'display' => $holderData['judul_ta_inggris'] ?? null,
+            ],
+            [
+                'key' => 'periode_lulus',
+                'label' => 'Periode Lulus',
+                'value' => $holderData['periode_lulus'] ?? null,
+                'display' => filled($holderData['periode_lulus'] ?? null)
+                    ? \Carbon\Carbon::parse($holderData['periode_lulus'] . '-01')->translatedFormat('F Y')
+                    : null,
+            ],
+            [
+                'key' => 'lama_studi',
+                'label' => 'Lama Studi',
+                'value' => $holderData['lama_studi'] ?? null,
+                'display' => $holderData['lama_studi'] ?? null,
             ],
         ];
     }

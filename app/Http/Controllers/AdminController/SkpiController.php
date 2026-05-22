@@ -79,12 +79,20 @@ class SkpiController extends Controller
         $student = $registration->student;
         $issues = [];
 
-        if (!filled($student->ipk) || !filled($student->sks)) {
-            $issues[] = 'IPK dan SKS belum lengkap.';
+        // IPK & SKS: cek dari skpiRegistration (form identitas SKPI) ATAU dari profil
+        $ipkOk  = filled($registration->ipk)  || filled($student->ipk);
+        $sksOk  = filled($registration->sks)  || filled($student->sks);
+        if (!$ipkOk || !$sksOk) {
+            $issues[] = 'IPK dan SKS belum dilengkapi (isi melalui Form Identitas SKPI).';
         }
-        if (!filled(optional($student->finalProject)->title)) {
-            $issues[] = 'Data Tugas Akhir belum ada.';
+
+        // Judul TA: cek dari skpiRegistration (input manual via form) ATAU dari final project
+        $taOk = filled($registration->judul_ta_indo)
+             || filled(optional($student->finalProject)->title);
+        if (!$taOk) {
+            $issues[] = 'Judul Tugas Akhir belum ada (isi melalui Form Identitas SKPI atau menu Tugas Akhir).';
         }
+
         if (!filled($student->foto) || !filled($student->ttd)) {
             $issues[] = 'Foto atau tanda tangan belum diupload.';
         }
@@ -393,7 +401,7 @@ class SkpiController extends Controller
             ->with(['achievements' => function ($query) use ($achievementsFilter) {
                 $achievementsFilter($query);
                 $query->with('approver')->latest();
-            }])
+            }, 'skpiRegistration', 'finalProject'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nama_lengkap', 'like', "%{$search}%")

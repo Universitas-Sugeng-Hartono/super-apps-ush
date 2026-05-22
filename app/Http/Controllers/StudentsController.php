@@ -260,8 +260,6 @@ class StudentsController extends Controller
             'password'             => 'nullable|string|min:8|max:20|confirmed',
             'password_confirmation' => 'nullable|string|min:8|max:20',
             'alamat'               => 'nullable|string',
-            'alamat_lat'           => 'nullable|numeric',
-            'alamat_lng'           => 'nullable|numeric',
             'no_telepon'           => 'nullable|string|max:20',
             'no_telepon_orangtua'  => 'nullable|string|max:20',
             'email'                => 'nullable|email|max:255',
@@ -283,8 +281,6 @@ class StudentsController extends Controller
             'password.confirmed'   => 'Password dan konfirmasi password tidak cocok.',
 
             'alamat.string'        => 'Address must be text.',
-            'alamat_lat.numeric'   => 'Latitude must be a number.',
-            'alamat_lng.numeric'   => 'Longitude must be a number.',
 
             'no_telepon.string'    => 'Phone number must be text.',
             'no_telepon.max'       => 'Phone number cannot be longer than 20 characters.',
@@ -339,10 +335,6 @@ class StudentsController extends Controller
                     if ($request->filled('jenis_kelamin')) $student->jenis_kelamin = $request->jenis_kelamin;
                     if ($request->filled('tanggal_lahir')) $student->tanggal_lahir = $request->tanggal_lahir;
                     if ($request->filled('alamat')) $student->alamat = $request->alamat;
-                    if ($request->filled('alamat_lat') && $request->filled('alamat_lng')) {
-                        $student->alamat_lat = $request->alamat_lat;
-                        $student->alamat_lng = $request->alamat_lng;
-                    }
                     if ($request->filled('no_telepon')) $student->no_telepon = $request->no_telepon;
                     if ($request->filled('no_telepon_orangtua')) $student->no_telepon_orangtua = $request->no_telepon_orangtua;
                     if ($request->filled('email')) $student->email = $request->email;
@@ -368,8 +360,6 @@ class StudentsController extends Controller
                     'jenis_kelamin',
                     'tanggal_lahir',
                     'alamat',
-                    'alamat_lat',
-                    'alamat_lng',
                     'no_telepon',
                     'no_telepon_orangtua',
                     'email',
@@ -434,17 +424,8 @@ class StudentsController extends Controller
             'certificate.max'        => 'Ukuran file maksimal 5 MB.',
         ]);
 
-        // Cek duplikasi input prestasi (kegiatan, tingkat, dan peran yang sama)
-        $isDuplicate = StudentAchievement::where('student_id', $student->id)
-            ->where('category', $request->category)
-            ->where('activity_type', $request->activity_type)
-            ->where('level', $request->level)
-            ->where('participation_role', $request->participation_role)
-            ->exists();
-
-        if ($isDuplicate) {
-            return back()->withInput()->with('error', 'Gagal! Anda sudah pernah menginput data prestasi dengan jenis kegiatan, tingkat, dan peran yang sama.');
-        }
+        // Cek duplikasi input prestasi dihapus karena mahasiswa bisa mengikuti
+        // kegiatan yang sama berkali-kali (contoh: 2x juara Lomba yang berbeda)
 
         try {
             $skpPoints = SkpPointCalculator::calculate(
@@ -525,18 +506,7 @@ class StudentsController extends Controller
             'certificate.max'        => 'Ukuran file maksimal 5 MB.',
         ]);
 
-        // Cek duplikasi input prestasi (kegiatan, tingkat, dan peran yang sama selain data ini sendiri)
-        $isDuplicate = StudentAchievement::where('student_id', $achievement->student_id)
-            ->where('category', $request->category)
-            ->where('activity_type', $request->activity_type)
-            ->where('level', $request->level)
-            ->where('participation_role', $request->participation_role)
-            ->where('id', '!=', $id)
-            ->exists();
-
-        if ($isDuplicate) {
-            return back()->withInput()->with('error', 'Gagal! Anda sudah pernah menginput data prestasi dengan jenis kegiatan, tingkat, dan peran yang sama.');
-        }
+        // Cek duplikasi dihapus
 
         try {
             $skpPoints = SkpPointCalculator::calculate(
@@ -572,17 +542,21 @@ class StudentsController extends Controller
 
             $student = Student::find($achievement->student_id);
             if ($student) {
-                NotificationHelper::notifyUsers(
-                    NotificationHelper::kaprodiAndSuperuserUserIdsForProdi(
-                        NotificationHelper::prodiFromStudent($student)
-                    ),
-                    'skpi.achievement.resubmitted',
-                    'Data Aktivitas SKPI Diperbarui',
-                    $student->nama_lengkap . ' memperbarui data "' . ($achievement->activity_type_label ?? $achievement->activity_type)
-                        . '" (' . $achievement->category_label . ', ' . $skpPoints . ' SKP) dan mengirim ulang untuk verifikasi.',
-                    route('superuser.skpi.verifikasi-data.index'),
-                    ['student_achievement_id' => $achievement->id]
-                );
+                try {
+                    NotificationHelper::notifyUsers(
+                        NotificationHelper::kaprodiAndSuperuserUserIdsForProdi(
+                            NotificationHelper::prodiFromStudent($student)
+                        ),
+                        'skpi.achievement.resubmitted',
+                        'Data Aktivitas SKPI Diperbarui',
+                        $student->nama_lengkap . ' memperbarui data "' . ($achievement->activity_type_label ?? $achievement->activity_type)
+                            . '" (' . $achievement->category_label . ', ' . $skpPoints . ' SKP) dan mengirim ulang untuk verifikasi.',
+                        route('superuser.skpi.verifikasi-data.index'),
+                        ['student_achievement_id' => $achievement->id]
+                    );
+                } catch (\Exception $e) {
+                    \Log::warning('Notifikasi gagal dikirim (updateAchievement): ' . $e->getMessage());
+                }
             }
 
             return back()->with('success', "Data berhasil diperbarui! Poin SKP sementara: {$skpPoints} SKP (menunggu verifikasi).");

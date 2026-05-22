@@ -50,7 +50,10 @@ class Student extends Authenticatable
         'ttd',
         'nama_orangtua',
         'nama_ibu_kandung',
+        'ipk',
+        'sks',
         'is_edited',
+        'is_skpi_unlocked',
     ];
 
     /*

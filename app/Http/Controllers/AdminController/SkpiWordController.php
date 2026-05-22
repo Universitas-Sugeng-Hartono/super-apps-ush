@@ -436,8 +436,8 @@ class SkpiWordController extends Controller
                     : null,
             ])->filter()->implode(', ');
 
-            $skripsiTitle   = $student?->finalProject?->title ?? '-';
-            $skripsiTitleEn = $student?->finalProject?->title_en ?? '-';
+            $skripsiTitle   = $registration->judul_ta_indo ?: optional($student?->finalProject)->title ?: '-';
+            $skripsiTitleEn = $registration->judul_ta_inggris ?: optional($student?->finalProject)->title_en ?: '-';
 
             // ─── Bagian 1: Data Diri ──────────────────────────────────────
             $templateProcessor->setValue('NOMOR_SKPI',              htmlspecialchars($documentMeta['nomor_skpi'] ?? ''));
@@ -459,7 +459,7 @@ class SkpiWordController extends Controller
             $templateProcessor->setValue('PERSYARATAN_PENERIMAAN',   htmlspecialchars($academicProfile?->persyaratan_penerimaan ?? '-'));
             $templateProcessor->setValue('BAHASA_PENGANTAR',         htmlspecialchars($academicProfile?->bahasa_pengantar_kuliah ?? 'Inggris / Indonesia'));
             $templateProcessor->setValue('NO_AKREDITASI_PT',         htmlspecialchars($academicProfile?->nomor_akreditasi_perguruan_tinggi ?? '-'));
-            $templateProcessor->setValue('LAMA_STUDI',               htmlspecialchars($academicProfile?->lama_studi ?? '-'));
+            $templateProcessor->setValue('LAMA_STUDI',               htmlspecialchars($registration->lama_studi ?? '-'));
             $templateProcessor->setValue('NO_AKREDITASI_PRODI',      htmlspecialchars($academicProfile?->nomor_akreditasi_program_studi ?? '-'));
             $templateProcessor->setValue('STATUS_PROFESI',           htmlspecialchars($academicProfile?->status_profesi ?? '-'));
 

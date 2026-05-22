@@ -161,13 +161,13 @@
             <div class="ush-card no-padding bg-transparent shadow-none border-0">
                 <h4 class="side-title">Menu Utama</h4>
                 
-                <a href="{{ route('student.personal.editDataIndex') }}" class="ush-action-card">
+                <a href="{{ route('student.skpi.daftar.create') }}" class="ush-action-card">
                     <div class="action-icon orange">
                         <i class="bi bi-person-vcard"></i>
                     </div>
                     <div class="action-text">
-                        <h5>Lengkapi Profil Mahasiswa</h5>
-                        <p>Kelola Nama, Tempat/Tanggal Lahir, NIM, dan lainnya.</p>
+                        <h5>Form Identitas SKPI</h5>
+                        <p>Isi dan simpan data nama, NIM, tempat/tanggal lahir, dan gelar.</p>
                     </div>
                     <i class="bi bi-chevron-right action-arrow"></i>
                 </a>

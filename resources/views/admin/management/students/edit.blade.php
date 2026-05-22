@@ -32,9 +32,9 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Angkatan *</label>
-                        <input type="number" name="angkatan" class="form-control" value="{{ old('angkatan', $student->angkatan) }}" min="1900" max="2100" required>
-                        @error('angkatan')<span class="error">{{ $message }}</span>@enderror
+                        <label>Periode Masuk (Bulan & Tahun) *</label>
+                        <input type="month" name="periode_masuk" class="form-control" value="{{ old('periode_masuk', $student->tanggal_masuk ? $student->tanggal_masuk->format('Y-m') : '') }}" required>
+                        @error('periode_masuk')<span class="error">{{ $message }}</span>@enderror
                     </div>
 
                     <div class="form-group">

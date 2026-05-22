@@ -89,6 +89,7 @@
                             <th>Status</th>
                             <th>Counseling</th>
                             <th>Edit Profil</th>
+                            <th>Akses SKPI</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -129,6 +130,20 @@
                                     </label>
                                     <span class="edit-status" id="status-{{ $student->id }}">
                                         {{ $student->is_edited ? 'Edit' : 'Kunci' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" 
+                                               class="toggle-skpi" 
+                                               data-student-id="{{ $student->id }}"
+                                               data-student-name="{{ $student->nama_lengkap }}"
+                                               {{ $student->is_skpi_unlocked ? 'checked' : '' }}
+                                               onchange="toggleStudentSkpi({{ $student->id }}, '{{ $student->nama_lengkap }}', this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span class="edit-status" id="skpi-status-{{ $student->id }}">
+                                        {{ $student->is_skpi_unlocked ? 'Buka' : 'Kunci' }}
                                     </span>
                                 </td>
                                 <td>
@@ -815,6 +830,49 @@
                 // Revert toggle jika gagal
                 toggleEl.checked = !isChecked;
                 showToast('error', 'Gagal mengubah status edit profil.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toggleEl.checked = !isChecked;
+            showToast('error', 'Terjadi kesalahan saat mengubah status.');
+        })
+        .finally(() => {
+            toggleEl.disabled = false;
+        });
+    }
+
+    // Toggle skpi untuk satu mahasiswa
+    function toggleStudentSkpi(studentId, studentName, isChecked) {
+        const statusEl = document.getElementById('skpi-status-' + studentId);
+        const toggleEl = event.target;
+        
+        // Disable toggle saat proses
+        toggleEl.disabled = true;
+        
+        fetch(`/admin/management/students/${studentId}/toggle-skpi`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                is_skpi_unlocked: isChecked ? 1 : 0
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                statusEl.textContent = isChecked ? 'Buka' : 'Kunci';
+                statusEl.style.color = isChecked ? '#2E7D32' : '#666';
+                statusEl.style.background = isChecked ? '#E8F5E9' : '#F5F5F5';
+                
+                // Show toast notification
+                showToast('success', data.message);
+            } else {
+                // Revert toggle jika gagal
+                toggleEl.checked = !isChecked;
+                showToast('error', 'Gagal mengubah status akses SKPI.');
             }
         })
         .catch(error => {

@@ -46,6 +46,7 @@ Route::middleware(['auth', 'role:superadmin,masteradmin'])->group(function () {
         Route::delete('/{id}', 'destroy')->name('destroy');
         Route::get('/{id}/reset-password', 'resetpassword')->name('reset-password');
         Route::post('/{id}/toggle-edit', 'toggleEdit')->name('toggle-edit');
+        Route::post('/{id}/toggle-skpi', 'toggleSkpiAkses')->name('toggle-skpi');
         Route::post('/toggle-all-edit', 'toggleAllEdit')->name('toggle-all-edit');
     });
 

@@ -75,41 +75,42 @@
         <form method="POST" action="{{ route('student.skpi.daftar.store') }}">
             @csrf
             <div class="form-grid">
+                <input type="hidden" id="angkatan" value="{{ $holderData['angkatan'] }}">
+
                 <div class="form-group">
-                    <label for="nama_lengkap">Nama Lengkap (sesuai nama ijasah)</label>
-                    <input id="nama_lengkap" type="text" name="nama_lengkap" class="form-control" value="{{ $holderData['nama_lengkap'] }}" placeholder="Masukkan nama lengkap" @disabled(!$canEditRegistration)>
-                    @error('nama_lengkap')<small class="text-danger">{{ $message }}</small>@enderror
+                    <label for="ipk">IPK</label>
+                    <input id="ipk" type="text" name="ipk" class="form-control" value="{{ $holderData['ipk'] }}" placeholder="Contoh: 3.85" @disabled(!$canEditRegistration)>
+                    @error('ipk')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="nim">Nomor Induk Mahasiswa</label>
-                    <input id="nim" type="text" name="nim" class="form-control" value="{{ $holderData['nim'] }}" placeholder="Masukkan NIM" @disabled(!$canEditRegistration)>
-                    @error('nim')<small class="text-danger">{{ $message }}</small>@enderror
+                    <label for="sks">Total SKS</label>
+                    <input id="sks" type="number" name="sks" class="form-control" value="{{ $holderData['sks'] }}" placeholder="Contoh: 144" @disabled(!$canEditRegistration)>
+                    @error('sks')<small class="text-danger">{{ $message }}</small>@enderror
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="judul_ta_indo">Judul Tugas Akhir (Indonesia)</label>
+                    <textarea id="judul_ta_indo" name="judul_ta_indo" class="form-control" rows="2" placeholder="Masukkan judul bahasa Indonesia" @disabled(!$canEditRegistration)>{{ $holderData['judul_ta_indo'] }}</textarea>
+                    @error('judul_ta_indo')<small class="text-danger">{{ $message }}</small>@enderror
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="judul_ta_inggris">Judul Tugas Akhir (Inggris)</label>
+                    <textarea id="judul_ta_inggris" name="judul_ta_inggris" class="form-control" rows="2" placeholder="Masukkan judul bahasa Inggris (opsional)" @disabled(!$canEditRegistration)>{{ $holderData['judul_ta_inggris'] }}</textarea>
+                    @error('judul_ta_inggris')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="tempat_lahir">Tempat Lahir</label>
-                    <input id="tempat_lahir" type="text" name="tempat_lahir" class="form-control" value="{{ $holderData['tempat_lahir'] }}" placeholder="Masukkan tempat lahir" @disabled(!$canEditRegistration)>
-                    @error('tempat_lahir')<small class="text-danger">{{ $message }}</small>@enderror
+                    <label for="periode_lulus">Periode Lulus (Bulan Tahun)</label>
+                    <input id="periode_lulus" type="month" name="periode_lulus" class="form-control" value="{{ $holderData['periode_lulus'] }}" @disabled(!$canEditRegistration) onchange="calculateLamaStudi()">
+                    @error('periode_lulus')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="tanggal_lahir">Tanggal Lahir</label>
-                    <input id="tanggal_lahir" type="date" name="tanggal_lahir" class="form-control" value="{{ $holderData['tanggal_lahir'] }}" @disabled(!$canEditRegistration)>
-                    @error('tanggal_lahir')<small class="text-danger">{{ $message }}</small>@enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="angkatan">Tahun Masuk</label>
-                    <input id="angkatan" type="number" name="angkatan" class="form-control" value="{{ $holderData['angkatan'] }}" min="1900" max="2100" placeholder="Contoh: 2022" @disabled(!$canEditRegistration)>
-                    @error('angkatan')<small class="text-danger">{{ $message }}</small>@enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="gelar">Gelar</label>
-                    <input id="gelar" type="text" name="gelar" class="form-control readonly-field" value="{{ $holderData['gelar'] }}" placeholder="Gelar dari program studi..." readonly>
-                    <small class="text-muted"><i class="bi bi-info-circle"></i> Gelar diatur oleh Masteradmin sesuai Program Studi Anda.</small>
-                    @error('gelar')<small class="text-danger">{{ $message }}</small>@enderror
+                    <label for="lama_studi">Lama Studi (Terhitung Otomatis)</label>
+                    <input id="lama_studi" type="text" name="lama_studi" class="form-control readonly-field" value="{{ $holderData['lama_studi'] }}" readonly placeholder="0 Bulan">
+                    <small class="text-muted"><i class="bi bi-info-circle"></i> Dihitung dari Tahun Masuk s.d. Periode Lulus.</small>
                 </div>
 
                 {{-- Nomor Ijazah diisi oleh Masteradmin, bukan mahasiswa --}}
@@ -137,6 +138,58 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    function calculateLamaStudi() {
+        const periodeLulusInput = document.getElementById('periode_lulus')?.value;
+        const angkatanInput = document.getElementById('angkatan')?.value;
+        const lamaStudiInput = document.getElementById('lama_studi');
+
+        if (!lamaStudiInput) return;
+
+        if (!periodeLulusInput || !angkatanInput) {
+            lamaStudiInput.value = '';
+            return;
+        }
+
+        // Angkatan biasanya adalah tahun, dan tanggal masuk biasanya bulan September (09)
+        const masukDate = new Date(angkatanInput + '-09-01');
+        const lulusDate = new Date(periodeLulusInput + '-01');
+
+        if (lulusDate < masukDate) {
+            lamaStudiInput.value = 'Data Tidak Valid';
+            return;
+        }
+
+        let months = (lulusDate.getFullYear() - masukDate.getFullYear()) * 12;
+        months -= masukDate.getMonth();
+        months += lulusDate.getMonth();
+
+        if (months <= 0) {
+            lamaStudiInput.value = '0 Bulan';
+            return;
+        }
+
+        const years = Math.floor(months / 12);
+        const remainingMonths = months % 12;
+
+        let result = [];
+        if (years > 0) result.push(years + ' Tahun');
+        if (remainingMonths > 0) result.push(remainingMonths + ' Bulan');
+
+        lamaStudiInput.value = result.join(' ');
+    }
+
+    // Call it initially just in case
+    document.addEventListener('DOMContentLoaded', function() {
+        calculateLamaStudi();
+        
+        // Also bind to angkatan change
+        document.getElementById('angkatan')?.addEventListener('change', calculateLamaStudi);
+    });
+</script>
+@endpush
 
 @push('css')
 <style>
