@@ -104,7 +104,6 @@
                     <th>No</th>
                     <th>Mahasiswa</th>
                     <th>Program Studi</th>
-                    <th>Kelengkapan SKPI</th>
                     <th>Total Pengajuan</th>
                     <th>Aksi</th>
                 </tr>
@@ -141,20 +140,6 @@
                 ];
                 });
 
-                // Cek kelengkapan SKPI: cek dari form skpiRegistration ATAU dari profil/final project
-                $reg = $student->skpiRegistration;
-                $ipkOk  = filled($reg?->ipk)  || filled($student->ipk);
-                $sksOk  = filled($reg?->sks)  || filled($student->sks);
-                $taOk   = filled($reg?->judul_ta_indo) || filled($student->finalProject?->title);
-                $fotoOk = filled($student->foto) && filled($student->ttd);
-
-                $completenessItems = [
-                    ['label' => 'IPK',        'ok' => $ipkOk,  'val' => $reg?->ipk  ?? ($student->ipk  ?? null)],
-                    ['label' => 'SKS',        'ok' => $sksOk,  'val' => $reg?->sks  ?? ($student->sks  ?? null)],
-                    ['label' => 'Judul TA',   'ok' => $taOk,   'val' => $reg?->judul_ta_indo ?? ($student->finalProject?->title ?? null)],
-                    ['label' => 'Foto & TTD', 'ok' => $fotoOk, 'val' => null],
-                ];
-                $allOk = $ipkOk && $sksOk && $taOk && $fotoOk;
                 @endphp
                 <tr>
                     <td>{{ $loop->iteration + ($students->currentPage() - 1) * $students->perPage() }}</td>
@@ -164,36 +149,6 @@
                     </td>
                     <td>
                         <span class="badge-prodi" style="display: inline-block;">{{ $student->program_studi ?? '-' }}</span>
-                    </td>
-                    <td>
-                        {{-- Kelengkapan Data SKPI --}}
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            @foreach($completenessItems as $ci)
-                            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
-                                @if($ci['ok'])
-                                    <i class="bi bi-check-circle-fill" style="color: #16a34a; font-size: 13px;"></i>
-                                @else
-                                    <i class="bi bi-x-circle-fill" style="color: #dc2626; font-size: 13px;"></i>
-                                @endif
-                                <span style="color: #374151;">{{ $ci['label'] }}</span>
-                                @if($ci['ok'] && $ci['val'] !== null)
-                                    <span style="color:#6B7280; font-size:11px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ $ci['val'] }}">
-                                        {{ Str::limit((string)$ci['val'], 20) }}
-                                    </span>
-                                @endif
-                            </div>
-                            @endforeach
-
-                            @if($reg)
-                                <span class="status-badge {{ $allOk ? 'status-aktif' : 'status-cuti' }}" style="font-size:10px; padding: 2px 8px; margin-top: 4px; display:inline-block; width:fit-content;">
-                                    {{ $allOk ? 'Siap Ajukan' : 'Belum Lengkap' }}
-                                </span>
-                            @else
-                                <span class="status-badge status-nonaktif" style="font-size:10px; padding: 2px 8px; margin-top: 4px; display:inline-block; width:fit-content;">
-                                    <i class="bi bi-exclamation-triangle"></i> Belum isi form SKPI
-                                </span>
-                            @endif
-                        </div>
                     </td>
                     <td>
                         <span class="badge-count">{{ $student->achievements->count() }} Data</span>

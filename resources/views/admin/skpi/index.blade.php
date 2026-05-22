@@ -15,7 +15,7 @@ $menus = [
 ],
 [
 'step' => '02',
-'title' => 'Verifikasi Data',
+'title' => 'Verifikasi Data Prestasi',
 'description' => 'Validasi prestasi dan aktivitas mahasiswa sebelum masuk ke draf SKPI.',
 'icon' => 'bi bi-patch-check',
 'route' => 'admin.skpi.verifikasi-data.index',

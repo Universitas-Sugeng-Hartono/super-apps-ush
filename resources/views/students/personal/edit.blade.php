@@ -1022,32 +1022,32 @@
                             <textarea name="alamat" rows="3" class="form-control" @readonly(!$student->is_edited) placeholder="Masukkan alamat lengkap">{{ old('alamat', $student->alamat) }}</textarea>
                         </div>
 
-                        <!-- @if ($student->is_edited)
-                            <div class="form-group" type="hiden">
+                        @if ($student->is_edited)
+                            <div class="form-group" style="display: none;">
                                 <label class="form-label">
                                     <i class="bi bi-map me-1"></i>
                                     Lokasi di Peta
                                 </label>
-                                <div id="map" type="hiden"></div>
+                                <div id="map" style="display: none;"></div>
                                 <input type="hidden" name="alamat_lat" id="alamat_lat"
                                     value="{{ old('alamat_lat', $student->alamat_lat) }}">
                                 <input type="hidden" name="alamat_lng" id="alamat_lng"
                                     value="{{ old('alamat_lng', $student->alamat_lng) }}">
-                                <small class="text-muted">
+                                  <small class="text-muted">
                                     <i class="bi bi-info-circle me-1"></i>
                                     Seret pin untuk menyesuaikan lokasi Anda
                                 </small>
                             </div>
-                        @else -->
-                            <!-- @if ($student->alamat_lat && $student->alamat_lng)
-                                <div class="form-group">
+                        @else
+                            @if ($student->alamat_lat && $student->alamat_lng)
+                                <div class="form-group" style="display: none;">
                                     <a href="https://www.google.com/maps?q={{ $student->alamat_lat }},{{ $student->alamat_lng }}"
                                         target="_blank" class="btn btn-outline-primary">
                                         <i class="bi bi-map me-2"></i>
                                         Lihat Lokasi di Google Maps
                                     </a>
                                 </div>
-                            @endif -->
+                            @endif
                         @endif
 
                         @if ($student->is_edited)

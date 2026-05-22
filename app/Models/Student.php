@@ -192,8 +192,6 @@ class Student extends Authenticatable
             'tempat_lahir',
             'tanggal_lahir',
             'alamat',
-            'alamat_lat',
-            'alamat_lng',
             'no_telepon',
             'foto',
             'ttd',
