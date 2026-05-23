@@ -332,8 +332,31 @@ class SkpiWordController extends Controller
                 $table = new \PhpOffice\PhpWord\Element\Table($tableStyle);
 
                 if (empty($items)) {
-                    // Jika kosong, kembalikan null agar placeholder diganti dengan string kosong
-                    return null;
+                    $bulletParaStyle = [
+                        'spaceAfter'  => 0,
+                        'spaceBefore' => 0,
+                        'indentation' => ['left' => 360, 'hanging' => 220],
+                    ];
+                    $engParaStyle = [
+                        'alignment'  => \PhpOffice\PhpWord\SimpleType\Jc::LEFT,
+                        'spaceAfter' => 60,
+                        'spaceBefore' => 0,
+                        'indentation' => ['left' => 360],
+                    ];
+
+                    $cell = $table->addRow()->addCell(9000);
+                    $cell->addText(
+                        "\u{2022} Tidak ada data",
+                        ['size' => 10, 'bold' => false, 'color' => '000000'],
+                        $bulletParaStyle
+                    );
+                    $cell->addText(
+                        "None",
+                        ['size' => 9, 'italic' => true, 'color' => '000000'],
+                        $engParaStyle
+                    );
+
+                    return $table;
                 }
 
                 foreach ($items as $item) {
