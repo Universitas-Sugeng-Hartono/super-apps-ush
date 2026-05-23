@@ -775,6 +775,14 @@
                             <i class="bi bi-person"></i>
                             <span>Profile</span>
                         </a>
+                        @if(auth()->user()->role === 'masteradmin')
+                            <a href="{{route('admin.settings.whatsapp')}}"
+                            class="dropdown-item {{request()->routeIs('admin.settings.whatsapp')?'active':''}}">
+                                <i class="bi bi-whatsapp"></i>
+                                <span>WhatsApp</span>
+                            </a>
+                        @endif
+
                         <div class="dropdown-divider"></div>
                         <a href="{{ route('auth.logout') }}" class="dropdown-item logout">
                             <i class="bi bi-box-arrow-right"></i>
@@ -820,14 +828,14 @@
                 </div>
                 <span>Pengumuman</span>
             </a>
-            @if(auth()->user()->role === 'masteradmin')
+            <!-- @if(auth()->user()->role === 'masteradmin')
             <a href="{{ route('admin.settings.whatsapp') }}" class="nav-item {{ request()->routeIs('admin.settings.whatsapp') ? 'active' : '' }}">
                 <div class="nav-icon">
                     <i class="bi bi-whatsapp"></i>
                 </div>
                 <span>Seting WA</span>
             </a>
-            @endif
+            @endif -->
             <a href="{{ route('user.admin.index') }}" class="nav-item {{ request()->routeIs('user.admin.index') ? 'active' : '' }}">
                 <div class="nav-icon">
                     <i class="bi bi-person-circle"></i>
@@ -875,14 +883,14 @@
             <span>Dosen</span>
         </a>
         @endif
-        @if(auth()->user()->role === 'masteradmin')
+        <!-- @if(auth()->user()->role === 'masteradmin')
         <a href="{{ route('admin.settings.whatsapp') }}" class="nav-item {{ request()->routeIs('admin.settings.whatsapp') ? 'active' : '' }}">
             <div class="nav-icon">
                 <i class="bi bi-whatsapp"></i>
             </div>
             <span>Seting WA</span>
         </a>
-        @endif
+        @endif -->
         <a href="{{ route('user.admin.index') }}" class="nav-item {{ request()->routeIs('user.admin.index') ? 'active' : '' }}">
             <div class="nav-icon">
                 <i class="bi bi-person-circle"></i>
