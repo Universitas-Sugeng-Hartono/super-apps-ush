@@ -52,7 +52,6 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
         </div>
     @endif
 
-    {{-- Filter / Search --}}
     <div class="search-box">
         <form method="GET" action="{{ route('admin.skpi.generate-skpi.index') }}" class="search-form" id="filterForm">
             <select name="study_program_id" class="filter-select" onchange="this.form.submit()">
@@ -63,13 +62,16 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
                     </option>
                 @endforeach
             </select>
-            <select name="generate_status" class="filter-select" onchange="this.form.submit()">
-                <option value="">Semua Status</option>
-                <option value="belum" {{ ($generateStatusFilter ?? '') === 'belum' ? 'selected' : '' }}>Belum Digenerate</option>
-                <option value="sudah" {{ ($generateStatusFilter ?? '') === 'sudah' ? 'selected' : '' }}>Sudah Digenerate</option>
+            <select name="registration_status" class="filter-select" onchange="this.form.submit()">
+                <option value="">Semua Status Registrasi</option>
+                <option value="pending"   {{ ($registrationStatusFilter ?? '') === 'pending'   ? 'selected' : '' }}>Pending</option>
+                <option value="approved"  {{ ($registrationStatusFilter ?? '') === 'approved'  ? 'selected' : '' }}>Approved</option>
             </select>
         </form>
     </div>
+
+    {{-- Simpan nama prodi terpilih untuk dikirim ke URL ZIP --}}
+    <span id="selectedProdiName" data-name="{{ $selectedStudyProgram?->name ?? '' }}" style="display:none;"></span>
 
     {{-- Table --}}
     @if($approvedRegistrations->count() > 0)
@@ -82,6 +84,7 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
                     <th>NIM</th>
                     <th>Angkatan</th>
                     <th>Program Studi</th>
+                    <th>Status Registrasi</th>
                     <th>Status SKPI</th>
                     <th>Generate At</th>
                     <th>Aksi</th>
@@ -102,6 +105,15 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
                     </td>
                     <td>
                         <span class="badge-prodi">{{ $registration->student?->program_studi ?? '-' }}</span>
+                    </td>
+                    <td>
+                        @if($registration->status === 'approved')
+                            <span class="status-badge status-tersimpan">Approved</span>
+                        @elseif($registration->status === 'pending')
+                            <span class="status-badge status-pending">Pending</span>
+                        @else
+                            <span class="status-badge">{{ ucfirst($registration->status) }}</span>
+                        @endif
                     </td>
                     <td>
                         <span class="status-badge {{ $isSaved ? 'status-tersimpan' : 'status-belum' }}">
@@ -130,6 +142,7 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
                                 data-ttl="{{ collect([$registration->tempat_lahir, $registration->tanggal_lahir?->translatedFormat('d F Y')])->filter()->implode(', ') }}"
                                 data-ijazah="{{ $registration->nomor_ijazah ?? '-' }}"
                                 data-gelar="{{ $registration->gelar ?? '-' }}"
+                                data-status-reg="{{ $registration->status }}"
                                 data-route-generate="{{ route('admin.skpi.generate-skpi.download-all') }}"
                                 data-route-saved="{{ $isSaved ? route('admin.skpi.generate-skpi.download-saved', $registration->id) : '' }}"
                                 data-nomor-skpi="{{ $isSaved ? ($registration->skpi_nomor ?? '') : '' }}">
@@ -212,6 +225,10 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
             <div id="mtab-dokumen" class="mtab-panel">
                 <div class="detail-grid">
                     <div class="detail-item full">
+                        <span class="detail-label">Status Registrasi</span>
+                        <span class="detail-value" id="dStatusReg">-</span>
+                    </div>
+                    <div class="detail-item full">
                         <span class="detail-label">Status Generate</span>
                         <span class="detail-value" id="dStatus">-</span>
                     </div>
@@ -221,18 +238,22 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
                     </div>
                 </div>
 
-                <div class="modal-actions">
+                <div class="modal-actions" id="modalActionsWrapper">
                     <form method="POST" id="modalWordForm">
                         @csrf
                         <input type="hidden" name="registration_id" id="modalRegId">
                         <input type="hidden" name="nomor_skpi" id="modalNomorSkpi">
-                        <button type="submit" class="btn-generate-word">
+                        <button type="submit" class="btn-generate-word" id="btnGenerateWord">
                             <i class="bi bi-file-earmark-word-fill"></i> Generate &amp; Download Word
                         </button>
                     </form>
                     <a href="#" id="modalBtnSaved" class="btn-download-saved" style="display:none;">
                         <i class="bi bi-cloud-arrow-down-fill"></i> Download Tersimpan
                     </a>
+                    <div id="pendingWarning" style="display:none;" class="alert-warning-inline">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Registrasi ini masih <strong>Pending</strong>. Setujui terlebih dahulu sebelum generate SKPI.
+                    </div>
                 </div>
             </div>
         </div>
@@ -262,18 +283,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnBulk = document.getElementById('btnBulkDocx');
     if (btnBulk) {
         btnBulk.onclick = () => {
-            // Ambil semua ID registrasi yang ada di tabel saat ini
             const ids = Array.from(document.querySelectorAll('.btn-view'))
                              .map(btn => btn.dataset.id)
                              .filter(id => id);
-            
+
             if (ids.length === 0) {
                 alert('Tidak ada data mahasiswa yang bisa di-download di tabel ini.');
                 return;
             }
 
-            const url = "{{ route('admin.skpi.generate-skpi.download-all') }}?registration_ids=" + ids.join(',');
-            
+            const prodiName = document.getElementById('selectedProdiName')?.dataset.name ?? '';
+            let url = "{{ route('admin.skpi.generate-skpi.download-all') }}?registration_ids=" + ids.join(',');
+            if (prodiName) {
+                url += '&study_program_name=' + encodeURIComponent(prodiName);
+            }
+
             window.location.href = url;
         };
     }
@@ -283,18 +307,20 @@ function openDetailModal(id) {
     const btn = document.querySelector(`.btn-view[data-id="${id}"]`);
     if (!btn) return;
 
-    const nama = btn.dataset.nama;
-    const nim = btn.dataset.nim;
-    const prodi = btn.dataset.prodi;
+    const nama     = btn.dataset.nama;
+    const nim      = btn.dataset.nim;
+    const prodi    = btn.dataset.prodi;
     const angkatan = btn.dataset.angkatan;
-    const isSaved = btn.dataset.saved === '1';
-    const genAt = btn.dataset.genat;
-    const ttl = btn.dataset.ttl || '-';
-    const ijazah = btn.dataset.ijazah || '-';
-    const gelar = btn.dataset.gelar || '-';
+    const isSaved  = btn.dataset.saved === '1';
+    const genAt    = btn.dataset.genat;
+    const ttl      = btn.dataset.ttl    || '-';
+    const ijazah   = btn.dataset.ijazah || '-';
+    const gelar    = btn.dataset.gelar  || '-';
+    const statusReg     = btn.dataset.statusReg || '';
     const routeGenerate = btn.dataset.routeGenerate;
-    const routeSaved = btn.dataset.routeSaved;
-    const nomorSkpi = btn.dataset.nomorSkpi || '';
+    const routeSaved    = btn.dataset.routeSaved;
+    const nomorSkpi     = btn.dataset.nomorSkpi || '';
+    const isApproved    = statusReg === 'approved';
 
     // Header
     const initials = nama.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -303,15 +329,23 @@ function openDetailModal(id) {
     document.getElementById('modalNimProdi').textContent = nim + ' • ' + prodi;
 
     // Tab Identitas
-    document.getElementById('dNama').textContent = nama;
-    document.getElementById('dNim').textContent = nim;
-    document.getElementById('dProdi').textContent = prodi;
+    document.getElementById('dNama').textContent     = nama;
+    document.getElementById('dNim').textContent      = nim;
+    document.getElementById('dProdi').textContent    = prodi;
     document.getElementById('dAngkatan').textContent = angkatan;
-    document.getElementById('dTtl').textContent = ttl;
-    document.getElementById('dIjazah').textContent = ijazah;
-    document.getElementById('dGelar').textContent = gelar;
+    document.getElementById('dTtl').textContent      = ttl;
+    document.getElementById('dIjazah').textContent   = ijazah;
+    document.getElementById('dGelar').textContent    = gelar;
 
-    // Tab Dokumen
+    // Tab Dokumen – status registrasi
+    const statusRegEl = document.getElementById('dStatusReg');
+    if (isApproved) {
+        statusRegEl.innerHTML = '<span class="status-badge status-tersimpan">Approved</span>';
+    } else {
+        statusRegEl.innerHTML = '<span class="status-badge status-pending">Pending</span>';
+    }
+
+    // Tab Dokumen – status generate
     const statusEl = document.getElementById('dStatus');
     statusEl.innerHTML = isSaved
         ? '<span class="status-badge status-tersimpan">Tersimpan</span>'
@@ -319,19 +353,29 @@ function openDetailModal(id) {
 
     document.getElementById('dGenAt').textContent = isSaved ? genAt : '-';
 
-    // Form generate
-    const wordForm = document.getElementById('modalWordForm');
-    wordForm.action = routeGenerate;
-    document.getElementById('modalRegId').value = id;
-    document.getElementById('modalNomorSkpi').value = nomorSkpi;
+    // Form generate & download – hanya tampil jika approved
+    const wordForm      = document.getElementById('modalWordForm');
+    const btnSaved      = document.getElementById('modalBtnSaved');
+    const pendingWarn   = document.getElementById('pendingWarning');
 
-    // Download tersimpan
-    const btnSaved = document.getElementById('modalBtnSaved');
-    if (isSaved && routeSaved) {
-        btnSaved.href = routeSaved;
-        btnSaved.style.display = 'flex';
+    if (isApproved) {
+        wordForm.style.display    = '';
+        pendingWarn.style.display = 'none';
+        wordForm.action = routeGenerate;
+        document.getElementById('modalRegId').value    = id;
+        document.getElementById('modalNomorSkpi').value = nomorSkpi;
+
+        if (isSaved && routeSaved) {
+            btnSaved.href         = routeSaved;
+            btnSaved.style.display = 'flex';
+        } else {
+            btnSaved.style.display = 'none';
+        }
     } else {
-        btnSaved.style.display = 'none';
+        // Pending: sembunyikan form generate & download
+        wordForm.style.display    = 'none';
+        btnSaved.style.display    = 'none';
+        pendingWarn.style.display = 'flex';
     }
 
     // Reset ke tab pertama

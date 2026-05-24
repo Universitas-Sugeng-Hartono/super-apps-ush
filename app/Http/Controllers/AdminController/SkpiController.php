@@ -606,14 +606,20 @@ class SkpiController extends Controller
             ->get();
 
         $selectedStudyProgramIdFilter = $request->integer('study_program_id');
-        $generateStatusFilter = $request->input('generate_status');
+        $generateStatusFilter         = $request->input('generate_status');
+        $registrationStatusFilter     = $request->input('registration_status'); // 'pending' | 'approved' | ''
 
-
+        // Default: tampilkan pending + approved (bukan hanya approved)
         $approvedRegistrationsQuery = SkpiRegistration::query()
             ->with('student')
-            ->where('status', 'approved')
+            ->whereIn('status', ['pending', 'approved'])
             ->whereHas('student')
             ->orderBy('nama_lengkap');
+
+        // Filter berdasarkan status registrasi
+        if (in_array($registrationStatusFilter, ['pending', 'approved'], true)) {
+            $approvedRegistrationsQuery->where('status', $registrationStatusFilter);
+        }
 
         if ($selectedStudyProgramIdFilter) {
             $studyProgram = StudyProgram::find($selectedStudyProgramIdFilter);
@@ -629,10 +635,6 @@ class SkpiController extends Controller
         } elseif ($generateStatusFilter === 'sudah') {
             $approvedRegistrationsQuery->whereNotNull('skpi_document');
         }
-
-
-
-
 
         $approvedRegistrations = $approvedRegistrationsQuery->paginate(10)->appends($request->query());
 
@@ -714,6 +716,7 @@ class SkpiController extends Controller
             'approvedRegistrations',
 
             'generateStatusFilter',
+            'registrationStatusFilter',
 
             'selectedAchievementIds',
             'selectedAchievements',

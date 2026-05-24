@@ -914,9 +914,16 @@ class SkpiWordController extends Controller
             return response()->download($singleFile)->deleteFileAfterSend(true);
         }
 
-        // ─── Buat ZIP ─────────────────────────────────────────────────────
-        $zipFileName = 'SKPI_Approved_All_' . date('Ymd_His') . '.zip';
-        $zipPath     = storage_path('app/' . $zipFileName);
+        // ─── Buat nama ZIP berdasarkan filter prodi ───────────────────────
+        if ($request->filled('study_program_name')) {
+            // Nama prodi dikirim dari tombol ZIP di view (via JS)
+            $safeProdi   = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim($request->study_program_name));
+            $safeProdi   = trim($safeProdi, '_');
+            $zipFileName = 'SKPI_' . $safeProdi . '_' . date('Ymd_His') . '.zip';
+        } else {
+            $zipFileName = 'SKPI_Approved_All_' . date('Ymd_His') . '.zip';
+        }
+        $zipPath = storage_path('app/' . $zipFileName);
 
         $zip = new \ZipArchive();
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
