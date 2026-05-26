@@ -42,7 +42,7 @@ class SkpiController extends Controller
                         });
                 });
             })
-            ->when(in_array($status, ['pending', 'approved', 'needs_revision', 'rejected'], true), function ($query) use ($status) {
+            ->when(in_array($status, ['pending', 'approved', 'needs_revision', 'rejected', 'draft'], true), function ($query) use ($status) {
                 $query->where('status', $status);
             })
             ->when($studyProgramId, function ($query) use ($studyProgramId) {
@@ -60,6 +60,7 @@ class SkpiController extends Controller
 
         $stats = [
             'total' => SkpiRegistration::count(),
+            'draft' => SkpiRegistration::where('status', 'draft')->count(),
             'pending' => SkpiRegistration::where('status', 'pending')->count(),
             'approved' => SkpiRegistration::where('status', 'approved')->count(),
             'needs_revision' => SkpiRegistration::where('status', 'needs_revision')->count(),
@@ -115,6 +116,18 @@ class SkpiController extends Controller
             'approved_by'    => auth()->id(),
             'approved_at'    => now(),
         ]);
+
+        // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI
+        if (filled($registration->ipk) || filled($registration->sks)) {
+            $studentUpdate = [];
+            if (filled($registration->ipk)) {
+                $studentUpdate['ipk'] = $registration->ipk;
+            }
+            if (filled($registration->sks)) {
+                $studentUpdate['sks'] = $registration->sks;
+            }
+            $student->update($studentUpdate);
+        }
 
         try {
             NotificationHelper::notifyStudent(
@@ -899,6 +912,18 @@ class SkpiController extends Controller
                 'approved_by'    => auth()->id(),
                 'approved_at'    => now(),
             ]);
+
+            // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI
+            if (filled($registration->ipk) || filled($registration->sks)) {
+                $studentUpdate = [];
+                if (filled($registration->ipk)) {
+                    $studentUpdate['ipk'] = $registration->ipk;
+                }
+                if (filled($registration->sks)) {
+                    $studentUpdate['sks'] = $registration->sks;
+                }
+                $student->update($studentUpdate);
+            }
 
             $approved++;
 

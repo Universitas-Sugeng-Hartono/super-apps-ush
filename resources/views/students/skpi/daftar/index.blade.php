@@ -27,7 +27,7 @@
                 
                 $steps = [
                     ['step' => 1, 'label' => 'Pengisian Data', 'active' => true],
-                    ['step' => 2, 'label' => 'Verifikasi', 'active' => in_array($status, ['pending', 'approved', 'rejected'])],
+                    ['step' => 2, 'label' => 'Verifikasi', 'active' => in_array($status, ['pending', 'approved', 'rejected', 'needs_revision'])],
                     ['step' => 3, 'label' => 'Penerbitan', 'active' => ($status === 'approved' && $hasDoc)]
                 ];
             @endphp
@@ -97,7 +97,7 @@
                 <div class="ush-alert info">
                     <i class="bi bi-chat-left-text"></i>
                     <div>
-                        <strong>Catatan Verifikator</strong>
+                        <strong>Catatan revisian</strong>
                         <p>{{ $skpiRegistration->approval_notes }}</p>
                     </div>
                 </div>
@@ -134,7 +134,7 @@
                     <form action="{{ route('student.skpi.daftar.submit') }}" method="POST">
                         @csrf
                         <button type="submit" class="btn-ush-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 16px;">
-                            <i class="bi bi-send-fill"></i> Ajukan SKPI Sekarang
+                            <i class="bi bi-send-fill"></i> {{ $skpiRegistration->status === 'needs_revision' ? 'Ajukan Ulang (Revisi)' : 'Ajukan SKPI Sekarang' }}
                         </button>
                     </form>
                 </div>

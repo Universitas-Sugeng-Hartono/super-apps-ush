@@ -142,6 +142,8 @@ class SkpiController extends Controller
             'judul_ta_inggris'=> 'nullable|string|max:500',
             'periode_lulus'=> 'required|date_format:Y-m',
             'lama_studi'   => 'required|string|max:255',
+            'doc_ijasah'   => 'nullable|mimes:pdf|max:1024',
+            'doc_ktp'      => 'nullable|mimes:pdf|max:1024',
         ]);
 
         // Ambil gelar otomatis dari profil prodi
@@ -171,6 +173,20 @@ class SkpiController extends Controller
             'periode_lulus'=> $validated['periode_lulus'],
             'lama_studi'   => $lamaStudiStr,
         ];
+
+        if ($request->hasFile('doc_ijasah')) {
+            if ($skpiRegistration && $skpiRegistration->doc_ijasah) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($skpiRegistration->doc_ijasah);
+            }
+            $registrationData['doc_ijasah'] = $request->file('doc_ijasah')->store('skpi/ijasah', 'public');
+        }
+
+        if ($request->hasFile('doc_ktp')) {
+            if ($skpiRegistration && $skpiRegistration->doc_ktp) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($skpiRegistration->doc_ktp);
+            }
+            $registrationData['doc_ktp'] = $request->file('doc_ktp')->store('skpi/ktp', 'public');
+        }
 
         if ($skpiRegistration) {
             $skpiRegistration->update($registrationData);

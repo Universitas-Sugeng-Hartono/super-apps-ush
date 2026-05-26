@@ -19,6 +19,10 @@
                 <span class="stat-label">Total</span>
                 <span class="stat-value">{{ $stats['total'] }}</span>
             </div>
+            <div class="stat-box text-secondary" style="background: #f1f5f9; border-left: 4px solid #94a3b8;">
+                <span class="stat-label">Draft</span>
+                <span class="stat-value">{{ $stats['draft'] }}</span>
+            </div>
             <div class="stat-box warning">
                 <span class="stat-label">Pending</span>
                 <span class="stat-value">{{ $stats['pending'] }}</span>
@@ -68,6 +72,7 @@
                 <label>Status</label>
                 <select name="status" class="form-select-modern" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
+                    <option value="draft" {{ $status === 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved</option>
                     <option value="needs_revision" {{ $status === 'needs_revision' ? 'selected' : '' }}>Need Revision</option>
@@ -148,31 +153,25 @@
                         </td>
                         <td>
                             <div class="prereq-container">
-                                @php
-                                    $profileTitle = "IPK: " . ($ipk ?? '-') . " " . ($ipk ? '✓' : '✗') . " | " .
-                                                   "SKS: " . ($sks ?? '-') . " " . ($sks ? '✓' : '✗') . " | " .
-                                                   "Foto: " . ($s->foto ? '✓' : '✗') . " | " .
-                                                   "TTD: " . ($s->ttd ? '✓' : '✗');
-                                    
-                                    if ($s->is_skpi_unlocked) {
-                                        $taTitle = "Akses SKPI Dibuka Superuser" . ($judulTa ? " (Judul: " . $judulTa . ")" : "");
-                                    } else {
-                                        $taTitle = $judulTa ? "Judul: " . $judulTa : "Judul TA Belum Diinput";
-                                    }
-                                @endphp
-                                <div class="prereq-badge {{ $hasProfile ? 'done' : 'missing' }}" 
-                                     data-bs-toggle="tooltip" 
-                                     data-bs-placement="top" 
-                                     data-bs-html="true"
-                                     title="{{ $profileTitle }}">
-                                    <i class="bi bi-person-check"></i> Profile
-                                </div>
-                                <div class="prereq-badge {{ $hasFinalProject ? 'done' : 'missing' }}" 
-                                     data-bs-toggle="tooltip" 
-                                     data-bs-placement="top" 
-                                     data-bs-html="true"
-                                     title="{{ $taTitle }}">
-                                    <i class="bi bi-journal-text"></i> TA
+                                <div class="prereq-badge done" 
+                                     style="cursor: pointer; background: #e0f2fe; color: #05567eff; border: 1px solid #bae6fd;"
+                                     onclick="showDetailDataModal({{ json_encode([
+                                        'nama' => $reg->nama_lengkap,
+                                        'nim' => $reg->nim,
+                                        'prodi' => $s->program_studi,
+                                        'tempat_lahir' => $reg->tempat_lahir,
+                                        'tanggal_lahir' => $reg->tanggal_lahir ? $reg->tanggal_lahir->format('d M Y') : '-',
+                                        'angkatan' => $reg->angkatan,
+                                        'gelar' => $reg->gelar,
+                                        'ipk' => $reg->ipk,
+                                        'sks' => $reg->sks,
+                                        'judul_ta' => $reg->judul_ta_indo,
+                                        'periode_lulus' => $reg->periode_lulus,
+                                        'lama_studi' => $reg->lama_studi,
+                                        'doc_ijasah' => $reg->doc_ijasah ? asset('storage/' . $reg->doc_ijasah) : null,
+                                        'doc_ktp' => $reg->doc_ktp ? asset('storage/' . $reg->doc_ktp) : null
+                                     ]) }})">
+                                    <i class="bi bi-card-list"></i> Detail Lengkap
                                 </div>
                                 @if($allReady)
                                 <i class="bi bi-shield-check-fill text-success" data-bs-toggle="tooltip" title="Semua Prasyarat Terpenuhi" style="font-size: 18px;"></i>
@@ -192,12 +191,13 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge-status status-{{ $reg->status }}">
+                            <span class="badge-status status-{{ $reg->status ?? 'draft' }}">
                                 {{ match($reg->status) {
                                     'approved' => 'Approved',
                                     'needs_revision' => 'Revision',
                                     'rejected' => 'Rejected',
-                                    default => 'Pending'
+                                    'pending' => 'Pending',
+                                    default => 'Draft'
                                 } }}
                             </span>
                         </td>
@@ -382,6 +382,39 @@
         </form>
     </div>
 </div>
+
+{{-- Modal Detail Data --}}
+<div id="detailDataModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern" style="max-width: 600px;">
+        <div class="modal-header-modern bg-info text-white">
+            <div class="modal-icon-wrap" style="color: white;"><i class="bi bi-card-list"></i></div>
+            <div class="modal-title-wrap text-white">
+                <h4 style="color: white;">Detail Pendaftar SKPI</h4>
+                <p style="color: rgba(255,255,255,0.8);">Menampilkan seluruh kelengkapan form pendaftaran.</p>
+            </div>
+        </div>
+        <div class="modal-body-modern" style="max-height: 70vh; overflow-y: auto;">
+            <table class="table table-borderless table-sm">
+                <tbody>
+                    <tr><td width="35%" class="text-muted">Nama Lengkap</td><td id="det_nama" class="fw-bold"></td></tr>
+                    <tr><td class="text-muted">NIM / Angkatan</td><td><span id="det_nim" class="fw-bold"></span> / <span id="det_angkatan"></span></td></tr>
+                    <tr><td class="text-muted">Program Studi</td><td id="det_prodi"></td></tr>
+                    <tr><td class="text-muted">Tempat, Tgl Lahir</td><td><span id="det_tempat_lahir"></span>, <span id="det_tanggal_lahir"></span></td></tr>
+                    <tr><td class="text-muted">Gelar</td><td id="det_gelar"></td></tr>
+                    <tr><td class="text-muted">IPK / SKS</td><td><span id="det_ipk"></span> / <span id="det_sks"></span></td></tr>
+                    <tr><td class="text-muted">Judul TA</td><td id="det_judul_ta"></td></tr>
+                    <tr><td class="text-muted">Periode Lulus</td><td id="det_periode"></td></tr>
+                    <tr><td class="text-muted">Lama Studi</td><td id="det_lama_studi"></td></tr>
+                    <tr><td class="text-muted">Dokumen Ijazah</td><td id="det_doc_ijasah"></td></tr>
+                    <tr><td class="text-muted">Dokumen KTP</td><td id="det_doc_ktp"></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer-modern">
+            <button type="button" class="btn-cancel-modern" onclick="closeDetailDataModal()">Tutup</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('css')
@@ -437,6 +470,41 @@
 
     function closeApproveAllModal() {
         document.getElementById('approveAllModal').style.display = 'none';
+    }
+
+    function showDetailDataModal(data) {
+        document.getElementById('det_nama').innerText = data.nama || '-';
+        document.getElementById('det_nim').innerText = data.nim || '-';
+        document.getElementById('det_angkatan').innerText = data.angkatan || '-';
+        document.getElementById('det_prodi').innerText = data.prodi || '-';
+        document.getElementById('det_tempat_lahir').innerText = data.tempat_lahir || '-';
+        document.getElementById('det_tanggal_lahir').innerText = data.tanggal_lahir || '-';
+        document.getElementById('det_gelar').innerText = data.gelar || '-';
+        document.getElementById('det_ipk').innerText = data.ipk || '-';
+        document.getElementById('det_sks').innerText = data.sks || '-';
+        document.getElementById('det_judul_ta').innerText = data.judul_ta || '-';
+        document.getElementById('det_periode').innerText = data.periode_lulus || '-';
+        document.getElementById('det_lama_studi').innerText = data.lama_studi || '-';
+        
+        const docIjasah = document.getElementById('det_doc_ijasah');
+        if(data.doc_ijasah) {
+            docIjasah.innerHTML = `<a href="${data.doc_ijasah}" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 12px; padding: 2px 8px;"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>`;
+        } else {
+            docIjasah.innerHTML = `<span class="text-muted">Belum ada</span>`;
+        }
+        
+        const docKtp = document.getElementById('det_doc_ktp');
+        if(data.doc_ktp) {
+            docKtp.innerHTML = `<a href="${data.doc_ktp}" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 12px; padding: 2px 8px;"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>`;
+        } else {
+            docKtp.innerHTML = `<span class="text-muted">Belum ada</span>`;
+        }
+
+        document.getElementById('detailDataModal').style.display = 'flex';
+    }
+
+    function closeDetailDataModal() {
+        document.getElementById('detailDataModal').style.display = 'none';
     }
 
     window.onclick = function(event) {

@@ -200,7 +200,7 @@ break;
                                 <h4>Unggah Bukti Pendukung</h4>
                                 <p id="buktiHintText" style="color:#d97706; font-weight:600; margin-bottom:5px;">Pilih Jenis Kegiatan untuk melihat jenis bukti</p>
                                 <p style="font-size:0.85rem; margin-top:0;">Tarik file ke sini atau klik untuk mencari file</p>
-                                <div class="upload-types">PDF, JPG, PNG (Maks. 5 MB)</div>
+                                <div class="upload-types">PDF, JPG, PNG (Maks. 2 MB)</div>
                             </div>
                             <div class="upload-result-exclusive" id="uploadPreview" style="display:none">
                                 <i class="bi bi-file-earmark-code"></i>
@@ -374,7 +374,7 @@ break;
                         <div class="mb-3">
                             <label class="form-label fw-bold">Unggah Berkas Baru <span class="text-danger">*</span></label>
                             <input type="file" name="certificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-                            <small class="text-muted"><i class="bi bi-info-circle"></i> Format: PDF/JPG/PNG max 5MB.</small>
+                            <small class="text-muted"><i class="bi bi-info-circle"></i> Format: PDF/JPG/PNG max 2MB.</small>
                         </div>
                     </div>
                     <div class="modal-footer border-0">

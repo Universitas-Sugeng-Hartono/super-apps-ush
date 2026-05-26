@@ -442,6 +442,25 @@ class SkpPointCalculator
                         'points' => ['Universitas' => ['Asisten'=>100]]
                     ]
                 ]
+            ],
+            'sertifikat_keahlian' => [
+                'label' => 'Sertifikat Keahlian',
+                'types' => [
+                    'sertifikat_mandarin' => [
+                        'label' => 'Sertifikat Mandarin',
+                        'bukti' => 'Sertifikat',
+                        'levels' => ['-' => '-'],
+                        'roles' => ['Peserta' => 'Peserta'],
+                        'points' => ['-' => ['Peserta' => 20]]
+                    ],
+                    'sertifikat_kompetensi_prodi' => [
+                        'label' => 'Sertifikat Ujian Kompetensi (Prodi)',
+                        'bukti' => 'Sertifikat',
+                        'levels' => ['-' => '-'],
+                        'roles' => ['Peserta' => 'Peserta'],
+                        'points' => ['-' => ['Peserta' => 20]]
+                    ]
+                ]
             ]
         ];
 

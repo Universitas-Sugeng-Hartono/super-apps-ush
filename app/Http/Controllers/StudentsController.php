@@ -413,7 +413,7 @@ class StudentsController extends Controller
             'activity_type'      => 'required|string|max:100',
             'level'              => 'required|string|max:100',
             'participation_role' => 'required|string|max:100',
-            'certificate'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'certificate'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ], [
             'category.required'      => 'Kategori SKPI harus dipilih.',
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
@@ -421,7 +421,7 @@ class StudentsController extends Controller
             'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
             'certificate.required'   => 'Bukti fisik wajib diunggah.',
             'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
-            'certificate.max'        => 'Ukuran file maksimal 5 MB.',
+            'certificate.max'        => 'Ukuran file maksimal 2 MB.',
         ]);
 
         // Cek duplikasi input prestasi dihapus karena mahasiswa bisa mengikuti
@@ -496,14 +496,14 @@ class StudentsController extends Controller
             'activity_type'      => 'required|string|max:100',
             'level'              => 'required|string|max:100',
             'participation_role' => 'required|string|max:100',
-            'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ], [
             'category.required'      => 'Kategori SKPI harus dipilih.',
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
             'level.required'         => 'Tingkat kegiatan harus dipilih.',
             'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
             'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
-            'certificate.max'        => 'Ukuran file maksimal 5 MB.',
+            'certificate.max'        => 'Ukuran file maksimal 2 MB.',
         ]);
 
         // Cek duplikasi dihapus

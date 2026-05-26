@@ -17,7 +17,7 @@
 
     <div class="preview-hero">
         <div>
-            <span class="preview-eyebrow">Preview Draft SKPI</span>
+            <span class="preview-eyebrow">{{ ($skpiRegistration && $skpiRegistration->status === 'needs_revision') ? 'Preview Revisi SKPI' : 'Preview Draft SKPI' }}</span>
             <h3>{{ $student->nama_lengkap }}</h3>
             <p>Berikut data pemegang SKPI yang sudah tersimpan sebagai pengajuan mahasiswa dan siap ditinjau oleh superuser.</p>
         </div>
@@ -72,6 +72,32 @@
                         </div>
                     </div>
                 @endforeach
+
+                <div class="field-row">
+                    <div class="field-label">Dokumen Ijazah</div>
+                    <div class="field-value {{ filled($skpiRegistration?->doc_ijasah) ? '' : 'is-empty' }}">
+                        @if($skpiRegistration && $skpiRegistration->doc_ijasah)
+                            <a href="{{ asset('storage/' . $skpiRegistration->doc_ijasah) }}" target="_blank" class="btn btn-sm btn-primary-soft" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
+                                <i class="bi bi-file-earmark-pdf"></i> Lihat Ijazah
+                            </a>
+                        @else
+                            Belum diunggah
+                        @endif
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Dokumen KTP</div>
+                    <div class="field-value {{ filled($skpiRegistration?->doc_ktp) ? '' : 'is-empty' }}">
+                        @if($skpiRegistration && $skpiRegistration->doc_ktp)
+                            <a href="{{ asset('storage/' . $skpiRegistration->doc_ktp) }}" target="_blank" class="btn btn-sm btn-primary-soft" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
+                                <i class="bi bi-file-earmark-pdf"></i> Lihat KTP
+                            </a>
+                        @else
+                            Belum diunggah
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -107,7 +133,6 @@
         @if($canEditRegistration)
             <a href="{{ route('student.skpi.daftar.create') }}" class="btn btn-muted">Edit Pengajuan</a>
         @endif
-        <a href="{{ route('student.personal.editDataIndex') }}" class="btn btn-muted">Lengkapi Profil</a>
     </div>
 @endsection
 

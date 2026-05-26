@@ -12,7 +12,7 @@
 
     <div class="page-card">
         <div>
-            <span class="page-eyebrow">Form Draft</span>
+            <span class="page-eyebrow">{{ ($skpiRegistration && $skpiRegistration->status === 'needs_revision') ? 'Form Revisi' : 'Form Draft' }}</span>
             <h3>Data Pemegang SKPI</h3>
             <p>Data di bawah ini otomatis mengambil data yang sudah ada di sistem. Jika ada yang belum tersedia,Jika ada Data  yang Kurang Lengkap Hubungi Dosen Pembimbing Anda.</p>
         </div>
@@ -72,7 +72,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('student.skpi.daftar.store') }}">
+        <form method="POST" action="{{ route('student.skpi.daftar.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="form-grid">
                 <input type="hidden" id="angkatan" value="{{ $holderData['angkatan'] }}">
@@ -110,10 +110,29 @@
                 <div class="form-group">
                     <label for="lama_studi">Lama Studi (Terhitung Otomatis)</label>
                     <input id="lama_studi" type="text" name="lama_studi" class="form-control readonly-field" value="{{ $holderData['lama_studi'] }}" readonly placeholder="0 Bulan">
-                    <small class="text-muted"><i class="bi bi-info-circle"></i> Dihitung dari Tahun Masuk s.d. Periode Lulus.</small>
                 </div>
 
                 {{-- Nomor Ijazah diisi oleh Masteradmin, bukan mahasiswa --}}
+            </div>
+
+            <div class="form-grid mt-4">
+                <div class="form-group full-width">
+                    <label for="doc_ijasah">Upload Ijazah Terakhir (PDF, Max 1MB)</label>
+                    <input id="doc_ijasah" type="file" name="doc_ijasah" class="form-control" accept=".pdf" @disabled(!$canEditRegistration)>
+                    @if($skpiRegistration && $skpiRegistration->doc_ijasah)
+                        <small class="text-success mt-1 d-block"><i class="bi bi-check-circle"></i> File sudah diunggah: <a href="{{ asset('storage/' . $skpiRegistration->doc_ijasah) }}" target="_blank">Lihat File</a></small>
+                    @endif
+                    @error('doc_ijasah')<small class="text-danger">{{ $message }}</small>@enderror
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="doc_ktp">Upload KTP (PDF, Max 1MB)</label>
+                    <input id="doc_ktp" type="file" name="doc_ktp" class="form-control" accept=".pdf" @disabled(!$canEditRegistration)>
+                    @if($skpiRegistration && $skpiRegistration->doc_ktp)
+                        <small class="text-success mt-1 d-block"><i class="bi bi-check-circle"></i> File sudah diunggah: <a href="{{ asset('storage/' . $skpiRegistration->doc_ktp) }}" target="_blank">Lihat File</a></small>
+                    @endif
+                    @error('doc_ktp')<small class="text-danger">{{ $message }}</small>@enderror
+                </div>
             </div>
 
             {{-- <div class="quick-links">

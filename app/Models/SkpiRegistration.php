@@ -23,6 +23,8 @@ class SkpiRegistration extends Model
         'periode_lulus',
         'lama_studi',
         'nomor_ijazah',
+        'doc_ijasah',
+        'doc_ktp',
         'status',
         'approval_notes',
         'approved_by',
