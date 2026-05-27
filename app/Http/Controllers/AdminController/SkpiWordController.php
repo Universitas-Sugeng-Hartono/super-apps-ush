@@ -235,6 +235,8 @@ class SkpiWordController extends Controller
                 'ujian_kompetensi' => '3.5',
                 'pelatihan_softskill' => '3.5',
                 'asisten_dosen' => '3.5',
+                'sertifikat_mandarin' => '3.5',
+                'sertifikat_kompetensi_prodi' => '3.5',
             ];
 
             // Nama kegiatan disesuaikan dengan Excel
@@ -280,6 +282,8 @@ class SkpiWordController extends Controller
                 'asisten_dosen' => 'Asisten dosen',
                 'calon_organisasi_intra' => 'Calon Ketua/Anggota Organisasi Intra',
                 'calon_organisasi_ekstra' => 'Calon Ketua/Anggota Organisasi Ekstra Universitas',
+                'sertifikat_mandarin' => 'Sertifikat Keahlian Bahasa Mandarin',
+                'sertifikat_kompetensi_prodi' => 'Sertifikat Ujian Kompetensi Program Studi',
             ];
 
             // Terjemahan Inggris berdasarkan activity_type
@@ -325,6 +329,8 @@ class SkpiWordController extends Controller
                 'dies_natalis' => 'Dies Natalis',
                 'panitia_pkkmb' => 'PKKMB Committee',
                 'asisten_dosen' => 'Lecturer Assistant',
+                'sertifikat_mandarin' => 'Mandarin Language Proficiency Certificate',
+                'sertifikat_kompetensi_prodi' => 'Study Program Competency Certificate',
             ];
 
             // Bangun tabel item prestasi — hanya isi, tanpa judul kategori
@@ -562,7 +568,7 @@ class SkpiWordController extends Controller
             $templateProcessor->setValue('JUDUL_SKRIPSI_EN',        htmlspecialchars($skripsiTitleEn));
 
             // ─── Lampiran 3: Transkrip Ringkasan SKP ─────────────────────
-            $l3Cats = ['wajib', 'organisasi', 'penalaran', 'minat_bakat', 'kepedulian_sosial', 'lainnya', 'volunteer'];
+            $l3Cats = ['wajib', 'organisasi', 'penalaran', 'minat_bakat', 'kepedulian_sosial', 'lainnya', 'volunteer', 'sertifikat_keahlian'];
             $skpByCategory = [];
             $totalSkp = 0;
             foreach ($l3Cats as $cat) {

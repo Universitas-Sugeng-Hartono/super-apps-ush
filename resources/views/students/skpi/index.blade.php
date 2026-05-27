@@ -70,7 +70,7 @@
             <div class="step-num">1</div>
             <div class="step-content">
                 <h6>Persiapan Data</h6>
-                <p>Lengkapi Foto, TTD, dan input semua Prestasi Anda.</p>
+                <p>Lengkapi Data Diri dan input semua Prestasi Anda.</p>
             </div>
         </div>
         <div class="step-connector"><i class="bi bi-chevron-right"></i></div>
@@ -86,7 +86,7 @@
             <div class="step-num">3</div>
             <div class="step-content">
                 <h6>Ajukan & Verifikasi</h6>
-                <p>Kirim pengajuan dan tunggu proses audit oleh Admin.</p>
+                <p>Kirim pengajuan dan tunggu proses.</p>
             </div>
         </div>
         <div class="step-connector"><i class="bi bi-chevron-right"></i></div>

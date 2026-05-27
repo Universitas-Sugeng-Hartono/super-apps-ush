@@ -13,11 +13,9 @@
     <div class="page-card">
         <div>
             <span class="page-eyebrow">{{ ($skpiRegistration && $skpiRegistration->status === 'needs_revision') ? 'Form Revisi' : 'Form Draft' }}</span>
-            <h3>Data Pemegang SKPI</h3>
-            <p>Data di bawah ini otomatis mengambil data yang sudah ada di sistem. Jika ada yang belum tersedia,Jika ada Data  yang Kurang Lengkap Hubungi Dosen Pembimbing Anda.</p>
+            <h3>Form Pengajuan SKPI</h3>
         </div>
         <div class="page-badge-wrap">
-            <span class="page-badge">{{ $holderMeta['filled_count'] }}/{{ $holderMeta['total_count'] }} field terisi</span>
             <span class="status-badge {{ $registrationStatus['badge_class'] }}">{{ $registrationStatus['label'] }}</span>
         </div>
     </div>
@@ -67,15 +65,15 @@
     <div class="form-card">
         <div class="card-head">
             <div>
-                <h4>Form Identitas Pemegang SKPI</h4>
+                <h4>Form Pengajuan SKPI</h4>
                 <p>Silakan tinjau dan lengkapi semua field berikut.</p>
             </div>
         </div>
 
         <form method="POST" action="{{ route('student.skpi.daftar.store') }}" enctype="multipart/form-data">
             @csrf
+            <input type="hidden" id="tanggal_masuk" value="{{ $student->tanggal_masuk ? $student->tanggal_masuk->format('Y-m') : '' }}">
             <div class="form-grid">
-                <input type="hidden" id="angkatan" value="{{ $holderData['angkatan'] }}">
 
                 <div class="form-group">
                     <label for="ipk">IPK</label>
@@ -149,7 +147,7 @@
             <div class="form-actions">
                 <a href="{{ route('student.skpi.daftar.index') }}" class="btn btn-soft">Kembali</a>
                 @if($canEditRegistration)
-                    <button type="submit" class="btn btn-primary-soft">{{ $skpiRegistration ? 'Update Data Identitas' : 'Simpan Data Identitas' }}</button>
+                    <button type="submit" class="btn btn-primary-soft">{{ $skpiRegistration ? 'Update Pengajuan SKPI' : 'Simpan Pengajuan SKPI' }}</button>
                 @else
                     <a href="{{ route('student.skpi.daftar.show') }}" class="btn btn-primary-soft">Lihat Pengajuan</a>
                 @endif
@@ -162,18 +160,18 @@
 <script>
     function calculateLamaStudi() {
         const periodeLulusInput = document.getElementById('periode_lulus')?.value;
-        const angkatanInput = document.getElementById('angkatan')?.value;
+        const tanggalMasukInput = document.getElementById('tanggal_masuk')?.value;
         const lamaStudiInput = document.getElementById('lama_studi');
 
         if (!lamaStudiInput) return;
 
-        if (!periodeLulusInput || !angkatanInput) {
+        if (!periodeLulusInput || !tanggalMasukInput) {
             lamaStudiInput.value = '';
             return;
         }
 
-        // Angkatan biasanya adalah tahun, dan tanggal masuk biasanya bulan September (09)
-        const masukDate = new Date(angkatanInput + '-09-01');
+        
+        const masukDate = new Date(tanggalMasukInput + '-01');
         const lulusDate = new Date(periodeLulusInput + '-01');
 
         if (lulusDate < masukDate) {
@@ -200,12 +198,8 @@
         lamaStudiInput.value = result.join(' ');
     }
 
-    // Call it initially just in case
     document.addEventListener('DOMContentLoaded', function() {
         calculateLamaStudi();
-        
-        // Also bind to angkatan change
-        document.getElementById('angkatan')?.addEventListener('change', calculateLamaStudi);
     });
 </script>
 @endpush

@@ -59,7 +59,7 @@
         <div class="search-box">
             <form method="GET" action="{{ route('admin.management.students.index') }}" class="search-form">
                 <input type="text" name="search" class="search-input" 
-                       placeholder="Cari nama, NIM, email, atau angkatan..." 
+                       placeholder="Cari nama, NIM, email, atau periode masuk..." 
                        value="{{ $search }}">
                 <select name="program_studi" class="filter-select">
                     <option value="">Semua Program Studi</option>
@@ -83,7 +83,7 @@
                             <th>No</th>
                             <th>Nama</th>
                             <th>NIM</th>
-                            <th>Angkatan</th>
+                            <th>Periode Masuk</th>
                             <th>Program Studi</th>
                             <th>Dosen PA</th>
                             <th>Status</th>
@@ -102,7 +102,7 @@
                                 </td>
                                 <td class="font-monospace">{{ $student->nim }}</td>
                                 <td>
-                                    <span class="badge-year">{{ $student->angkatan }}</span>
+                                    <span class="badge-year">{{ $student->tanggal_masuk ? $student->tanggal_masuk->translatedFormat('M Y') : ($student->angkatan ?? '-') }}</span>
                                 </td>
                                 <td>
                                     <span class="badge-prodi">{{ $student->program_studi }}</span>

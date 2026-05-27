@@ -26,8 +26,8 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Angkatan</label>
-                    <input type="text" class="form-control" value="{{ $student->angkatan }}" disabled>
+                    <label>Periode Masuk</label>
+                    <input type="text" class="form-control" value="{{ $student->tanggal_masuk ? $student->tanggal_masuk->translatedFormat('F Y') : ($student->angkatan ?? '-') }}" disabled>
                 </div>
 
                 <div class="form-group">

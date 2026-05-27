@@ -41,7 +41,7 @@ class SkpiController extends Controller
             ],
             [
                 'title' => ' Tugas Akhir',
-                'description' => $student->finalProject && $student->finalProject->title 
+                'description' => $student->finalProject && $student->finalProject->title
                     ? $student->finalProject->title . ($student->finalProject->title_en ? ' (' . $student->finalProject->title_en . ')' : '')
                     : 'Pastikan Anda sudah menyelesaikan Tugas Akhir/Skripsi.',
                 'icon' => 'bi bi-journal-check',
@@ -80,9 +80,9 @@ class SkpiController extends Controller
 
         $registrationChecklist = $this->buildRegistrationChecklist($student);
         $registrationMeta = $this->buildRegistrationMeta($registrationChecklist);
-        
-        $birthIdentityComplete = filled($student->nama_lengkap) 
-            && filled($student->tempat_lahir) 
+
+        $birthIdentityComplete = filled($student->nama_lengkap)
+            && filled($student->tempat_lahir)
             && filled($student->tanggal_lahir)
             && filled($student->nim)
             && filled($student->angkatan);
@@ -138,9 +138,9 @@ class SkpiController extends Controller
         $validated = $request->validate([
             'ipk'          => 'required|numeric|min:0|max:4',
             'sks'          => 'required|integer|min:0',
-            'judul_ta_indo'=> 'required|string|max:500',
-            'judul_ta_inggris'=> 'nullable|string|max:500',
-            'periode_lulus'=> 'required|date_format:Y-m',
+            'judul_ta_indo' => 'required|string|max:500',
+            'judul_ta_inggris' => 'nullable|string|max:500',
+            'periode_lulus' => 'required|date_format:Y-m',
             'lama_studi'   => 'required|string|max:255',
             'doc_ijasah'   => 'nullable|mimes:pdf|max:1024',
             'doc_ktp'      => 'nullable|mimes:pdf|max:1024',
@@ -159,19 +159,21 @@ class SkpiController extends Controller
         $lamaStudiStr = $validated['lama_studi'];
 
         $registrationData = [
-            'nama_lengkap' => $student->nama_lengkap,
-            'nim'          => $student->nim,
-            'tempat_lahir' => $student->tempat_lahir,
-            'tanggal_lahir'=> $student->tanggal_lahir,
-            'angkatan'     => $student->angkatan,
-            'gelar'        => $gelar,
-            'status'       => 'draft',
-            'ipk'          => $validated['ipk'],
-            'sks'          => $validated['sks'],
-            'judul_ta_indo'=> $validated['judul_ta_indo'],
-            'judul_ta_inggris'=> $validated['judul_ta_inggris'] ?? null,
-            'periode_lulus'=> $validated['periode_lulus'],
-            'lama_studi'   => $lamaStudiStr,
+            'status'           => 'draft',
+            // Snapshot data profil mahasiswa saat pengajuan
+            'nama_lengkap'     => $student->nama_lengkap,
+            'tempat_lahir'     => $student->tempat_lahir,
+            'tanggal_lahir'    => $student->tanggal_lahir,
+            'nim'              => $student->nim,
+            'angkatan'         => $student->angkatan,
+            'gelar'            => $gelar,
+            // Data dari form pengajuan
+            'ipk'              => $validated['ipk'],
+            'sks'              => $validated['sks'],
+            'judul_ta_indo'    => $validated['judul_ta_indo'],
+            'judul_ta_inggris' => $validated['judul_ta_inggris'] ?? null,
+            'periode_lulus'    => $validated['periode_lulus'],
+            'lama_studi'       => $lamaStudiStr,
         ];
 
         if ($request->hasFile('doc_ijasah')) {
@@ -352,20 +354,20 @@ class SkpiController extends Controller
 
     private function buildRegistrationChecklist(Student $student): array
     {
-        $birthIdentityComplete = filled($student->nama_lengkap) 
-            && filled($student->tempat_lahir) 
+        $birthIdentityComplete = filled($student->nama_lengkap)
+            && filled($student->tempat_lahir)
             && filled($student->tanggal_lahir)
             && filled($student->nim)
             && filled($student->angkatan);
-            
+
         $skpiRegistration = $student->skpiRegistration;
-        $formIdentitasLengkap = $skpiRegistration 
-            && filled($skpiRegistration->ipk) 
-            && filled($skpiRegistration->sks) 
-            && filled($skpiRegistration->judul_ta_indo) 
+        $formIdentitasLengkap = $skpiRegistration
+            && filled($skpiRegistration->ipk)
+            && filled($skpiRegistration->sks)
+            && filled($skpiRegistration->judul_ta_indo)
             && filled($skpiRegistration->periode_lulus)
             && filled($skpiRegistration->lama_studi);
-        
+
         $hasDocumentSupport = filled($student->foto) && filled($student->ttd);
         $hasApprovedAchievements = ($student->approved_achievements_count ?? 0) > 0;
 
@@ -378,7 +380,7 @@ class SkpiController extends Controller
             ],
             [
                 'title' => 'Form Identitas SKPI',
-                'description' => 'Data IPK, SKS, Judul Tugas Akhir, dan Periode Lulus sudah dilengkapi dan disimpan pada form.',
+                'description' => 'Lengkapi Data Diri Untuk Pengajuan SKPI.',
                 'ready' => (bool)$formIdentitasLengkap,
                 'required' => true,
             ],
@@ -466,33 +468,41 @@ class SkpiController extends Controller
         $finalProject = $student->finalProject;
 
         $defaults = [
-            'nama_lengkap' => $registration?->nama_lengkap ?? $student->nama_lengkap,
-            'tempat_lahir' => $registration?->tempat_lahir ?? $student->tempat_lahir,
-            'tanggal_lahir' => optional($registration?->tanggal_lahir ?? $student->tanggal_lahir)->format('Y-m-d'),
-            'nim' => $registration?->nim ?? $student->nim,
-            'angkatan' => $registration?->angkatan ?? $student->angkatan,
-            'gelar' => $gelarFromProfile ?? $registration?->gelar,
-            'ipk' => $registration?->ipk ?? $student->ipk,
-            'sks' => $registration?->sks ?? $student->sks,
-            'judul_ta_indo' => $registration?->judul_ta_indo ?? $finalProject?->title,
-            'judul_ta_inggris' => $registration?->judul_ta_inggris ?? $finalProject?->title_en,
-            'periode_lulus' => $registration?->periode_lulus,
-            'lama_studi' => $registration?->lama_studi,
+            // Data dari profil mahasiswa
+            'nama_lengkap'    => $student->nama_lengkap,
+            'tempat_lahir'    => $student->tempat_lahir,
+            'tanggal_lahir'   => $student->tanggal_lahir,
+            'nim'             => $student->nim,
+            'angkatan'        => $student->angkatan,
+            'gelar'           => $gelarFromProfile,
+            // Data dari form pengajuan SKPI
+            'ipk'             => $registration?->ipk ?? $student->ipk,
+            'sks'             => $registration?->sks ?? $student->sks,
+            'judul_ta_indo'   => $registration?->judul_ta_indo ?? $finalProject?->title,
+            'judul_ta_inggris'=> $registration?->judul_ta_inggris ?? $finalProject?->title_en,
+            'periode_lulus'   => $registration?->periode_lulus,
+            'lama_studi'      => $registration?->lama_studi,
+            'doc_ktp'         => $registration?->doc_ktp,
+            'doc_ijasah'      => $registration?->doc_ijasah,
         ];
 
         return [
-            'nama_lengkap' => old('nama_lengkap', $request?->input('nama_lengkap', $defaults['nama_lengkap']) ?? $defaults['nama_lengkap']),
-            'tempat_lahir' => old('tempat_lahir', $request?->input('tempat_lahir', $defaults['tempat_lahir']) ?? $defaults['tempat_lahir']),
-            'tanggal_lahir' => old('tanggal_lahir', $request?->input('tanggal_lahir', $defaults['tanggal_lahir']) ?? $defaults['tanggal_lahir']),
-            'nim' => old('nim', $request?->input('nim', $defaults['nim']) ?? $defaults['nim']),
-            'angkatan' => old('angkatan', $request?->input('angkatan', $defaults['angkatan']) ?? $defaults['angkatan']),
-            'gelar' => old('gelar', $request?->input('gelar', $defaults['gelar']) ?? $defaults['gelar']),
-            'ipk' => old('ipk', $request?->input('ipk', $defaults['ipk']) ?? $defaults['ipk']),
-            'sks' => old('sks', $request?->input('sks', $defaults['sks']) ?? $defaults['sks']),
-            'judul_ta_indo' => old('judul_ta_indo', $request?->input('judul_ta_indo', $defaults['judul_ta_indo']) ?? $defaults['judul_ta_indo']),
-            'judul_ta_inggris' => old('judul_ta_inggris', $request?->input('judul_ta_inggris', $defaults['judul_ta_inggris']) ?? $defaults['judul_ta_inggris']),
-            'periode_lulus' => old('periode_lulus', $request?->input('periode_lulus', $defaults['periode_lulus']) ?? $defaults['periode_lulus']),
-            'lama_studi' => old('lama_studi', $request?->input('lama_studi', $defaults['lama_studi']) ?? $defaults['lama_studi']),
+            // Data profil (tidak bisa diubah lewat form pengajuan)
+            'nama_lengkap'    => $defaults['nama_lengkap'],
+            'tempat_lahir'    => $defaults['tempat_lahir'],
+            'tanggal_lahir'   => $defaults['tanggal_lahir'],
+            'nim'             => $defaults['nim'],
+            'angkatan'        => $defaults['angkatan'],
+            'gelar'           => $defaults['gelar'],
+            // Data form pengajuan (bisa diubah mahasiswa)
+            'ipk'             => old('ipk', $request?->input('ipk', $defaults['ipk']) ?? $defaults['ipk']),
+            'sks'             => old('sks', $request?->input('sks', $defaults['sks']) ?? $defaults['sks']),
+            'judul_ta_indo'   => old('judul_ta_indo', $request?->input('judul_ta_indo', $defaults['judul_ta_indo']) ?? $defaults['judul_ta_indo']),
+            'judul_ta_inggris'=> old('judul_ta_inggris', $request?->input('judul_ta_inggris', $defaults['judul_ta_inggris']) ?? $defaults['judul_ta_inggris']),
+            'periode_lulus'   => old('periode_lulus', $request?->input('periode_lulus', $defaults['periode_lulus']) ?? $defaults['periode_lulus']),
+            'lama_studi'      => old('lama_studi', $request?->input('lama_studi', $defaults['lama_studi']) ?? $defaults['lama_studi']),
+            'doc_ktp'         => old('doc_ktp', $request?->input('doc_ktp', $defaults['doc_ktp']) ?? $defaults['doc_ktp']),
+            'doc_ijasah'      => old('doc_ijasah', $request?->input('doc_ijasah', $defaults['doc_ijasah']) ?? $defaults['doc_ijasah']),
         ];
     }
 
@@ -575,6 +585,18 @@ class SkpiController extends Controller
                 'value' => $holderData['lama_studi'] ?? null,
                 'display' => $holderData['lama_studi'] ?? null,
             ],
+            [
+                'key' => 'doc_ktp',
+                'label' => 'doc_ktp',
+                'value' => $holderData['doc_ktp'] ?? null,
+                'display' => $holderData['doc_ktp'] ?? null,
+            ],
+            [
+                'key' => 'doc_ijasah',
+                'label' => 'doc_ijasah',
+                'value' => $holderData['doc_ijasah'] ?? null,
+                'display' => $holderData['doc_ijasah'] ?? null,
+            ]
         ];
     }
 

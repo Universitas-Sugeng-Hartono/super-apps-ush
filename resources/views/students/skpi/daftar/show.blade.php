@@ -58,7 +58,7 @@
         <div class="preview-card">
             <div class="card-head">
                 <div>
-                    <h4>Informasi Tentang Identitas Diri Pemegang SKPI</h4>
+                    <h4>Data Pengajuan SKPI</h4>
                     <p>Disusun mengikuti field utama pada template SKPI.</p>
                 </div>
             </div>

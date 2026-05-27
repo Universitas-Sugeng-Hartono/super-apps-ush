@@ -184,26 +184,6 @@
                 </a>
             </div>
             @endif
-
-            {{-- Summary Stats --}}
-            <div class="ush-card bg-light-blue mt-4">
-                <h4 class="side-title mb-3">Ringkasan Data</h4>
-                <div class="ush-stat-list">
-                    <div class="stat-row">
-                        <span>Kelengkapan Dasar</span>
-                        <strong>{{ $registrationMeta['completed_count'] }}/{{ $registrationMeta['required_count'] }}</strong>
-                    </div>
-                    <div class="stat-row">
-                        <span>Data Identitas</span>
-                        <strong>{{ $birthIdentityComplete ? 'Lengkap' : 'Belum Lengkap' }}</strong>
-                    </div>
-                    <div class="stat-row">
-                        <span>Prestasi Valid</span>
-                        <strong>{{ $student->achievements()->where('status', 'approved')->count() }} Item</strong>
-                    </div>
-                </div>
-            </div>
-
             {{-- Guide Card --}}
             <div class="ush-card mt-4" style="border-left: 4px solid var(--ush-orange);">
                 <h4 class="side-title mb-2">Panduan Cepat</h4>
