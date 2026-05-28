@@ -292,7 +292,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const prodiName = document.getElementById('selectedProdiName')?.dataset.name ?? '';
+            // Ambil nama prodi dari dropdown filter (bukan dari modal)
+            const prodiSelect = document.querySelector('select[name="study_program_id"]');
+            const selectedOption = prodiSelect?.options[prodiSelect.selectedIndex];
+            // Hanya kirim jika prodi spesifik dipilih (value != '')
+            const prodiName = (prodiSelect?.value && selectedOption) ? selectedOption.text.trim() : '';
+
             let url = "{{ route('admin.skpi.generate-skpi.download-all') }}?registration_ids=" + ids.join(',');
             if (prodiName) {
                 url += '&study_program_name=' + encodeURIComponent(prodiName);

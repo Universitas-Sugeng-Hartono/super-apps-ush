@@ -307,7 +307,9 @@ class SkpiController extends Controller
         }
 
         $safeNim  = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $registration->nim) ?: 'student';
-        $fileName = 'SKPI_' . $safeNim . '.docx';
+        $safeName = preg_replace('/[^A-Za-z0-9_]/', '_', (string) $registration->nama_lengkap) ?: 'mahasiswa';
+        $safeName = trim($safeName, '_');
+        $fileName = 'SKPI_' . $safeNim . '_' . $safeName . '.docx';
 
         return response($decrypted, 200, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

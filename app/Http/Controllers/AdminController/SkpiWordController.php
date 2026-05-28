@@ -19,26 +19,30 @@ class SkpiWordController extends Controller
 {
     public function downloadAllApproved(Request $request)
     {
-        $registrationsQuery = SkpiRegistration::query()
-            ->with(['student.finalProject', 'approver'])
-            ->where('status', 'approved');
-
-        // Jika ada list ID spesifik (dari JS), gunakan itu (Paling Akurat untuk IDM)
+        // Jika ada list ID spesifik (dari JS), tidak perlu filter status — JS sudah kirim ID sesuai filter tampilan
         if ($request->filled('registration_ids')) {
             $ids = explode(',', $request->registration_ids);
-            $registrationsQuery->whereIn('id', $ids);
+            $registrationsQuery = SkpiRegistration::query()
+                ->with(['student.finalProject', 'approver'])
+                ->whereIn('id', $ids);
         } elseif ($request->filled('registration_id')) {
-            $registrationsQuery->where('id', $request->registration_id);
+            $registrationsQuery = SkpiRegistration::query()
+                ->with(['student.finalProject', 'approver'])
+                ->where('status', 'approved')
+                ->where('id', $request->registration_id);
         } else {
             // Fallback ke filter prodi/status jika tidak ada ID (biasanya untuk aksi lain)
-            $registrationsQuery->whereHas('student', function ($query) use ($request) {
-                if ($request->filled('study_program_id')) {
-                    $studyProgram = StudyProgram::find($request->study_program_id);
-                    if ($studyProgram) {
-                        $query->where('program_studi', $studyProgram->name);
+            $registrationsQuery = SkpiRegistration::query()
+                ->with(['student.finalProject', 'approver'])
+                ->where('status', 'approved')
+                ->whereHas('student', function ($query) use ($request) {
+                    if ($request->filled('study_program_id')) {
+                        $studyProgram = StudyProgram::find($request->study_program_id);
+                        if ($studyProgram) {
+                            $query->where('program_studi', $studyProgram->name);
+                        }
                     }
-                }
-            })
+                })
                 ->when($request->filled('generate_status'), function ($q) use ($request) {
                     if ($request->generate_status === 'belum') {
                         $q->whereNull('skpi_document');
@@ -871,8 +875,9 @@ class SkpiWordController extends Controller
             }
 
             // ─── Simpan ───────────────────────────────────────────────────
-            $safeNim  = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $registration->nim)          ?: 'student';
-            $safeName = preg_replace('/[^A-Za-z0-9_ -]/', '', (string) $registration->nama_lengkap) ?: 'name';
+            $safeNim  = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $registration->nim)                    ?: 'student';
+            $safeName = preg_replace('/[^A-Za-z0-9_]/', '_', (string) $registration->nama_lengkap)            ?: 'mahasiswa';
+            $safeName = trim(preg_replace('/_+/', '_', $safeName), '_');
 
             $fileName  = "SKPI_{$safeNim}_{$safeName}.docx";
             $savePath  = $tempDir . '/' . $fileName;
@@ -914,20 +919,19 @@ class SkpiWordController extends Controller
             $generatedFiles[] = $savePath;
         }
 
-        // Jika hanya 1 file karena filter registration_id, return langsung docx-nya
+        // Jika hanya 1 file karena filter registration_id spesifik, return langsung docx-nya
         if (count($generatedFiles) === 1 && $request->filled('registration_id')) {
             $singleFile = $generatedFiles[0];
-            return response()->download($singleFile)->deleteFileAfterSend(true);
+            return response()->download($singleFile, basename($singleFile))->deleteFileAfterSend(true);
         }
 
         // ─── Buat nama ZIP berdasarkan filter prodi ───────────────────────
         if ($request->filled('study_program_name')) {
-            // Nama prodi dikirim dari tombol ZIP di view (via JS)
             $safeProdi   = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim($request->study_program_name));
             $safeProdi   = trim($safeProdi, '_');
             $zipFileName = 'SKPI_' . $safeProdi . '_' . date('Ymd_His') . '.zip';
         } else {
-            $zipFileName = 'SKPI_Approved_All_' . date('Ymd_His') . '.zip';
+            $zipFileName = 'SKPI_All_Prodi_' . date('Ymd_His') . '.zip';
         }
         $zipPath = storage_path('app/' . $zipFileName);
 
