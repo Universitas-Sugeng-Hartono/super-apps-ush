@@ -102,7 +102,11 @@ class SkpiWordController extends Controller
 
             $groupedByCategory = [];
             foreach ($approvedAchievements as $achievement) {
-                $groupedByCategory[$achievement->category][] = $achievement;
+                $cat = $achievement->category;
+                if ($cat === 'sertifikat_keahlian') {
+                    $cat = 'penalaran';
+                }
+                $groupedByCategory[$cat][] = $achievement;
             }
 
             // ─────────────────────────────────────────────────────────────

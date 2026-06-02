@@ -20,9 +20,13 @@ $transkripCategories = [
 $groupedByCategory = [];
 $skpByCategory = [];
 foreach ($transkripCategories as $catKey => $catLabel) {
-$items = $selectedAchievements->where('category', $catKey)->values();
-$groupedByCategory[$catKey] = $items;
-$skpByCategory[$catKey] = $items->sum('skp_points');
+    if ($catKey === 'penalaran') {
+        $items = $selectedAchievements->whereIn('category', ['penalaran', 'sertifikat_keahlian'])->values();
+    } else {
+        $items = $selectedAchievements->where('category', $catKey)->values();
+    }
+    $groupedByCategory[$catKey] = $items;
+    $skpByCategory[$catKey] = $items->sum('skp_points');
 }
 
 $totalSkp = array_sum($skpByCategory);
