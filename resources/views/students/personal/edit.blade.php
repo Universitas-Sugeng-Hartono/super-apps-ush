@@ -786,7 +786,7 @@
             </div>
 
             <!-- Signature Card -->
-            <div class="profile-card">
+            <div class="profile-card d-none">
                 <div class="profile-card-header">
                     <i class="bi bi-pen-fill"></i>
                     <span>Tanda Tangan</span>

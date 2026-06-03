@@ -194,7 +194,6 @@ class Student extends Authenticatable
             'alamat',
             'no_telepon',
             'foto',
-            'ttd',
         ];
 
         foreach ($requiredFields as $field) {

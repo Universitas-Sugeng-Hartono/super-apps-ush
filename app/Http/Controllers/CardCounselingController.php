@@ -19,10 +19,10 @@ class CardCounselingController extends Controller
             return redirect()->back()->with('error', 'You do not have access to this page.');
         }
 
-        if ($student->ttd == null || $student->foto == null) {
+        if ($student->foto == null) {
             return redirect()
                 ->route('student.personal.editDataIndex', encrypt(session('student_id')))
-                ->with('error', 'Please complete your personal data (photo and signature) before accessing counseling services.');
+                ->with('error', 'Please complete your personal data (photo ) before accessing counseling services.');
         }
 
         $history = $student->counselings()
