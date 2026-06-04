@@ -364,6 +364,7 @@ class StudentsController extends Controller
                     'no_telepon_orangtua',
                     'email',
                     'foto',
+                    'ttd',
                     'password'
                 ];
 
@@ -382,7 +383,7 @@ class StudentsController extends Controller
                 }
             });
 
-            if ($student->foto) {
+            if ($student->foto && $student->ttd) {
                 return redirect()
                     ->route('student.counseling.show', encrypt(session('student_id')))
                     ->with('success', 'Data berhasil disimpan! Perubahan Anda telah tersimpan dengan baik. Anda sekarang dapat mengakses layanan bimbingan akademik.');
