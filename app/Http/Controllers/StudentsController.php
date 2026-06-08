@@ -385,10 +385,10 @@ class StudentsController extends Controller
                     }
                 }
 
-                // Kalau semua lengkap → kunci data
+                // Cek kelengkapan data (bisa digunakan untuk keperluan lain jika dibutuhkan)
                 if ($isComplete) {
-                    $student->is_edited = 0;
-                    $student->save();
+                    // $student->is_edited = 0; // Fitur auto-lock dimatikan sesuai permintaan
+                    // $student->save();
                 }
             });
 

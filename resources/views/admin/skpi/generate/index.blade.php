@@ -35,8 +35,19 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
             <h3><i class="bi bi-file-earmark-text"></i> Generator SKPI</h3>
         </div>
         <div class="header-actions">
+            @php
+                $prodiNameLabel = '';
+                if (isset($selectedStudyProgramIdFilter) && $selectedStudyProgramIdFilter) {
+                    $found = $studyPrograms->firstWhere('id', $selectedStudyProgramIdFilter);
+                    if ($found) {
+                        $prodiNameLabel = '(' . $found->name . ')';
+                    } else {
+                        $prodiNameLabel = '(Prodi)';
+                    }
+                }
+            @endphp
             <button type="button" class="btn-primary" id="btnBulkDocx" title="Unduh ZIP Word">
-                <i class="bi bi-file-earmark-word"></i> ZIP Word {{ isset($selectedStudyProgramIdFilter) && $selectedStudyProgramIdFilter ? '(Prodi)' : '' }}
+                <i class="bi bi-file-earmark-word"></i> ZIP Word {{ $prodiNameLabel }}
             </button>
         </div>
     </div>
@@ -62,10 +73,10 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
                     </option>
                 @endforeach
             </select>
-            <select name="registration_status" class="filter-select" onchange="this.form.submit()">
-                <option value="">Semua Status Registrasi</option>
-                <option value="pending"   {{ ($registrationStatusFilter ?? '') === 'pending'   ? 'selected' : '' }}>Pending</option>
-                <option value="approved"  {{ ($registrationStatusFilter ?? '') === 'approved'  ? 'selected' : '' }}>Approved</option>
+            <select name="generate_status" class="filter-select" onchange="this.form.submit()">
+                <option value="">Semua Status Generate</option>
+                <option value="belum" {{ ($generateStatusFilter ?? '') === 'belum' ? 'selected' : '' }}>Belum Generate</option>
+                <option value="sudah" {{ ($generateStatusFilter ?? '') === 'sudah' ? 'selected' : '' }}>Sudah Generate</option>
             </select>
         </form>
     </div>
@@ -162,7 +173,13 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
     @else
     <div class="empty-state">
         <i class="bi bi-inbox"></i>
-        <p>Tidak ada data mahasiswa yang disetujui</p>
+        @if(($generateStatusFilter ?? '') === 'belum')
+            <p>Tidak ada data mahasiswa yang belum digenerate</p>
+        @elseif(($generateStatusFilter ?? '') === 'sudah')
+            <p>Tidak ada data mahasiswa yang sudah digenerate</p>
+        @else
+            <p>Tidak ada data mahasiswa yang disetujui</p>
+        @endif
     </div>
     @endif
 </div>
@@ -283,24 +300,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnBulk = document.getElementById('btnBulkDocx');
     if (btnBulk) {
         btnBulk.onclick = () => {
-            const ids = Array.from(document.querySelectorAll('.btn-view'))
-                             .map(btn => btn.dataset.id)
-                             .filter(id => id);
+            const prodiSelect = document.querySelector('select[name="study_program_id"]');
+            const genSelect = document.querySelector('select[name="generate_status"]');
+            
+            const prodiId = prodiSelect?.value || '';
+            const genStatus = genSelect?.value || '';
 
-            if (ids.length === 0) {
-                alert('Tidak ada data mahasiswa yang bisa di-download di tabel ini.');
-                return;
+            let url = "{{ route('admin.skpi.generate-skpi.download-all') }}";
+            let params = new URLSearchParams();
+            
+            if (prodiId) {
+                params.append('study_program_id', prodiId);
+                const selectedOption = prodiSelect.options[prodiSelect.selectedIndex];
+                if (selectedOption) {
+                    params.append('study_program_name', selectedOption.text.trim());
+                }
+            }
+            
+            if (genStatus) {
+                params.append('generate_status', genStatus);
             }
 
-            // Ambil nama prodi dari dropdown filter (bukan dari modal)
-            const prodiSelect = document.querySelector('select[name="study_program_id"]');
-            const selectedOption = prodiSelect?.options[prodiSelect.selectedIndex];
-            // Hanya kirim jika prodi spesifik dipilih (value != '')
-            const prodiName = (prodiSelect?.value && selectedOption) ? selectedOption.text.trim() : '';
-
-            let url = "{{ route('admin.skpi.generate-skpi.download-all') }}?registration_ids=" + ids.join(',');
-            if (prodiName) {
-                url += '&study_program_name=' + encodeURIComponent(prodiName);
+            const queryString = params.toString();
+            if (queryString) {
+                url += '?' + queryString;
             }
 
             window.location.href = url;

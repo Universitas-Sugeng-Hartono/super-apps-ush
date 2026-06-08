@@ -157,7 +157,7 @@
         <div class="ush-col-side">
             
             {{-- Action Cards --}}
-            @if($status !== 'approved')
+            @if(!in_array($status, ['pending', 'approved']))
             <div class="ush-card no-padding bg-transparent shadow-none border-0">
                 <h4 class="side-title">Menu Utama</h4>
                 

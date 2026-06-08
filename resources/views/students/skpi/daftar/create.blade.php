@@ -100,8 +100,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="periode_lulus">Periode Lulus (Bulan Tahun)</label>
-                    <input id="periode_lulus" type="month" name="periode_lulus" class="form-control" value="{{ $holderData['periode_lulus'] }}" @disabled(!$canEditRegistration) onchange="calculateLamaStudi()">
+                    <label for="periode_lulus">periode lulus(sk yudisium/kelulusan)</label>
+                    @php
+                        $periodeValue = $holderData['periode_lulus'] ?? '';
+                        if (strlen($periodeValue) === 7) {
+                            $periodeValue .= '-01';
+                        }
+                    @endphp
+                    <input id="periode_lulus" type="date" name="periode_lulus" class="form-control" value="{{ $periodeValue }}" @disabled(!$canEditRegistration) onchange="calculateLamaStudi()">
                     @error('periode_lulus')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
 
@@ -148,8 +154,6 @@
                 <a href="{{ route('student.skpi.daftar.index') }}" class="btn btn-soft">Kembali</a>
                 @if($canEditRegistration)
                     <button type="submit" class="btn btn-primary-soft">{{ $skpiRegistration ? 'Update Pengajuan SKPI' : 'Simpan Pengajuan SKPI' }}</button>
-                @else
-                    <a href="{{ route('student.skpi.daftar.show') }}" class="btn btn-primary-soft">Lihat Pengajuan</a>
                 @endif
             </div>
         </form>
@@ -172,7 +176,11 @@
 
         
         const masukDate = new Date(tanggalMasukInput + '-01');
-        const lulusDate = new Date(periodeLulusInput + '-01');
+        let lulusDateStr = periodeLulusInput;
+        if (lulusDateStr.length === 7) {
+            lulusDateStr += '-01';
+        }
+        const lulusDate = new Date(lulusDateStr);
 
         if (lulusDate < masukDate) {
             lamaStudiInput.value = 'Data Tidak Valid';

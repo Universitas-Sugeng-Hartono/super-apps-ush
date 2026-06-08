@@ -175,7 +175,7 @@ class SkpiController extends Controller
             'skpi.registration.revision',
             'Pendaftaran SKPI Perlu Revisi',
             'Pendaftaran SKPI Anda perlu revisi. Catatan: ' . $registration->approval_notes,
-            route('student.skpi.daftar.show'),
+            route('student.skpi.daftar.index'),
             ['skpi_registration_id' => $registration->id]
         );
 
@@ -207,7 +207,7 @@ class SkpiController extends Controller
             'skpi.registration.rejected',
             'Pendaftaran SKPI Ditolak',
             'Pendaftaran SKPI Anda ditolak. Catatan: ' . $registration->approval_notes,
-            route('student.skpi.daftar.show'),
+            route('student.skpi.daftar.index'),
             ['skpi_registration_id' => $registration->id]
         );
 
@@ -625,19 +625,12 @@ class SkpiController extends Controller
 
         $selectedStudyProgramIdFilter = $request->integer('study_program_id');
         $generateStatusFilter         = $request->input('generate_status');
-        $registrationStatusFilter     = $request->input('registration_status'); // 'pending' | 'approved' | ''
 
-        // Default: tampilkan pending + approved (bukan hanya approved)
         $approvedRegistrationsQuery = SkpiRegistration::query()
             ->with('student')
-            ->whereIn('status', ['pending', 'approved'])
+            ->where('status', 'approved')
             ->whereHas('student')
             ->orderBy('nama_lengkap');
-
-        // Filter berdasarkan status registrasi
-        if (in_array($registrationStatusFilter, ['pending', 'approved'], true)) {
-            $approvedRegistrationsQuery->where('status', $registrationStatusFilter);
-        }
 
         if ($selectedStudyProgramIdFilter) {
             $studyProgram = StudyProgram::find($selectedStudyProgramIdFilter);
@@ -734,7 +727,6 @@ class SkpiController extends Controller
             'approvedRegistrations',
 
             'generateStatusFilter',
-            'registrationStatusFilter',
 
             'selectedAchievementIds',
             'selectedAchievements',

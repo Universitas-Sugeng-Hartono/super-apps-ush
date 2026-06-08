@@ -306,7 +306,7 @@
 {{-- Modal Revision --}}
 <div id="revisionModal" class="modal-backdrop-modern" style="display: none;">
     <div class="modal-dialog-modern">
-        <div class="modal-header-modern bg-warning">
+        <div class="modal-header-modern bg-primary">
             <div class="modal-icon-wrap"><i class="bi bi-arrow-repeat"></i></div>
             <div class="modal-title-wrap">
                 <h4>Minta Revisi</h4>
@@ -324,7 +324,7 @@
             </div>
             <div class="modal-footer-modern">
                 <button type="button" class="btn-cancel-modern" onclick="closeRevisionModal()">Batal</button>
-                <button type="submit" class="btn-submit-modern bg-warning">Kirim Revisi</button>
+                <button type="submit" class="btn-submit-modern bg-primary">Kirim Revisi</button>
             </div>
         </form>
     </div>

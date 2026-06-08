@@ -31,7 +31,7 @@ class SkpiWordController extends Controller
                 ->where('status', 'approved')
                 ->where('id', $request->registration_id);
         } else {
-            // Fallback ke filter prodi/status jika tidak ada ID (biasanya untuk aksi lain)
+            // Fallback ke filter prodi/status jika tidak ada ID
             $registrationsQuery = SkpiRegistration::query()
                 ->with(['student.finalProject', 'approver'])
                 ->where('status', 'approved')

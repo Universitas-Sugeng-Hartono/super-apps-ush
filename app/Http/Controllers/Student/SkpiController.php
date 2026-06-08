@@ -140,7 +140,7 @@ class SkpiController extends Controller
             'sks'          => 'required|integer|min:0',
             'judul_ta_indo' => 'required|string|max:500',
             'judul_ta_inggris' => 'nullable|string|max:500',
-            'periode_lulus' => 'required|date_format:Y-m',
+            'periode_lulus' => 'required|date_format:Y-m-d',
             'lama_studi'   => 'required|string|max:255',
             'doc_ijasah'   => 'nullable|mimes:pdf|max:1024',
             'doc_ktp'      => 'nullable|mimes:pdf|max:1024',
@@ -252,31 +252,7 @@ class SkpiController extends Controller
             ->with('success', 'Pendaftaran SKPI berhasil dikirim untuk direview.');
     }
 
-    public function daftarShow()
-    {
-        $student = $this->getStudent();
-        $skpiRegistration = $student->skpiRegistration;
 
-        if (!$skpiRegistration) {
-            return redirect()
-                ->route('student.skpi.daftar.index')
-                ->with('error', 'Anda belum mengajukan pendaftaran SKPI.');
-        }
-
-        $holderFields = $this->buildHolderFields($this->buildHolderData($student, $skpiRegistration));
-        $holderMeta = $this->buildHolderMeta($holderFields);
-        $registrationStatus = $this->buildStatusMeta($skpiRegistration->status);
-        $canEditRegistration = $this->canEditRegistration($skpiRegistration);
-
-        return view('students.skpi.daftar.show', compact(
-            'student',
-            'skpiRegistration',
-            'holderFields',
-            'holderMeta',
-            'registrationStatus',
-            'canEditRegistration'
-        ));
-    }
 
     public function downloadWord()
     {
@@ -578,7 +554,7 @@ class SkpiController extends Controller
                 'label' => 'Periode Lulus',
                 'value' => $holderData['periode_lulus'] ?? null,
                 'display' => filled($holderData['periode_lulus'] ?? null)
-                    ? \Carbon\Carbon::parse($holderData['periode_lulus'] . '-01')->translatedFormat('F Y')
+                    ? \Carbon\Carbon::parse(strlen($holderData['periode_lulus']) === 7 ? $holderData['periode_lulus'] . '-01' : $holderData['periode_lulus'])->translatedFormat('d F Y')
                     : null,
             ],
             [

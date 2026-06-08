@@ -965,10 +965,16 @@
                     <span>Informasi Personal</span>
                 </div>
                 <div class="profile-card-body">
-                    <form action="{{ route('student.personal.updateData') }}" method="POST">
+                    <form action="{{ route('student.personal.updateData') }}" method="POST" id="personalDataForm">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="text">
+                        
+                        @if ($student->is_edited)
+                            <fieldset id="profileFieldset" disabled>
+                        @else
+                            <fieldset disabled>
+                        @endif
 
                         <h6 class="mt-4 mb-3 fw-bold border-bottom pb-2"><i class="bi bi-person-badge me-2"></i>Data Identitas Mahasiswa</h6>
                         <div class="row">
@@ -990,7 +996,14 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label class="form-label"><i class="bi bi-mortarboard me-1"></i>Program Studi</label>
-                                    <input type="text" name="program_studi" class="form-control" value="{{ old('program_studi', $student->program_studi) }}" @readonly(!$student->is_edited) placeholder="Contoh: Teknik Informatika">
+                                    <select name="program_studi" class="form-control" @disabled(!$student->is_edited)>
+                                        <option value="">-- Pilih Program Studi --</option>
+                                        @foreach(\App\Models\StudyProgram::where('is_active', true)->orderBy('order')->get() as $prodi)
+                                            <option value="{{ $prodi->name }}" @selected(old('program_studi', $student->program_studi) == $prodi->name)>
+                                                {{ $prodi->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -1010,13 +1023,13 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>NIK</label>
+                                    <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>NIK ( no.KTP)</label>
                                     <input type="text" name="nik" class="form-control" value="{{ old('nik', $student->nik) }}" @readonly(!$student->is_edited) placeholder="Masukkan NIK">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>NISN</label>
+                                    <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>NISN ( 10 digit ) Ijazah SMA/sederajat</label>
                                     <input type="text" name="nisn" class="form-control" value="{{ old('nisn', $student->nisn) }}" @readonly(!$student->is_edited) placeholder="Masukkan NISN">
                                 </div>
                             </div>
@@ -1147,12 +1160,23 @@
                             </div>
                         @endif
 
+                        </fieldset>
+
                         @if ($student->is_edited)
-                            <div class="text-end mt-4">
-                                <button type="submit" class="btn-save">
-                                    <i class="bi bi-check-circle"></i>
-                                    Simpan Semua Data
+                            <div class="text-end mt-4" id="action-buttons-container">
+                                <button type="button" class="btn-save" id="btnEditProfile" style="background: linear-gradient(135deg, #2196F3, #1976D2); box-shadow: 0 10px 20px -5px rgba(33, 150, 243, 0.4);">
+                                    <i class="bi bi-pencil-square"></i>
+                                    Edit Profile
                                 </button>
+                                <div id="save-buttons-group" style="display: none;">
+                                    <button type="button" class="btn btn-secondary me-2" id="btnCancelEdit" style="border-radius: 12px; padding: 12px 24px; font-weight: 600;">
+                                        <i class="bi bi-x-circle me-1"></i> Batal
+                                    </button>
+                                    <button type="submit" class="btn-save">
+                                        <i class="bi bi-check-circle"></i>
+                                        Simpan Perubahan Profile
+                                    </button>
+                                </div>
                             </div>
                         @else
                             <div class="info-alert mt-4">
@@ -1164,9 +1188,7 @@
                                 </div>
                             </div>
                         @endif
-                    
-
-                        </form>
+                    </form>
                 </div>
             </div>
 
@@ -1356,6 +1378,31 @@
                         }
                     });
                 }
+            }
+            // Edit Profile Toggle Logic
+            const btnEditProfile = document.getElementById('btnEditProfile');
+            const btnCancelEdit = document.getElementById('btnCancelEdit');
+            const profileFieldset = document.getElementById('profileFieldset');
+            const saveButtonsGroup = document.getElementById('save-buttons-group');
+            const personalDataForm = document.getElementById('personalDataForm');
+
+            if (btnEditProfile) {
+                btnEditProfile.addEventListener('click', function() {
+                    profileFieldset.removeAttribute('disabled');
+                    btnEditProfile.style.display = 'none';
+                    saveButtonsGroup.style.display = 'inline-block';
+                });
+            }
+
+            if (btnCancelEdit) {
+                btnCancelEdit.addEventListener('click', function() {
+                    profileFieldset.setAttribute('disabled', 'disabled');
+                    btnEditProfile.style.display = 'inline-block';
+                    saveButtonsGroup.style.display = 'none';
+                    if (personalDataForm) {
+                        personalDataForm.reset();
+                    }
+                });
             }
         });
     </script>

@@ -42,7 +42,6 @@ Route::middleware(['student'])->group(function () {
             Route::get('/', 'daftarIndex')->name('index');
             Route::get('/create', 'daftarCreate')->name('create');
             Route::post('/', 'daftarStore')->name('store');
-            Route::get('/show', 'daftarShow')->name('show');
             Route::post('/submit', 'daftarSubmit')->name('submit');
         });
     });
