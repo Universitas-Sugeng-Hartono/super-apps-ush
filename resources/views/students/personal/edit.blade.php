@@ -971,7 +971,7 @@
                         <input type="hidden" name="form_type" value="text">
                         
                         @if ($student->is_edited)
-                            <fieldset id="profileFieldset" disabled>
+                            <fieldset id="profileFieldset">
                         @else
                             <fieldset disabled>
                         @endif
@@ -1164,11 +1164,11 @@
 
                         @if ($student->is_edited)
                             <div class="text-end mt-4" id="action-buttons-container">
-                                <button type="button" class="btn-save" id="btnEditProfile" style="background: linear-gradient(135deg, #2196F3, #1976D2); box-shadow: 0 10px 20px -5px rgba(33, 150, 243, 0.4);">
+                                <button type="button" class="btn-save" id="btnEditProfile" style="display: none; background: linear-gradient(135deg, #2196F3, #1976D2); box-shadow: 0 10px 20px -5px rgba(33, 150, 243, 0.4);">
                                     <i class="bi bi-pencil-square"></i>
                                     Edit Profile
                                 </button>
-                                <div id="save-buttons-group" style="display: none;">
+                                <div id="save-buttons-group" style="display: inline-block;">
                                     <button type="button" class="btn btn-secondary me-2" id="btnCancelEdit" style="border-radius: 12px; padding: 12px 24px; font-weight: 600;">
                                         <i class="bi bi-x-circle me-1"></i> Batal
                                     </button>

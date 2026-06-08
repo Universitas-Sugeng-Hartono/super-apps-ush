@@ -624,9 +624,15 @@ class StudentsAdminController extends Controller
     {
         $student = Student::findOrFail($id);
 
+        \Log::info("toggleEdit called for student {$id}", [
+            'request_has_is_edited' => $request->has('is_edited'),
+            'request_is_edited_value' => $request->input('is_edited'),
+            'boolean_parsed' => $request->boolean('is_edited')
+        ]);
+
         // Jika request body ada is_edited, gunakan itu, jika tidak toggle
         if ($request->has('is_edited')) {
-            $student->is_edited = $request->is_edited ? 1 : 0;
+            $student->is_edited = $request->boolean('is_edited') ? 1 : 0;
         } else {
             $student->is_edited = $student->is_edited ? 0 : 1;
         }
@@ -673,13 +679,14 @@ class StudentsAdminController extends Controller
             'is_edited' => 'required|boolean'
         ]);
 
-        $count = Student::query()->update(['is_edited' => $request->is_edited ? 1 : 0]);
-        $status = $request->is_edited ? 'dibuka' : 'dikunci';
+        $is_edited = $request->boolean('is_edited') ? 1 : 0;
+        $count = Student::query()->update(['is_edited' => $is_edited]);
+        $status = $is_edited ? 'dibuka' : 'dikunci';
 
         return response()->json([
             'success' => true,
             'message' => "Akses edit profil untuk {$count} mahasiswa telah {$status}.",
-            'is_edited' => $request->is_edited ? 1 : 0
+            'is_edited' => $is_edited
         ]);
     }
     /**

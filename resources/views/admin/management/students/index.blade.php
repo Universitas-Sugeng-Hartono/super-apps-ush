@@ -125,7 +125,7 @@
                                                data-student-id="{{ $student->id }}"
                                                data-student-name="{{ $student->nama_lengkap }}"
                                                {{ $student->is_edited ? 'checked' : '' }}
-                                               onchange="toggleStudentEdit({{ $student->id }}, '{{ $student->nama_lengkap }}', this.checked)">
+                                               onchange="toggleStudentEdit({{ $student->id }}, this.checked)">
                                         <span class="toggle-slider"></span>
                                     </label>
                                     <span class="edit-status" id="status-{{ $student->id }}">
@@ -139,7 +139,7 @@
                                                data-student-id="{{ $student->id }}"
                                                data-student-name="{{ $student->nama_lengkap }}"
                                                {{ $student->is_skpi_unlocked ? 'checked' : '' }}
-                                               onchange="toggleStudentSkpi({{ $student->id }}, '{{ $student->nama_lengkap }}', this.checked)">
+                                               onchange="toggleStudentSkpi({{ $student->id }}, this.checked)">
                                         <span class="toggle-slider"></span>
                                     </label>
                                     <span class="edit-status" id="skpi-status-{{ $student->id }}">
@@ -800,12 +800,13 @@
     @endif
 
     // Toggle edit untuk satu mahasiswa
-    function toggleStudentEdit(studentId, studentName, isChecked) {
+    function toggleStudentEdit(studentId, isChecked) {
         const statusEl = document.getElementById('status-' + studentId);
-        const toggleEl = event.target;
+        // Kita bisa ambil toggle-edit element lewat data-student-id
+        const toggleEl = document.querySelector(`.toggle-edit[data-student-id="${studentId}"]`);
         
         // Disable toggle saat proses
-        toggleEl.disabled = true;
+        if (toggleEl) toggleEl.disabled = true;
         
         fetch(`/admin/management/students/${studentId}/toggle-edit`, {
             method: 'POST',
@@ -828,27 +829,27 @@
                 showToast('success', data.message);
             } else {
                 // Revert toggle jika gagal
-                toggleEl.checked = !isChecked;
+                if (toggleEl) toggleEl.checked = !isChecked;
                 showToast('error', 'Gagal mengubah status edit profil.');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            toggleEl.checked = !isChecked;
+            if (toggleEl) toggleEl.checked = !isChecked;
             showToast('error', 'Terjadi kesalahan saat mengubah status.');
         })
         .finally(() => {
-            toggleEl.disabled = false;
+            if (toggleEl) toggleEl.disabled = false;
         });
     }
 
     // Toggle skpi untuk satu mahasiswa
-    function toggleStudentSkpi(studentId, studentName, isChecked) {
+    function toggleStudentSkpi(studentId, isChecked) {
         const statusEl = document.getElementById('skpi-status-' + studentId);
-        const toggleEl = event.target;
+        const toggleEl = document.querySelector(`.toggle-skpi[data-student-id="${studentId}"]`);
         
         // Disable toggle saat proses
-        toggleEl.disabled = true;
+        if (toggleEl) toggleEl.disabled = true;
         
         fetch(`/admin/management/students/${studentId}/toggle-skpi`, {
             method: 'POST',
@@ -871,17 +872,17 @@
                 showToast('success', data.message);
             } else {
                 // Revert toggle jika gagal
-                toggleEl.checked = !isChecked;
+                if (toggleEl) toggleEl.checked = !isChecked;
                 showToast('error', 'Gagal mengubah status akses SKPI.');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            toggleEl.checked = !isChecked;
+            if (toggleEl) toggleEl.checked = !isChecked;
             showToast('error', 'Terjadi kesalahan saat mengubah status.');
         })
         .finally(() => {
-            toggleEl.disabled = false;
+            if (toggleEl) toggleEl.disabled = false;
         });
     }
 
