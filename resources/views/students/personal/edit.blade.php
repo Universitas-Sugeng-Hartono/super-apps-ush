@@ -511,10 +511,66 @@
             font-weight: 700;
             text-decoration: none;
             transition: all 0.3s;
-
         }
         .btn-cv-download:hover{
             color: #4CAF50;
+        }
+
+        /* Signature Pad Styles */
+        .signature-pad-container {
+            position: relative;
+            width: 100%;
+            background: #fff;
+            border: 2px dashed #FFB347;
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: crosshair;
+            transition: border-color 0.2s;
+        }
+        .signature-pad-container:hover {
+            border-color: var(--primary-orange);
+        }
+        .signature-pad-container.is-drawing {
+            border-style: solid;
+            border-color: var(--primary-orange);
+        }
+        #signatureCanvas {
+            display: block;
+            width: 100%;
+            height: 160px;
+            touch-action: none;
+        }
+        .sig-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            color: var(--primary-orange);
+            gap: 4px;
+            transition: opacity 0.2s;
+        }
+        .sig-placeholder.hidden {
+            opacity: 0;
+        }
+        .btn-sig-clear {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #FDE8E7;
+            color: #C23934;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-sig-clear:hover {
+            background: #f5c6c5;
         }
 
         /* Premium Table Styles (from achievements page) */
@@ -786,40 +842,62 @@
             </div>
 
             <!-- Signature Card -->
-            <div class="profile-card ">
+            <div class="profile-card">
                 <div class="profile-card-header">
                     <i class="bi bi-pen-fill"></i>
                     <span>Tanda Tangan</span>
                 </div>
                 <div class="profile-card-body">
-                    <div class="signature-wrapper">
-                        @if ($student->ttd)
-                            <img src="{{ asset('storage/' . $student->ttd) }}" alt="Tanda Tangan">
-                        @else
-                            <span style="color: #ccc; font-size: 14px;">Belum ada tanda tangan</span>
-                        @endif
-                    </div>
 
                     @if ($student->is_edited)
-                        <form action="{{ route('student.personal.updateData') }}" method="POST"
-                            enctype="multipart/form-data">
+                        {{-- Mode Edit: Canvas Signature Pad --}}
+                        <form action="{{ route('student.personal.updateData') }}" method="POST" id="ttdForm">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="form_type" value="ttd">
+                            <input type="hidden" name="ttd_base64" id="ttdBase64Input">
 
-                            <div class="file-input-wrapper">
-                                <input type="file" name="ttd" id="ttdInput" accept="image/*">
-                                <label for="ttdInput" class="file-input-label">
-                                    <i class="bi bi-cloud-upload"></i>
-                                    <span>Pilih TTD Baru</span>
+                            <div style="margin-bottom: 10px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-dark);">
+                                    <i class="bi bi-pencil-square me-1"></i>
+                                    Tanda tangan di sini:
                                 </label>
                             </div>
 
-                            <button type="submit" class="btn-upload">
-                                <i class="bi bi-save"></i>
-                                Simpan TTD
-                            </button>
+                            <div class="signature-pad-container" id="signaturePadContainer">
+                                <canvas id="signatureCanvas" width="320" height="160"></canvas>
+                                <div class="sig-placeholder" id="sigPlaceholder">
+                                    <i class="bi bi-pen" style="font-size:22px; opacity:0.3;"></i>
+                                    <span style="font-size:12px; opacity:0.4; margin-top:4px;">Tanda tangan di sini...</span>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:8px; margin-top:10px;">
+                                <button type="button" id="resetSignatureBtn" class="btn-sig-clear">
+                                    <i class="bi bi-arrow-clockwise"></i> Reset
+                                </button>
+                                <button type="submit" id="saveTtdBtn" class="btn-upload" style="flex:1;" onclick="return prepareSignature()">
+                                    <i class="bi bi-save"></i> Simpan TTD
+                                </button>
+                            </div>
+
+                            @if ($student->ttd)
+                                <div style="margin-top:12px; padding:10px; background:#f8f9fa; border-radius:10px; text-align:center;">
+                                    <div style="font-size:11px; color:#888; margin-bottom:6px;">TTD saat ini:</div>
+                                    <img src="{{ asset('storage/' . $student->ttd) }}" alt="Tanda Tangan Saat Ini"
+                                        style="max-height:60px; max-width:100%; opacity:0.7; border-radius:6px;">
+                                </div>
+                            @endif
                         </form>
+                    @else
+                        {{-- Mode View: Tampilkan TTD yang tersimpan --}}
+                        <div class="signature-wrapper">
+                            @if ($student->ttd)
+                                <img src="{{ asset('storage/' . $student->ttd) }}" alt="Tanda Tangan">
+                            @else
+                                <span style="color: #ccc; font-size: 14px;">Belum ada tanda tangan</span>
+                            @endif
+                        </div>
                     @endif
                 </div>
             </div>
@@ -1117,6 +1195,25 @@
             }
         }
 
+        // Convert canvas to base64 and inject into hidden input before submit
+        function prepareSignature() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (!canvas) return true; // fallback: allow submit
+
+            // Check if canvas is blank (all pixels transparent)
+            const pixelData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+            const isBlank = !pixelData.some((channel, i) => i % 4 !== 3 && channel !== 0);
+
+            if (isBlank) {
+                alert('Silakan buat tanda tangan Anda terlebih dahulu di kotak yang tersedia.');
+                return false;
+            }
+
+            const dataURL = canvas.toDataURL('image/png');
+            document.getElementById('ttdBase64Input').value = dataURL;
+            return true;
+        }
+
         // Auto hide toast after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
             const toast = document.getElementById('toastNotification');
@@ -1125,6 +1222,99 @@
                     closeToast();
                 }, 5000);
             }
+
+            // ──────────────────────────────────────────────
+            // Signature Pad (Canvas Draw)
+            // ──────────────────────────────────────────────
+            const canvas = document.getElementById('signatureCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                const container = document.getElementById('signaturePadContainer');
+                const placeholder = document.getElementById('sigPlaceholder');
+                let drawing = false;
+                let isEmpty = true;
+
+                // Resize canvas to match actual rendered size
+                function resizeCanvas() {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = rect.width / canvas.width;
+                    const scaleY = rect.height / canvas.height;
+                    // only resize if visually different
+                    canvas.width = Math.round(rect.width);
+                    canvas.height = Math.round(rect.height);
+                    ctx.lineWidth = 2.5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = '#1a1a2e';
+                }
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+
+                function getPos(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    if (e.touches) {
+                        return {
+                            x: e.touches[0].clientX - rect.left,
+                            y: e.touches[0].clientY - rect.top
+                        };
+                    }
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                }
+
+                function startDraw(e) {
+                    e.preventDefault();
+                    drawing = true;
+                    const pos = getPos(e);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                    container.classList.add('is-drawing');
+                }
+
+                function draw(e) {
+                    if (!drawing) return;
+                    e.preventDefault();
+                    const pos = getPos(e);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                    if (isEmpty) {
+                        isEmpty = false;
+                        placeholder.classList.add('hidden');
+                    }
+                }
+
+                function stopDraw(e) {
+                    drawing = false;
+                    container.classList.remove('is-drawing');
+                }
+
+                // Mouse events
+                canvas.addEventListener('mousedown', startDraw);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDraw);
+                canvas.addEventListener('mouseleave', stopDraw);
+
+                // Touch events (mobile/tablet)
+                canvas.addEventListener('touchstart', startDraw, { passive: false });
+                canvas.addEventListener('touchmove', draw, { passive: false });
+                canvas.addEventListener('touchend', stopDraw);
+
+                // Reset button
+                const resetBtn = document.getElementById('resetSignatureBtn');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.beginPath(); // Reset path to prevent redrawing old lines
+                        isEmpty = true;
+                        placeholder.classList.remove('hidden');
+                        
+                        // Clear the hidden input if it was set
+                        const base64Input = document.getElementById('ttdBase64Input');
+                        if (base64Input) base64Input.value = '';
+                    });
+                }
+            }
+
 
             // Password validation
             const passwordInput = document.getElementById('password');

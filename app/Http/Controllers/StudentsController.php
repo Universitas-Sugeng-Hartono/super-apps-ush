@@ -266,7 +266,7 @@ class StudentsController extends Controller
             'ipk'                  => 'nullable|numeric|min:0|max:4',
             'sks'                  => 'nullable|integer|min:0|max:200',
             'foto'                 => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'ttd'                  => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'ttd_base64'           => 'nullable|string',
         ], [
             'nama_lengkap.string'  => 'Gunakan Nama Lengkap sesuai dengan ijasah terakhir',
             'nama_orangtua.string' => 'Parent’s name must be text.',
@@ -301,10 +301,6 @@ class StudentsController extends Controller
             'foto.image'           => 'Photo must be an image.',
             'foto.mimes'           => 'Photo must be a file of type: jpeg, png, jpg.',
             'foto.max'             => 'Photo size must not exceed 2 MB.',
-
-            'ttd.image'            => 'Signature must be an image.',
-            'ttd.mimes'            => 'Signature must be a file of type: jpeg, png, jpg.',
-            'ttd.max'              => 'Signature size must not exceed 2 MB.',
         ]);
 
         try {
@@ -316,11 +312,24 @@ class StudentsController extends Controller
                         Storage::disk('public')->delete($student->foto);
                     }
                     $student->foto = $request->file('foto')->store('students/foto/' . $student->id, 'public');
-                } elseif ($formType === 'ttd' && $request->hasFile('ttd')) {
+                } elseif ($formType === 'ttd' && $request->filled('ttd_base64')) {
+                    // Terima TTD dalam bentuk base64 PNG dari canvas signature pad
+                    $base64 = $request->input('ttd_base64');
+                    // Hapus prefix "data:image/png;base64,"
+                    if (str_contains($base64, ',')) {
+                        $base64 = explode(',', $base64, 2)[1];
+                    }
+                    $imageData = base64_decode($base64);
+                    if ($imageData === false) {
+                        throw new \Exception('Data tanda tangan tidak valid.');
+                    }
+                    // Hapus TTD lama jika ada
                     if ($student->ttd && Storage::disk('public')->exists($student->ttd)) {
                         Storage::disk('public')->delete($student->ttd);
                     }
-                    $student->ttd = $request->file('ttd')->store('students/ttd/' . $student->id, 'public');
+                    $ttdPath = 'students/ttd/' . $student->id . '/' . uniqid('ttd_') . '.png';
+                    Storage::disk('public')->put($ttdPath, $imageData);
+                    $student->ttd = $ttdPath;
                 } else {
                     // Update field text
                     if ($request->filled('nama_lengkap')) $student->nama_lengkap = $request->nama_lengkap;

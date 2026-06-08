@@ -89,6 +89,7 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
     Route::prefix('admin/skpi')->name('admin.skpi.')->controller(SkpiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/daftar-skpi', 'daftarSkpi')->name('daftar-skpi.index');
+        Route::get('/daftar-skpi/export', 'exportExcel')->name('daftar-skpi.export');
         Route::post('/daftar-skpi/AproveAll', 'AproveAllDaftarSkpi')->name('daftar-skpi.approve-all');
         Route::get('/daftar-skpi/{id}', [SkpiController::class, 'showDaftarSkpi'])->name('daftar-skpi.show');
         Route::patch('/daftar-skpi/{id}/approve', [SkpiController::class, 'approveDaftarSkpi'])->name('daftar-skpi.approve');

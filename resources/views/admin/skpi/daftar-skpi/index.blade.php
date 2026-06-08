@@ -95,6 +95,10 @@
                 <button type="submit" class="btn-search-modern">
                     <i class="bi bi-funnel"></i> Filter
                 </button>
+                
+                <a href="{{ route('admin.skpi.daftar-skpi.export') }}" class="btn-search-modern" style="background-color: #10b981; color: white;" title="Export Excel">
+                    <i class="bi bi-file-earmark-excel"></i> Export
+                </a>
             </div>
         </form>
     </div>
