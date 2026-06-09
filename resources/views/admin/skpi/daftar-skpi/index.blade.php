@@ -173,7 +173,8 @@
                                         'periode_lulus' => $reg->periode_lulus,
                                         'lama_studi' => $reg->lama_studi,
                                         'doc_ijasah' => $reg->doc_ijasah ? asset('storage/' . $reg->doc_ijasah) : null,
-                                        'doc_ktp' => $reg->doc_ktp ? asset('storage/' . $reg->doc_ktp) : null
+                                        'doc_ktp' => $reg->doc_ktp ? asset('storage/' . $reg->doc_ktp) : null,
+                                        'doc_pembayaran_and_naskah' => $reg->doc_pembayaran_and_naskah ? asset('storage/' . $reg->doc_pembayaran_and_naskah) : null
                                      ]) }})">
                                     <i class="bi bi-card-list"></i> Detail Lengkap
                                 </div>
@@ -411,6 +412,7 @@
                     <tr><td class="text-muted">Lama Studi</td><td id="det_lama_studi"></td></tr>
                     <tr><td class="text-muted">Dokumen Ijazah</td><td id="det_doc_ijasah"></td></tr>
                     <tr><td class="text-muted">Dokumen KTP</td><td id="det_doc_ktp"></td></tr>
+                    <tr><td class="text-muted">Pembayaran & Naskah</td><td id="det_doc_pembayaran"></td></tr>
                 </tbody>
             </table>
         </div>
@@ -502,6 +504,13 @@
             docKtp.innerHTML = `<a href="${data.doc_ktp}" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 12px; padding: 2px 8px;"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>`;
         } else {
             docKtp.innerHTML = `<span class="text-muted">Belum ada</span>`;
+        }
+
+        const docPembayaran = document.getElementById('det_doc_pembayaran');
+        if(data.doc_pembayaran_and_naskah) {
+            docPembayaran.innerHTML = `<a href="${data.doc_pembayaran_and_naskah}" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 12px; padding: 2px 8px;"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>`;
+        } else {
+            docPembayaran.innerHTML = `<span class="text-muted">Belum ada</span>`;
         }
 
         document.getElementById('detailDataModal').style.display = 'flex';

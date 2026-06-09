@@ -137,6 +137,15 @@
                     @endif
                     @error('doc_ktp')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
+
+                <div class="form-group full-width">
+                    <label for="doc_pembayaran_and_naskah">upload pembayaran wisuda dan bukti naskah publikasi (PDF, Max 1MB)</label>
+                    <input type="file" name="doc_pembayaran_and_naskah" id="doc_pembayaran_and_naskah" class="form-control" accept=".pdf" @disabled(!$canEditRegistration)>
+                    @if($skpiRegistration && $skpiRegistration->doc_pembayaran_and_naskah)
+                        <small class="text-success mt-1 d-block"><i class="bi bi-check-circle"></i> File sudah diunggah: <a href="{{ asset('storage/' . $skpiRegistration->doc_pembayaran_and_naskah) }}" target="_blank">Lihat File</a></small>
+                    @endif
+                    @error('doc_pembayaran_and_naskah')<small class="text-danger">{{ $message }}</small>@enderror
+                </div>
             </div>
 
             {{-- <div class="quick-links">

@@ -25,6 +25,7 @@ class SkpiRegistration extends Model
         'nomor_ijazah',
         'doc_ijasah',
         'doc_ktp',
+        'doc_pembayaran_and_naskah',
         'status',
         'approval_notes',
         'approved_by',

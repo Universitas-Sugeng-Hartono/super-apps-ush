@@ -144,6 +144,7 @@ class SkpiController extends Controller
             'lama_studi'   => 'required|string|max:255',
             'doc_ijasah'   => 'nullable|mimes:pdf|max:1024',
             'doc_ktp'      => 'nullable|mimes:pdf|max:1024',
+            'doc_pembayaran_and_naskah' => 'nullable|mimes:pdf|max:1024',
         ]);
 
         // Ambil gelar otomatis dari profil prodi
@@ -188,6 +189,13 @@ class SkpiController extends Controller
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($skpiRegistration->doc_ktp);
             }
             $registrationData['doc_ktp'] = $request->file('doc_ktp')->store('skpi/ktp', 'public');
+        }
+
+        if ($request->hasFile('doc_pembayaran_and_naskah')) {
+            if ($skpiRegistration && $skpiRegistration->doc_pembayaran_and_naskah) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($skpiRegistration->doc_pembayaran_and_naskah);
+            }
+            $registrationData['doc_pembayaran_and_naskah'] = $request->file('doc_pembayaran_and_naskah')->store('skpi/pembayaran_naskah', 'public');
         }
 
         if ($skpiRegistration) {
