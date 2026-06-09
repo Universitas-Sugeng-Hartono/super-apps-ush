@@ -72,9 +72,9 @@ class SkpiController extends Controller
         return view('admin.skpi.daftar-skpi.index', compact('registrations', 'stats', 'search', 'status', 'studyPrograms', 'studyProgramId'));
     }
 
-    public function exportExcel()
+    public function exportExcel(Request $request)
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\SkpiRegistrationExport, 'daftar_pengajuan_skpi_' . date('Ymd_His') . '.xlsx');
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\SkpiRegistrationExport($request->study_program_id), 'daftar_pengajuan_skpi_' . date('Ymd_His') . '.xlsx');
     }
 
     public function approveDaftarSkpi(Request $request, $id)

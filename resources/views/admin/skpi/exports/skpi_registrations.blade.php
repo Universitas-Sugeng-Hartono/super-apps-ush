@@ -30,7 +30,7 @@
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">SKS</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Status Mahasiswa</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tahun Masuk</th>
-            <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tahun Lulus</th>
+            <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tanggal Lulus</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Status Pendaftaran SKPI</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Nomor Ijazah</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tanggal Pengajuan SKPI</th>
@@ -62,8 +62,8 @@
             <td style="text-align: center;">{{ $student->ipk ?? '-' }}</td>
             <td style="text-align: center;">{{ $student->sks ?? '-' }}</td>
             <td style="text-align: center;">{{ $student->status_mahasiswa ?? '-' }}</td>
-            <td style="text-align: center;">{{ $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->locale('id')->translatedFormat('F Y') : '-' }}</td>
-            <td style="text-align: center;">{{ $student->tanggal_lulus ? \Carbon\Carbon::parse($student->tanggal_lulus)->locale('id')->translatedFormat('F Y') : '-' }}</td>
+            <td style="text-align: center;">{{ $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->locale('id')->translatedFormat('Y') : '-' }}</td>
+            <td style="text-align: center;">{{ $reg->periode_lulus ? \Carbon\Carbon::parse($reg->periode_lulus)->locale('id')->translatedFormat('d F Y') : '-' }}</td>
             <td style="text-align: center;">
                 @if($reg->status === 'draft')
                     Draft

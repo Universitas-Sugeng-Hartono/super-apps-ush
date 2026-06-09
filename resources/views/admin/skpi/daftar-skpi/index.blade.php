@@ -96,7 +96,7 @@
                     <i class="bi bi-funnel"></i> Filter
                 </button>
                 
-                <a href="{{ route('admin.skpi.daftar-skpi.export') }}" class="btn-search-modern" style="background-color: #10b981; color: white;" title="Export Excel">
+                <a href="{{ route('admin.skpi.daftar-skpi.export', ['study_program_id' => $studyProgramId]) }}" class="btn-search-modern" style="background-color: #10b981; color: white;" title="Export Excel">
                     <i class="bi bi-file-earmark-excel"></i> Export
                 </a>
             </div>
@@ -351,7 +351,7 @@
             </div>
             <div class="modal-footer-modern">
                 <button type="button" class="btn-cancel-modern" onclick="closeRejectModal()">Batal</button>
-                <button type="submit" class="btn-submit-modern bg-danger">Tolak Permanen</button>
+                <button type="submit" class="btn-submit-modern bg-danger">Tolak</button>
             </div>
         </form>
     </div>

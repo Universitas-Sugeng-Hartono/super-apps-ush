@@ -11,10 +11,28 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SkpiRegistrationExport implements FromView, ShouldAutoSize, WithStyles
 {
+    protected $studyProgramId;
+
+    public function __construct($studyProgramId = null)
+    {
+        $this->studyProgramId = $studyProgramId;
+    }
+
     public function view(): View
     {
-        // Load the registrations with student relationship
-        $registrations = SkpiRegistration::with('student')->get();
+        // Load the registrations with student relationship, filtering only approved ones
+        $query = SkpiRegistration::with('student')->where('status', 'approved');
+
+        if ($this->studyProgramId) {
+            $query->whereHas('student', function ($q) {
+                $studyProgram = \App\Models\StudyProgram::find($this->studyProgramId);
+                if ($studyProgram) {
+                    $q->where('program_studi', $studyProgram->name);
+                }
+            });
+        }
+
+        $registrations = $query->get();
         
         return view('admin.skpi.exports.skpi_registrations', [
             'registrations' => $registrations
