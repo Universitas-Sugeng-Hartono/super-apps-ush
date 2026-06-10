@@ -177,7 +177,7 @@ class StudentsAdminController extends Controller
             return back()->with('error', 'Header CSV tidak ditemukan.');
         }
 
-        $header = array_map(fn ($h) => strtolower(trim((string) $h)), $header);
+        $header = array_map(fn ($h) => strtolower(trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $h))), $header);
         $idx = fn (array $keys) => collect($keys)->map(fn ($k) => array_search($k, $header, true))->first(fn ($v) => $v !== false);
 
         $iNama = $idx(['nama', 'name', 'nama_lengkap']);
