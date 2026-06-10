@@ -45,10 +45,10 @@
                 </div>
             </div>
             <div class="import-right">
-                <form method="POST" action="{{ route('admin.management.students.import') }}" enctype="multipart/form-data" class="import-form">
+                <form method="POST" action="{{ route('admin.management.students.import') }}" enctype="multipart/form-data" class="import-form" onsubmit="document.getElementById('import-btn').disabled=true; document.getElementById('import-btn').innerHTML='<i class=\'bi bi-hourglass-split\'></i> Proses...';">
                     @csrf
                     <input type="file" name="import_file" class="file-input" accept=".csv,text/csv" required>
-                    <button type="submit" class="btn-primary">
+                    <button type="submit" class="btn-primary" id="import-btn">
                         <i class="bi bi-cloud-arrow-up"></i> Import
                     </button>
                 </form>
