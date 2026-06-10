@@ -76,13 +76,13 @@
             <div class="form-grid">
 
                 <div class="form-group">
-                    <label for="ipk">IPK</label>
+                    <label for="ipk">IPK (include skripsi)</label>
                     <input id="ipk" type="text" name="ipk" class="form-control" value="{{ $holderData['ipk'] }}" placeholder="Contoh: 3.85" @disabled(!$canEditRegistration)>
                     @error('ipk')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="sks">Total SKS</label>
+                    <label for="sks">Total SKS (include skripsi)</label>
                     <input id="sks" type="number" name="sks" class="form-control" value="{{ $holderData['sks'] }}" placeholder="Contoh: 144" @disabled(!$canEditRegistration)>
                     @error('sks')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
