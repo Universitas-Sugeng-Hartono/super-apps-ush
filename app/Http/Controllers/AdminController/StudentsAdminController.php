@@ -241,6 +241,7 @@ class StudentsAdminController extends Controller
                     $updateData = [
                         'nama_lengkap' => $nama,
                         'angkatan' => (int) $angkatan,
+                        'tanggal_masuk' => $tanggalMasuk,
                         'program_studi' => $prodi,
                         'email' => $email ?: $student->email,
                         'id_lecturer' => $student->id_lecturer ?: $lecturerId,
