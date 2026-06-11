@@ -59,14 +59,14 @@ class DefenseRegistrationController extends Controller
         }
 
         $request->validate([
-            'final_draft_file'             => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'ukt_semester_8_file'          => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'bebas_perpustakaan_file'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'persetujuan_dospem_file'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'lembar_konsultasi_file'       => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'transkrip_nilai_file'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'turnitin_file'                => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'sertifikat_pkkmb_file'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'final_draft_file'             => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'ukt_semester_8_file'          => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'bebas_perpustakaan_file'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'persetujuan_dospem_file'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'lembar_konsultasi_file'       => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'transkrip_nilai_file'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'turnitin_file'                => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'sertifikat_pkkmb_file'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:5048',
         ]);
 
         try {

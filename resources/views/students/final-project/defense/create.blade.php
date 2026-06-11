@@ -74,7 +74,7 @@
         <div class="form-card">
             <h4>Upload Dokumen</h4>
             <p style="margin-top: -10px; font-size: 13px; color: #666; margin-bottom: 20px;">
-                Format file: PDF/JPG/PNG. Maksimal ukuran file: 2MB per dokumen.
+                Format file: PDF/JPG/PNG. Maksimal ukuran file: 5MB per dokumen.
             </p>
 
             <div class="form-group">
