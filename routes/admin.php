@@ -103,6 +103,7 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
         Route::post('/input-data-akademi/learning-outcome', 'storeLearningOutcome')->name('input-data-akademi.store-learning-outcome');
         Route::get('/verifikasi-data', 'verifikasiData')->name('verifikasi-data.index');
         Route::post('/verifikasi-data/{id}/approve', 'approveVerifikasiData')->name('verifikasi-data.approve');
+        Route::post('/verifikasi-data/{id}/unapprove', 'unapproveVerifikasiData')->name('verifikasi-data.unapprove');
         Route::post('/verifikasi-data/{id}/reject', 'rejectVerifikasiData')->name('verifikasi-data.reject');
         Route::post('/verifikasi-data/approve-all', 'approveAllVerifikasiData')->name('verifikasi-data.approve-all');
         Route::get('/generate-skpi', 'generateSkpi')->name('generate-skpi.index');

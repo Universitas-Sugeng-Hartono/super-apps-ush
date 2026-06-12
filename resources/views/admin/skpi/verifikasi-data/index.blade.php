@@ -452,14 +452,21 @@
                             <button type="button" class="btn-view" data-ach="${encodedData}" data-nama="${nama}" onclick="showDetailModalFromEncoded(this)" style="padding: 4px 8px; font-size: 11px;">
                                 <i class="bi bi-eye"></i> Detail
                             </button>
-                            ${ach.status !== 'approved' ? `
+                            ${ach.status === 'approved' ? `
+                                <form action="/admin/skpi/verifikasi-data/${ach.id}/unapprove" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin membatalkan approval data ini? Status akan kembali menjadi pending.');">
+                                    @csrf
+                                    <button type="submit" class="btn-reject" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background-color: #64748B; color: white; border: none;" title="Batal Approve">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Batal Approve
+                                    </button>
+                                </form>
+                            ` : `
                                 <button type="button" class="btn-approve" onclick="showApproveModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;">
                                     <i class="bi bi-check-lg"></i>
                                 </button>
                                 <button type="button" class="btn-reject" onclick="showRejectModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
-                            ` : ''}
+                            `}
                         </div>
                     </td>
                 </tr>
@@ -509,7 +516,17 @@
 
         // Konfigurasi tombol Approve & Reject
         const actionContainer = document.getElementById('detail_action_container');
-        if (data.status !== 'approved') {
+        if (data.status === 'approved') {
+            actionContainer.innerHTML = `
+            <form action="/admin/skpi/verifikasi-data/${data.id}/unapprove" method="POST" style="display:inline; width: 100%;" onsubmit="return confirm('Yakin ingin membatalkan approval data ini? Status akan kembali menjadi pending.');">
+                @csrf
+                <button type="submit" class="btn-reject" style="width: 100%; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; background-color: #64748B; color: white;">
+                    <i class="bi bi-arrow-counterclockwise"></i> Batal Approve
+                </button>
+            </form>
+            `;
+            actionContainer.style.display = 'flex';
+        } else {
             actionContainer.innerHTML = `
             <button type="button" class="btn-approve" onclick="showApproveModal(${data.id})" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
                 <i class="bi bi-check-circle"></i> Approve
@@ -517,10 +534,8 @@
             <button type="button" class="btn-reject" onclick="showRejectModal(${data.id})" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
                 <i class="bi bi-x-circle"></i> Reject
             </button>
-        `;
+            `;
             actionContainer.style.display = 'flex';
-        } else {
-            actionContainer.style.display = 'none';
         }
 
         // Sembunyikan Modal 1 sementara, munculkan Modal 2

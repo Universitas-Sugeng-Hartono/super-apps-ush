@@ -572,6 +572,22 @@ class SkpiController extends Controller
             ->with('success', 'Prestasi mahasiswa berhasil disetujui.');
     }
 
+    public function unapproveVerifikasiData(Request $request, $id)
+    {
+        $achievement = StudentAchievement::findOrFail($id);
+
+        $achievement->update([
+            'status' => 'pending',
+            'approval_notes' => null,
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
+
+        return redirect()
+            ->route('admin.skpi.verifikasi-data.index')
+            ->with('success', 'Status approval berhasil dibatalkan. Data kembali ke antrian pending.');
+    }
+
     public function rejectVerifikasiData(Request $request, $id)
     {
         $achievement = StudentAchievement::with('student')->findOrFail($id);
