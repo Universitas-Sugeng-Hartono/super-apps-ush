@@ -607,29 +607,33 @@ class SkpiWordController extends Controller
             // ─── Lampiran 3: Tabel Wajib Universitas (L3_WAJIB_TABLE) ─────
             // Header + baris A sekarang ada di dalam PHP generate (user hapus dari Word template)
             $l3BorderStyle = [
-                'borderTopSize'      => 8,
+                'borderTopSize'      => 6,
                 'borderTopColor'      => '000000',
-                'borderBottomSize'   => 8,
+                'borderBottomSize'   => 6,
                 'borderBottomColor'   => '000000',
-                'borderLeftSize'     => 8,
+                'borderLeftSize'     => 6,
                 'borderLeftColor'     => '000000',
-                'borderRightSize'    => 8,
+                'borderRightSize'    => 6,
                 'borderRightColor'    => '000000',
-                'borderInsideHSize'  => 8,
+                'borderInsideHSize'  => 6,
                 'borderInsideHColor'  => '000000',
-                'borderInsideVSize'  => 8,
+                'borderInsideVSize'  => 6,
                 'borderInsideVColor'  => '000000',
                 'valign'             => 'center',
             ];
             $l3WajibTableStyle = array_merge($l3BorderStyle, [
                 'unit'            => \PhpOffice\PhpWord\SimpleType\TblWidth::TWIP,
-                'width'           => 9213,
-                'cellMarginLeft'  => 108,
-                'cellMarginRight' => 108,
+                'width'           => 9214,
+                'layout'          => 'fixed',
+                'cellMarginLeft'  => 0,
+                'cellMarginRight' => 0,
+                'cellMarginTop'   => 0,
+                'cellMarginBottom'=> 0,
+                'indent'          => new \PhpOffice\PhpWord\ComplexType\TblWidth(-8),
             ]);
-            $l3ColNo   = 856;   // 1.51 cm
-            $l3ColKrit = 5948;  // 10.49 cm
-            $l3ColSkp  = 2409;  // 4.25 cm
+            $l3ColNo   = 855;
+            $l3ColKrit = 5949;
+            $l3ColSkp  = 2410;
             $l3RowH    = 488;   // 0.86 cm
             $Jc = \PhpOffice\PhpWord\SimpleType\Jc::class;
 
@@ -673,17 +677,17 @@ class SkpiWordController extends Controller
 
             // ─── Lampiran 4: Rincian Detail SKP per Kategori ──────────────
             $cellBorder = [
-                'borderTopSize'      => 8,
+                'borderTopSize'      => 6,
                 'borderTopColor'      => '000000',
-                'borderBottomSize'   => 8,
+                'borderBottomSize'   => 6,
                 'borderBottomColor'   => '000000',
-                'borderLeftSize'     => 8,
+                'borderLeftSize'     => 6,
                 'borderLeftColor'     => '000000',
-                'borderRightSize'    => 8,
+                'borderRightSize'    => 6,
                 'borderRightColor'    => '000000',
-                'borderInsideHSize'  => 8,
+                'borderInsideHSize'  => 6,
                 'borderInsideHColor'  => '000000',
-                'borderInsideVSize'  => 8,
+                'borderInsideVSize'  => 6,
                 'borderInsideVColor'  => '000000',
                 'valign'             => 'center',
             ];
