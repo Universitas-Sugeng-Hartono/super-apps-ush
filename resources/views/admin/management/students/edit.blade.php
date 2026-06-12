@@ -4,7 +4,7 @@
     <div class="content-card">
         <div class="card-header">
             <h3>Edit Mahasiswa - {{ $student->nama_lengkap }}</h3>
-            <a href="{{ route('admin.management.students.index') }}" class="btn-secondary">
+            <a href="{{ session('management_students_url', route('admin.management.students.index')) }}" class="btn-secondary">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
         </div>
@@ -103,7 +103,7 @@
             </div>
 
             <div class="form-actions">
-                <a href="{{ route('admin.management.students.index') }}" class="btn-secondary">Batal</a>
+                <a href="{{ session('management_students_url', route('admin.management.students.index')) }}" class="btn-secondary">Batal</a>
                 <button type="submit" class="btn-primary">Update</button>
             </div>
         </form>

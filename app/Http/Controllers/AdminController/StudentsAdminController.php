@@ -100,6 +100,9 @@ class StudentsAdminController extends Controller
         $programStudi = $request->input('program_studi');
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
 
+        // Simpan state filter ke session
+        $request->session()->put('management_students_url', $request->fullUrl());
+
         $students = Student::with(['dosenPA'])
             ->withCount('counselings')
             ->when($search, function ($query, $search) {
@@ -114,7 +117,7 @@ class StudentsAdminController extends Controller
                 $query->where('program_studi', $programStudi);
             })
             ->latest()
-            ->paginate(15)
+            ->paginate($programStudi ? 9999 : 15)
             ->appends(['search' => $search, 'program_studi' => $programStudi]);
 
         return view('admin.management.students.index', compact('students', 'search', 'programStudi', 'studyPrograms'));
@@ -522,7 +525,8 @@ class StudentsAdminController extends Controller
 
         // Redirect berdasarkan route yang dipanggil
         if (request()->routeIs('admin.management.students.*')) {
-            return redirect()->route('admin.management.students.index')
+            $redirectUrl = session('management_students_url', route('admin.management.students.index'));
+            return redirect($redirectUrl)
                 ->with('success', 'Data mahasiswa berhasil diperbarui!');
         }
 
