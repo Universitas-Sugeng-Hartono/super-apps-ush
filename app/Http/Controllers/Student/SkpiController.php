@@ -215,6 +215,10 @@ class SkpiController extends Controller
                 'nama_lengkap' => $student->nama_lengkap,
                 'nim' => $student->nim,
                 'angkatan' => $student->angkatan,
+                'tempat_lahir' => $student->tempat_lahir ?? '-',
+                'tanggal_lahir' => $student->tanggal_lahir ?? '1970-01-01',
+                'gelar' => '-',
+                'nomor_ijazah' => '-',
                 'status' => 'draft',
             ]);
             // Refresh relasi
@@ -242,6 +246,10 @@ class SkpiController extends Controller
                 'nama_lengkap' => $student->nama_lengkap,
                 'nim' => $student->nim,
                 'angkatan' => $student->angkatan,
+                'tempat_lahir' => $student->tempat_lahir ?? '-',
+                'tanggal_lahir' => $student->tanggal_lahir ?? '1970-01-01',
+                'gelar' => '-',
+                'nomor_ijazah' => '-',
                 'status' => 'draft',
             ]);
             $student->setRelation('skpiRegistration', $skpiRegistration);
@@ -672,15 +680,22 @@ class SkpiController extends Controller
 
     private function buildHolderMeta(array $holderFields): array
     {
-        $filledCount = collect($holderFields)
+        // Filter out optional fields from the required count
+        $requiredFields = collect($holderFields)->filter(function($field) {
+            return !in_array($field['key'], ['judul_ta_inggris']); // exclude optional fields
+        });
+
+        $filledCount = $requiredFields
             ->filter(fn($field) => filled($field['value']))
             ->count();
 
+        $totalCount = $requiredFields->count();
+
         return [
             'filled_count' => $filledCount,
-            'total_count' => count($holderFields),
-            'complete' => $filledCount === count($holderFields),
-            'missing_fields' => collect($holderFields)
+            'total_count' => $totalCount,
+            'complete' => $filledCount === $totalCount,
+            'missing_fields' => $requiredFields
                 ->filter(fn($field) => blank($field['value']))
                 ->pluck('label')
                 ->values(),
