@@ -174,7 +174,8 @@
                                         'lama_studi' => $reg->lama_studi,
                                         'doc_ijasah' => $reg->doc_ijasah ? asset('storage/' . $reg->doc_ijasah) : null,
                                         'doc_ktp' => $reg->doc_ktp ? asset('storage/' . $reg->doc_ktp) : null,
-                                        'doc_pembayaran_and_naskah' => $reg->doc_pembayaran_and_naskah ? asset('storage/' . $reg->doc_pembayaran_and_naskah) : null
+                                        'doc_pembayaran_wisuda' => $reg->doc_pembayaran_wisuda ? asset('storage/' . $reg->doc_pembayaran_wisuda) : null,
+                                        'doc_naskah_publikasi' => $reg->doc_naskah_publikasi ? asset('storage/' . $reg->doc_naskah_publikasi) : null
                                      ]) }})">
                                     <i class="bi bi-card-list"></i> Detail Lengkap
                                 </div>
@@ -412,7 +413,8 @@
                     <tr><td class="text-muted">Lama Studi</td><td id="det_lama_studi"></td></tr>
                     <tr><td class="text-muted">Dokumen Ijazah</td><td id="det_doc_ijasah"></td></tr>
                     <tr><td class="text-muted">Dokumen KTP</td><td id="det_doc_ktp"></td></tr>
-                    <tr><td class="text-muted">Pembayaran & Naskah</td><td id="det_doc_pembayaran"></td></tr>
+                    <tr><td class="text-muted">Pembayaran Wisuda</td><td id="det_doc_pembayaran"></td></tr>
+                    <tr><td class="text-muted">Naskah Publikasi</td><td id="det_doc_naskah"></td></tr>
                 </tbody>
             </table>
         </div>
@@ -507,10 +509,17 @@
         }
 
         const docPembayaran = document.getElementById('det_doc_pembayaran');
-        if(data.doc_pembayaran_and_naskah) {
-            docPembayaran.innerHTML = `<a href="${data.doc_pembayaran_and_naskah}" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 12px; padding: 2px 8px;"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>`;
+        if(data.doc_pembayaran_wisuda) {
+            docPembayaran.innerHTML = `<a href="${data.doc_pembayaran_wisuda}" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 12px; padding: 2px 8px;"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>`;
         } else {
             docPembayaran.innerHTML = `<span class="text-muted">Belum ada</span>`;
+        }
+
+        const docNaskah = document.getElementById('det_doc_naskah');
+        if(data.doc_naskah_publikasi) {
+            docNaskah.innerHTML = `<a href="${data.doc_naskah_publikasi}" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 12px; padding: 2px 8px;"><i class="bi bi-file-earmark-pdf"></i> Lihat File</a>`;
+        } else {
+            docNaskah.innerHTML = `<span class="text-muted">Belum ada</span>`;
         }
 
         document.getElementById('detailDataModal').style.display = 'flex';

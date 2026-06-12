@@ -7,7 +7,7 @@
     <div class="ush-hero">
         <div class="ush-hero-inner">
             <div class="ush-hero-text">
-                <div class="ush-badge-light">Pengajuan SKPI</div>
+                <div class="ush-badge-light">Pengajuan Kelulusan</div>
                 <h1>Portofolio Mahasiswa</h1>
                 <p>Lengkapi profil, identitas akademik, dan kelola dokumen pendamping ijazah Anda melalui portal ini.</p>
             </div>
@@ -94,16 +94,26 @@
                 @endif
 
                 @if($skpiRegistration->approval_notes)
-                <div class="ush-alert info">
-                    <i class="bi bi-chat-left-text"></i>
+                @php
+                    $alertClass = $skpiRegistration->status === 'rejected' ? 'error' : 'info';
+                    $alertIcon = $skpiRegistration->status === 'rejected' ? 'bi-x-octagon-fill' : 'bi-chat-left-text';
+                    $alertTitle = $skpiRegistration->status === 'rejected' ? 'Pengajuan Ditolak' : 'Catatan Revisi';
+                @endphp
+                <div class="ush-alert {{ $alertClass }}">
+                    <i class="bi {{ $alertIcon }}"></i>
                     <div>
-                        <strong>Catatan revisian</strong>
+                        <strong>{{ $alertTitle }}</strong>
                         <p>{{ $skpiRegistration->approval_notes }}</p>
+                        @if($skpiRegistration->status === 'rejected')
+                        <p style="margin-top: 6px; font-size: 13px; opacity: 0.85;">Silakan perbaiki data Anda sesuai catatan di atas, lalu ajukan kembali pengajuan SKPI Anda.</p>
+                        @endif
                     </div>
                 </div>
                 @endif
             </div>
             @endif
+
+
 
             {{-- Checklist Data --}}
             <div class="ush-card">
@@ -112,18 +122,49 @@
                 </div>
                 <div class="ush-checklist">
                     @foreach($registrationChecklist as $item)
-                    <div class="ush-check-item">
-                        <div class="check-icon {{ $item['ready'] ? 'ready' : 'pending' }}">
-                            <i class="bi {{ $item['ready'] ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill' }}"></i>
+                    @php
+                        $isPaymentItem = str_contains($item['title'], 'Pembayaran');
+                        $paymentRejected = $isPaymentItem && $skpiRegistration && $skpiRegistration->payment_status === 'rejected';
+                        $paymentPending  = $isPaymentItem && $skpiRegistration && $skpiRegistration->payment_status === 'pending' && $skpiRegistration->doc_pembayaran_wisuda;
+                        $paymentApproved = $isPaymentItem && $skpiRegistration && $skpiRegistration->payment_status === 'approved';
+                    @endphp
+                    <div class="ush-check-item" style="{{ $paymentRejected ? 'border-left: 3px solid #e53935; padding-left: 8px; border-radius: 4px;' : '' }}">
+                        <div class="check-icon {{ $item['ready'] ? ($paymentRejected ? 'pending' : 'ready') : 'pending' }}" style="{{ $paymentRejected ? 'background: #FFEBEE; color: #e53935;' : '' }}">
+                            <i class="bi {{ $paymentRejected ? 'bi-x-circle-fill' : ($item['ready'] ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill') }}"></i>
                         </div>
                         <div class="check-content">
                             <div class="check-title">
                                 <h5>{{ $item['title'] }}</h5>
-                                <span class="badge {{ $item['ready'] ? 'bg-success' : 'bg-warning text-dark' }}">
-                                    {{ $item['ready'] ? 'Terpenuhi' : 'Belum Terpenuhi' }}
-                                </span>
+                                @if($paymentRejected)
+                                    <span class="badge bg-danger">Ditolak</span>
+                                @elseif($paymentPending)
+                                    <span class="badge bg-warning text-dark">Menunggu Verifikasi</span>
+                                @elseif($paymentApproved)
+                                    <span class="badge bg-success">Terverifikasi</span>
+                                @else
+                                    <span class="badge {{ $item['ready'] ? 'bg-success' : 'bg-warning text-dark' }}">
+                                        {{ $item['ready'] ? 'Terpenuhi' : 'Belum Terpenuhi' }}
+                                    </span>
+                                @endif
                             </div>
                             <p>{{ $item['description'] }}</p>
+                            {{-- Tampilkan catatan penolakan pembayaran --}}
+                            @if($paymentRejected && $skpiRegistration->payment_approval_notes)
+                            <div style="background: #FFEBEE; border: 1px solid #ef9a9a; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 13px;">
+                                <strong style="color: #c62828;"><i class="bi bi-x-octagon-fill"></i> Alasan Penolakan:</strong>
+                                <p style="margin: 4px 0 6px; color: #b71c1c;">{{ $skpiRegistration->payment_approval_notes }}</p>
+                                <a href="{{ route('student.skpi.pembayaran.create') }}" style="color: #c62828; font-weight: 600; font-size: 12px;">
+                                    <i class="bi bi-arrow-right-circle"></i> Upload Ulang Dokumen
+                                </a>
+                            </div>
+                            @endif
+                            {{-- Tampilkan status verifikasi pending (dokumen sudah diupload tapi belum diverifikasi) --}}
+                            @if($paymentPending)
+                            <div style="background: #FFF8E1; border: 1px solid #ffe082; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 13px;">
+                                <strong style="color: #f57f17;"><i class="bi bi-hourglass-split"></i> Menunggu Verifikasi Admin</strong>
+                                <p style="margin: 4px 0 0; color: #e65100;">Dokumen Anda sudah diunggah dan sedang dalam proses review oleh Admin.</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                     @endforeach
@@ -160,13 +201,26 @@
             @if(!in_array($status, ['pending', 'approved']))
             <div class="ush-card no-padding bg-transparent shadow-none border-0">
                 <h4 class="side-title">Menu Utama</h4>
-                
+
+                {{-- LANGKAH 1: Upload Pembayaran (selalu muncul, tidak butuh registration dulu) --}}
+                <a href="{{ route('student.skpi.pembayaran.create') }}" class="ush-action-card">
+                    <div class="action-icon" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
+                        <i class="bi bi-cloud-arrow-up"></i>
+                    </div>
+                    <div class="action-text">
+                        <h5>Upload Pembayaran & Naskah</h5>
+                        <p>Langkah pertama: unggah bukti pembayaran wisuda dan naskah publikasi.</p>
+                    </div>
+                    <i class="bi bi-chevron-right action-arrow"></i>
+                </a>
+
+                {{-- LANGKAH 2: Form Identitas --}}
                 <a href="{{ route('student.skpi.daftar.create') }}" class="ush-action-card">
                     <div class="action-icon orange">
                         <i class="bi bi-person-vcard"></i>
                     </div>
                     <div class="action-text">
-                        <h5>Form Identitas SKPI</h5>
+                        <h5>Form Identitas Kelulusan </h5>
                         <p>Isi dan simpan data nama, NIM, tempat/tanggal lahir, dan gelar.</p>
                     </div>
                     <i class="bi bi-chevron-right action-arrow"></i>

@@ -8,7 +8,7 @@
         <div class="ush-hero-inner">
             <div class="ush-hero-text">
                 <div class="ush-badge-light">Dashboard Utama</div>
-                <h1>Sistem SKPI</h1>
+                <h1>Sistem  Kelulusan</h1>
                 <p>Siapkan data akademik dan portofolio prestasi sebelum diajukan untuk verifikasi Surat Keterangan Pendamping Ijazah.</p>
             </div>
             <div class="ush-hero-meta">
@@ -59,45 +59,9 @@
         </div>
     </div>
 
-    {{-- 3. STEP BY STEP GUIDE --}}
-    <div class="ush-section-header mt-5">
-        <h4>Alur Pengajuan SKPI</h4>
-        <p>Ikuti langkah-langkah berikut untuk mendapatkan dokumen SKPI Anda.</p>
-    </div>
 
-    <div class="ush-stepper-horizontal">
-        <div class="ush-guide-step">
-            <div class="step-num">1</div>
-            <div class="step-content">
-                <h6>Persiapan Data</h6>
-                <p>Lengkapi Data Diri dan input semua Prestasi Anda.</p>
-            </div>
-        </div>
-        <div class="step-connector"><i class="bi bi-chevron-right"></i></div>
-        <div class="ush-guide-step">
-            <div class="step-num">2</div>
-            <div class="step-content">
-                <h6>Isi Form Identitas</h6>
-                <p>Isi data diri di menu Daftar SKPI sesuai ijazah terakhir.</p>
-            </div>
-        </div>
-        <div class="step-connector"><i class="bi bi-chevron-right"></i></div>
-        <div class="ush-guide-step">
-            <div class="step-num">3</div>
-            <div class="step-content">
-                <h6>Ajukan & Verifikasi</h6>
-                <p>Kirim pengajuan dan tunggu proses.</p>
-            </div>
-        </div>
-        <div class="step-connector"><i class="bi bi-chevron-right"></i></div>
-        <div class="ush-guide-step">
-            <div class="step-num">4</div>
-            <div class="step-content">
-                <h6>Unduh Dokumen</h6>
-                <p>Setelah disetujui, unduh dokumen SKPI versi digital.</p>
-            </div>
-        </div>
-    </div>
+
+
 
     {{-- 4. MAIN MENU --}}
     <div class="ush-section-header mt-5">
@@ -139,7 +103,7 @@
 
                 <div class="card-body-content">
                     <div class="card-titles">
-                        <h5>Daftar SKPI</h5>
+                        <h5>Daftar Kelulusan </h5>
                         <p>
                             @if($isLockedByTA)
                             Menu ini terkunci. Selesaikan <strong>Tugas Akhir</strong> terlebih dahulu agar bisa mengajukan pendaftaran SKPI.

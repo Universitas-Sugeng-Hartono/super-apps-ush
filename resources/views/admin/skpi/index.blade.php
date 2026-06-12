@@ -16,30 +16,43 @@ $menus = [
 [
 'step' => '02',
 'title' => 'Verifikasi Data Prestasi',
-'description' => 'Validasi prestasi dan aktivitas mahasiswa sebelum masuk ke draf SKPI.',
+'description' => 'Validasi prestasi dan aktivitas mahasiswa sebelum masuk ke draf Kelulusan.',
 'icon' => 'bi bi-patch-check',
 'route' => 'admin.skpi.verifikasi-data.index',
 'badge' => 'Approval Prestasi Mahasiswa',
 'color' => '#FF9800',
 'gradient' => 'linear-gradient(135deg, #FF9800, #FFB347)'
 ],
+
 [
 'step' => '03',
-'title' => 'Daftar SKPI',
-'description' => 'Kelola antrean pengajuan pendaftaran SKPI dan status verifikasi akhir.',
+'title' => 'Verifikasi Pembayaran Wisuda',
+'description' => 'Lakukan validasi Bukti pembayaran dan Naskah Publikasi',
+'icon' => 'bi bi-credit-card-2-front',
+'route' => 'admin.skpi.verifikasi-pembayaran.index',
+'badge' => 'Approval Pembayaran',
+'color' => '#1f5301ff',
+'gradient' => 'linear-gradient(135deg, #276a04ff, #57a33dff)'
+],
+
+[
+'step' => '04',
+'title' => 'Daftar Kelulusan',
+'description' => 'Kelola antrean pengajuan pendaftaran Kelulusan dan status verifikasi akhir.',
 'icon' => 'bi bi-people',
 'route' => 'admin.skpi.daftar-skpi.index',
-'badge' => 'Approval Pendaftar SKPI',
+'badge' => 'Approval Kelulusan',
 'color' => '#4CAF50',
 'gradient' => 'linear-gradient(135deg, #4CAF50, #81C784)'
 ],
+
 [
-'step' => '04',
-'title' => 'Generate SKPI',
+'step' => '05',
+'title' => 'Generate Kelulusan',
 'description' => 'Proses akhir pembuatan dokumen Word/PDF dan penomoran resmi.',
 'icon' => 'bi bi-file-earmark-pdf',
 'route' => 'admin.skpi.generate-skpi.index',
-'badge' => 'Generate Final SKPI Mahasiswa',
+'badge' => 'Generate Final Kelulusan',
 'color' => '#E91E63',
 'gradient' => 'linear-gradient(135deg, #E91E63, #F06292)'
 ],
@@ -51,8 +64,8 @@ $menus = [
     <div class="welcome-banner">
         <div class="banner-content">
             <div class="text-side">
-                <h1>Manajemen SKPI</h1>
-                <p>Kelola seluruh tahapan penerbitan Surat Keterangan Pendamping Ijazah secara terstruktur.</p>
+                <h1>Manajemen Kelulusan</h1>
+                <p>Kelola seluruh tahapan kelulusan secara terstruktur.</p>
                 <div class="banner-badges">
                     <span class="b-badge"><i class="bi bi-shield-check"></i> Verified Process</span>
                     <span class="b-badge"><i class="bi bi-lightning-charge"></i> Efficient Workflow</span>
@@ -69,7 +82,7 @@ $menus = [
     <div class="workflow-section">
         <div class="section-title">
             <div class="title-line"></div>
-            <h4>Alur Penerbitan SKPI</h4>
+            <h4>Alur Penerbitan Kelulusan SKPI</h4>
             <div class="title-line"></div>
         </div>
 

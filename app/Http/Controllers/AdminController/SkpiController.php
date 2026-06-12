@@ -103,6 +103,10 @@ class SkpiController extends Controller
             $issues[] = 'Foto atau tanda tangan belum diupload.';
         }
 
+        if ($registration->payment_status !== 'approved') {
+            $issues[] = 'Pembayaran Wisuda dan Naskah Publikasi belum diverifikasi (Verifikasi terlebih dahulu).';
+        }
+
         if (count($issues) > 0) {
             return redirect()
                 ->route('admin.skpi.daftar-skpi.index')
@@ -214,6 +218,85 @@ class SkpiController extends Controller
         return redirect()
             ->route('admin.skpi.daftar-skpi.index')
             ->with('success', 'Pendaftaran SKPI berhasil ditolak.');
+    }
+
+    public function verifikasiPembayaran(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $status = $request->input('status');
+        $studyProgramId = $request->input('study_program_id');
+
+        $registrations = SkpiRegistration::with(['student'])
+            ->whereNotNull('doc_pembayaran_wisuda')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('nim', 'like', "%{$search}%");
+                });
+            })
+            ->when(in_array($status, ['pending', 'approved', 'rejected'], true), function ($query) use ($status) {
+                $query->where('payment_status', $status);
+            })
+            ->when($studyProgramId, function ($query) use ($studyProgramId) {
+                $query->whereHas('student', function ($q) use ($studyProgramId) {
+                    $studyProgram = \App\Models\StudyProgram::find($studyProgramId);
+                    if ($studyProgram) {
+                        $q->where('program_studi', $studyProgram->name);
+                    }
+                });
+            })
+            ->latest('updated_at')
+            ->paginate(15)
+            ->appends($request->query());
+
+        $stats = [
+            'total' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->count(),
+            'pending' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->where('payment_status', 'pending')->count(),
+            'approved' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->where('payment_status', 'approved')->count(),
+            'rejected' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->where('payment_status', 'rejected')->count(),
+        ];
+
+        $studyPrograms = \App\Models\StudyProgram::all();
+
+        return view('admin.skpi.verifikasi_pembayaran.index', compact('registrations', 'stats', 'search', 'status', 'studyPrograms', 'studyProgramId'));
+    }
+
+    public function approvePembayaran(Request $request, $id)
+    {
+        $registration = SkpiRegistration::findOrFail($id);
+
+        $request->validate([
+            'payment_approval_notes' => 'nullable|string',
+        ]);
+
+        $registration->update([
+            'payment_status' => 'approved',
+            'payment_approval_notes' => $request->payment_approval_notes,
+        ]);
+
+        return redirect()
+            ->route('admin.skpi.verifikasi-pembayaran.index')
+            ->with('success', 'Pembayaran mahasiswa berhasil disetujui.');
+    }
+
+    public function rejectPembayaran(Request $request, $id)
+    {
+        $registration = SkpiRegistration::findOrFail($id);
+
+        $request->validate([
+            'payment_approval_notes' => 'required|string',
+        ], [
+            'payment_approval_notes.required' => 'Alasan penolakan wajib diisi.',
+        ]);
+
+        $registration->update([
+            'payment_status' => 'rejected',
+            'payment_approval_notes' => $request->payment_approval_notes,
+        ]);
+
+        return redirect()
+            ->route('admin.skpi.verifikasi-pembayaran.index')
+            ->with('success', 'Pembayaran mahasiswa berhasil ditolak.');
     }
 
     public function updateIjazahOnly(Request $request, $id)

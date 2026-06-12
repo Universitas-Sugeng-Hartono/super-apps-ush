@@ -44,6 +44,10 @@ Route::middleware(['student'])->group(function () {
             Route::post('/', 'daftarStore')->name('store');
             Route::post('/submit', 'daftarSubmit')->name('submit');
         });
+        Route::prefix('pembayaran')->name('pembayaran.')->group(function () {
+            Route::get('/create', 'pembayaranIndex')->name('create');
+            Route::post('/upload', 'uploadDokumen')->name('upload');
+        });
     });
 
     // Final Project (Tugas Akhir)

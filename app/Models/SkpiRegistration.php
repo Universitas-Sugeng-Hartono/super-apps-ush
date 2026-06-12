@@ -9,7 +9,6 @@ class SkpiRegistration extends Model
 {
     protected $fillable = [
         'student_id',
-
         'nama_lengkap',
         'tempat_lahir',
         'tanggal_lahir',
@@ -25,7 +24,8 @@ class SkpiRegistration extends Model
         'nomor_ijazah',
         'doc_ijasah',
         'doc_ktp',
-        'doc_pembayaran_and_naskah',
+        'doc_pembayaran_wisuda',
+        'doc_naskah_publikasi',
         'status',
         'approval_notes',
         'approved_by',
@@ -33,6 +33,8 @@ class SkpiRegistration extends Model
         'submitted_at',
         'skpi_document',
         'skpi_generated_at',
+        'payment_status',
+        'payment_approval_notes',
     ];
 
     protected $casts = [

@@ -142,9 +142,8 @@ class SkpiController extends Controller
             'judul_ta_inggris' => 'nullable|string|max:500',
             'periode_lulus' => 'required|date_format:Y-m-d',
             'lama_studi'   => 'required|string|max:255',
-            'doc_ijasah'   => 'nullable|mimes:pdf|max:1024',
-            'doc_ktp'      => 'nullable|mimes:pdf|max:1024',
-            'doc_pembayaran_and_naskah' => 'nullable|mimes:pdf|max:1024',
+            'doc_ijasah'   => 'nullable|mimes:pdf|max:2024',
+            'doc_ktp'      => 'nullable|mimes:pdf|max:2024',
         ]);
 
         // Ambil gelar otomatis dari profil prodi
@@ -191,12 +190,7 @@ class SkpiController extends Controller
             $registrationData['doc_ktp'] = $request->file('doc_ktp')->store('skpi/ktp', 'public');
         }
 
-        if ($request->hasFile('doc_pembayaran_and_naskah')) {
-            if ($skpiRegistration && $skpiRegistration->doc_pembayaran_and_naskah) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($skpiRegistration->doc_pembayaran_and_naskah);
-            }
-            $registrationData['doc_pembayaran_and_naskah'] = $request->file('doc_pembayaran_and_naskah')->store('skpi/pembayaran_naskah', 'public');
-        }
+
 
         if ($skpiRegistration) {
             $skpiRegistration->update($registrationData);
@@ -207,6 +201,93 @@ class SkpiController extends Controller
         return redirect()
             ->route('student.skpi.daftar.index')
             ->with('success', 'Data identitas SKPI berhasil disimpan sebagai draft.');
+    }
+
+    public function pembayaranIndex()
+    {
+        $student = $this->getStudent();
+        $skpiRegistration = $student->skpiRegistration;
+
+        // Jika belum ada registration, buat record minimal agar bisa upload dokumen duluan
+        if (!$skpiRegistration) {
+            $skpiRegistration = SkpiRegistration::create([
+                'student_id' => $student->id,
+                'nama_lengkap' => $student->nama_lengkap,
+                'nim' => $student->nim,
+                'angkatan' => $student->angkatan,
+                'status' => 'draft',
+            ]);
+            // Refresh relasi
+            $student->setRelation('skpiRegistration', $skpiRegistration);
+        }
+
+        $canEditRegistration = $this->canEditRegistration($skpiRegistration);
+
+        return view('students.skpi.pembayaran.create', compact(
+            'student',
+            'skpiRegistration',
+            'canEditRegistration'
+        ));
+    }
+
+    public function uploadDokumen(Request $request)
+    {
+        $student = $this->getStudent();
+        $skpiRegistration = $student->skpiRegistration;
+
+        // Jika belum ada registration, buat record minimal agar bisa upload dokumen duluan
+        if (!$skpiRegistration) {
+            $skpiRegistration = SkpiRegistration::create([
+                'student_id' => $student->id,
+                'nama_lengkap' => $student->nama_lengkap,
+                'nim' => $student->nim,
+                'angkatan' => $student->angkatan,
+                'status' => 'draft',
+            ]);
+            $student->setRelation('skpiRegistration', $skpiRegistration);
+        }
+
+        if (!$this->canEditRegistration($skpiRegistration)) {
+            return redirect()
+                ->route('student.skpi.daftar.index')
+                ->with('error', 'Dokumen tidak dapat diubah karena status pengajuan saat ini tidak mengizinkan pengeditan.');
+        }
+
+        $validated = $request->validate([
+            'doc_pembayaran_wisuda' => 'nullable|mimes:pdf|max:5120',
+            'doc_naskah_publikasi' => 'nullable|mimes:pdf|max:5120',
+        ]);
+
+        $updateData = [];
+
+        if ($request->hasFile('doc_pembayaran_wisuda')) {
+            if ($skpiRegistration->doc_pembayaran_wisuda) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($skpiRegistration->doc_pembayaran_wisuda);
+            }
+            $updateData['doc_pembayaran_wisuda'] = $request->file('doc_pembayaran_wisuda')->store('skpi/pembayaran_wisuda', 'public');
+        }
+
+        if ($request->hasFile('doc_naskah_publikasi')) {
+            if ($skpiRegistration->doc_naskah_publikasi) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($skpiRegistration->doc_naskah_publikasi);
+            }
+            $updateData['doc_naskah_publikasi'] = $request->file('doc_naskah_publikasi')->store('skpi/naskah_publikasi', 'public');
+        }
+
+        if (!empty($updateData)) {
+            // Reset status verifikasi ke pending agar admin perlu review ulang
+            $updateData['payment_status'] = 'pending';
+            $updateData['payment_approval_notes'] = null;
+
+            $skpiRegistration->update($updateData);
+            return redirect()
+                ->route('student.skpi.pembayaran.create')
+                ->with('success', 'Dokumen berhasil diunggah. Menunggu verifikasi ulang oleh Admin.');
+        }
+
+        return redirect()
+            ->route('student.skpi.pembayaran.create')
+            ->with('info', 'Tidak ada dokumen yang diunggah.');
     }
 
     public function daftarSubmit(Request $request)
@@ -354,10 +435,19 @@ class SkpiController extends Controller
             && filled($skpiRegistration->periode_lulus)
             && filled($skpiRegistration->lama_studi);
 
-        $hasDocumentSupport = filled($student->foto) && filled($student->ttd);
+        $hasPaymentAndPublication = $skpiRegistration
+            && filled($skpiRegistration->doc_pembayaran_wisuda)
+            && filled($skpiRegistration->doc_naskah_publikasi)
+            && $skpiRegistration->payment_status === 'approved';
         $hasApprovedAchievements = ($student->approved_achievements_count ?? 0) > 0;
 
         return [
+            [
+                'title' => 'Verifikasi Pembayaran Wisuda & Naskah Publikasi',
+                'description' => 'Upload bukti pembayaran wisuda dan naskah publikasi terlebih dahulu sebelum mengisi form identitas.',
+                'ready' => $hasPaymentAndPublication,
+                'required' => true,
+            ],
             [
                 'title' => 'Data Pemegang SKPI',
                 'description' => 'Identitas dasar (nama, tempat/tanggal lahir, NIM) harus lengkap di profil.',
@@ -365,20 +455,14 @@ class SkpiController extends Controller
                 'required' => true,
             ],
             [
-                'title' => 'Form Identitas SKPI',
-                'description' => 'Lengkapi Data Diri Untuk Pengajuan SKPI.',
+                'title' => 'Form Identitas Kelulusan ',
+                'description' => 'Lengkapi Data Diri Untuk Pengajuan SKPI Kelulusan .',
                 'ready' => (bool)$formIdentitasLengkap,
                 'required' => true,
             ],
             [
-                'title' => 'Foto & Tanda Tangan',
-                'description' => 'Foto profil dan tanda tangan digital sudah lengkap.',
-                'ready' => $hasDocumentSupport,
-                'required' => true,
-            ],
-            [
                 'title' => 'Prestasi & Penghargaan',
-                'description' => 'Opsional. Hanya prestasi yang sudah approved yang akan masuk ke SKPI.',
+                'description' => 'Opsional. Hanya prestasi yang sudah approved yang akan masuk ke SKPI Kelulusan .',
                 'ready' => $hasApprovedAchievements,
                 'required' => false,
             ],

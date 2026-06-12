@@ -21,11 +21,22 @@
     </div>
 
     @if($skpiRegistration && $skpiRegistration->approval_notes)
-        <div class="alert-card alert-note">
-            <i class="bi bi-chat-left-text"></i>
+        @php
+            $isRejected = $skpiRegistration->status === 'rejected';
+            $alertClass = $isRejected ? 'alert-error' : 'alert-note';
+            $alertBg = $isRejected ? '#FFEBEE' : '#E3F2FD';
+            $alertColor = $isRejected ? '#C62828' : '#1565C0';
+            $alertIcon = $isRejected ? 'bi-x-octagon-fill' : 'bi-chat-left-text';
+            $alertTitle = $isRejected ? 'Pengajuan Ditolak' : 'Catatan Revisi dari Admin';
+        @endphp
+        <div class="alert-card {{ $alertClass }}" style="background: {{ $alertBg }}; color: {{ $alertColor }}; padding: 16px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 12px; border: 1px solid {{ $isRejected ? '#ef9a9a' : '#bbdefb' }};">
+            <i class="bi {{ $alertIcon }}" style="font-size: 20px; margin-top: 2px;"></i>
             <div>
-                <strong>Catatan Review Terakhir</strong>
-                <p>{{ $skpiRegistration->approval_notes }}</p>
+                <strong style="display: block; margin-bottom: 4px; font-size: 15px;">{{ $alertTitle }}</strong>
+                <p style="margin: 0; font-size: 14px; line-height: 1.5;">{{ $skpiRegistration->approval_notes }}</p>
+                @if($isRejected)
+                <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Silakan perbaiki data Anda dan simpan ulang form ini.</p>
+                @endif
             </div>
         </div>
     @endif
@@ -121,7 +132,7 @@
 
             <div class="form-grid mt-4">
                 <div class="form-group full-width">
-                    <label for="doc_ijasah">Upload Ijazah Terakhir (PDF, Max 1MB)</label>
+                    <label for="doc_ijasah">Upload Ijazah Terakhir (PDF, Max 2MB)</label>
                     <input id="doc_ijasah" type="file" name="doc_ijasah" class="form-control" accept=".pdf" @disabled(!$canEditRegistration)>
                     @if($skpiRegistration && $skpiRegistration->doc_ijasah)
                         <small class="text-success mt-1 d-block"><i class="bi bi-check-circle"></i> File sudah diunggah: <a href="{{ asset('storage/' . $skpiRegistration->doc_ijasah) }}" target="_blank">Lihat File</a></small>
@@ -130,7 +141,7 @@
                 </div>
 
                 <div class="form-group full-width">
-                    <label for="doc_ktp">Upload KTP (PDF, Max 1MB)</label>
+                    <label for="doc_ktp">Upload KTP (PDF, Max 2MB)</label>
                     <input id="doc_ktp" type="file" name="doc_ktp" class="form-control" accept=".pdf" @disabled(!$canEditRegistration)>
                     @if($skpiRegistration && $skpiRegistration->doc_ktp)
                         <small class="text-success mt-1 d-block"><i class="bi bi-check-circle"></i> File sudah diunggah: <a href="{{ asset('storage/' . $skpiRegistration->doc_ktp) }}" target="_blank">Lihat File</a></small>
@@ -138,14 +149,7 @@
                     @error('doc_ktp')<small class="text-danger">{{ $message }}</small>@enderror
                 </div>
 
-                <div class="form-group full-width">
-                    <label for="doc_pembayaran_and_naskah">upload pembayaran wisuda dan bukti naskah publikasi (PDF, Max 1MB)</label>
-                    <input type="file" name="doc_pembayaran_and_naskah" id="doc_pembayaran_and_naskah" class="form-control" accept=".pdf" @disabled(!$canEditRegistration)>
-                    @if($skpiRegistration && $skpiRegistration->doc_pembayaran_and_naskah)
-                        <small class="text-success mt-1 d-block"><i class="bi bi-check-circle"></i> File sudah diunggah: <a href="{{ asset('storage/' . $skpiRegistration->doc_pembayaran_and_naskah) }}" target="_blank">Lihat File</a></small>
-                    @endif
-                    @error('doc_pembayaran_and_naskah')<small class="text-danger">{{ $message }}</small>@enderror
-                </div>
+
             </div>
 
             {{-- <div class="quick-links">

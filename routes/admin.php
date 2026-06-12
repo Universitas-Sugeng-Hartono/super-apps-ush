@@ -109,6 +109,11 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
         Route::post('/generate-skpi/metadata', 'storeGenerateMetadata')->name('generate-skpi.metadata.store');
         Route::match(['get', 'post'], '/generate-skpi/download-all', [SkpiWordController::class, 'downloadAllApproved'])->name('generate-skpi.download-all');
         Route::get('/generate-skpi/{id}/download-saved', 'downloadSavedSkpi')->name('generate-skpi.download-saved');
+
+        // verifikai pembayaran
+        Route::get('/verifikasi-pembayaran', 'verifikasiPembayaran')->name('verifikasi-pembayaran.index');
+        Route::patch('/verifikasi-pembayaran/{id}/approve', 'approvePembayaran')->name('verifikasi-pembayaran.approve');
+        Route::patch('/verifikasi-pembayaran/{id}/reject', 'rejectPembayaran')->name('verifikasi-pembayaran.reject');
     });
 
     // Pengaturan Aplikasi (WhatsApp Button, dll)
