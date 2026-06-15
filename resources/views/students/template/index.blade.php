@@ -8,20 +8,26 @@
     <!-- Main Content -->
     <main class="main-content">
         <header class="header">
+            @php
+                $student = auth()->guard('student')->user();
+                $nama = $student ? $student->nama_lengkap : session('student_nama');
+                $foto = $student && $student->foto ? $student->foto : (session('path_pic') !== '0' && session('path_pic') !== 0 ? session('path_pic') : null);
+                $inisial = collect(explode(' ', trim($nama ?? '')))->map(fn($word) => strtoupper(substr($word, 0, 1)))->join('');
+            @endphp
             <div>
                 <h2>
-                    Selamat {{ $greeting }} {{ ucfirst(explode(' ', trim(session('student_nama')))[0]) }}
+                    Selamat {{ $greeting }} {{ ucfirst(explode(' ', trim($nama ?? ''))[0]) }}
                 </h2>
 
             </div>
             <div class="user-profile">
                 <div class="profile-img" style=" object-fit: cover; object-position: center;">
-                    @if (session('path_pic') !== 0)
+                    @if ($foto)
                         <div class="photo-wrapper">
-                            <img src="{{ asset('storage/' . session('path_pic')) }}" alt="Photo Student">
+                            <img src="{{ asset('storage/' . $foto) }}" alt="Photo Student">
                         </div>
                     @else
-                        {{ collect(explode(' ', session('student_nama')))->map(fn($word) => strtoupper(substr($word, 0, 1)))->join('') }}
+                        {{ $inisial }}
                     @endif
 
                 </div>
@@ -29,7 +35,7 @@
                 <div class="dropdown">
                     <a class="btn  dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        {{ collect(explode(' ', session('student_nama')))->map(fn($word) => strtoupper(substr($word, 0, 1)))->join('') }}
+                        {{ $inisial }}
                     </a>
 
                     <ul class="dropdown-menu">

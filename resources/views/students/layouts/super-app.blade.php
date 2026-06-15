@@ -829,12 +829,18 @@
             <div class="user-info">
                 <div class="user-profile" id="userProfile">
                     <div class="user-details">
-                        <h5>Halo, {{ explode(' ', session('student_nama'))[0] }}!</h5>
-                        <p>Student {{ session('student_prodi') }}</p>
+                        @php
+                            $student = auth()->guard('student')->user();
+                            $nama = $student ? $student->nama_lengkap : session('student_nama');
+                            $prodi = $student ? $student->program_studi : session('student_prodi');
+                            $foto = $student && $student->foto ? $student->foto : (session('path_pic') !== '0' ? session('path_pic') : null);
+                        @endphp
+                        <h5>Halo, {{ explode(' ', $nama ?? '')[0] }}!</h5>
+                        <p>Student {{ $prodi }}</p>
                     </div>
                     <div class="user-avatar">
-                        @if (session('path_pic') !== '0')
-                        <img src="{{ asset('storage/' . session('path_pic')) }}" alt="Profile">
+                        @if ($foto)
+                        <img src="{{ asset('storage/' . $foto) }}" alt="Profile">
                         @else
                         <i class="bi bi-person-circle" style="font-size: 35px; color: var(--primary-orange);"></i>
                         @endif

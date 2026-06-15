@@ -754,12 +754,18 @@
             <div class="user-info">
                 <div class="user-profile" id="userProfile">
                     <div class="user-details">
-                        <h5>Halo, {{ explode(' ', session('user_name'))[0] }}!</h5>
-                        <p>Lecturer {{ session('user_prodi') ?? 'Dosen' }}</p>
+                        @php
+                            $user = auth()->user();
+                            $name = $user ? $user->name : session('user_name');
+                            $prodi = $user ? $user->program_studi : session('user_prodi');
+                            $photo = $user && $user->photo ? $user->photo : (session('user_photo') !== '0' && session('user_photo') !== 0 ? session('user_photo') : null);
+                        @endphp
+                        <h5>Halo, {{ explode(' ', $name ?? '')[0] }}!</h5>
+                        <p>Lecturer {{ $prodi ?? 'Dosen' }}</p>
                     </div>
                     <div class="user-avatar">
-                        @if (session('user_photo') !== '0')
-                            <img src="{{ asset('storage/' . session('user_photo')) }}" alt="Profile">
+                        @if ($photo)
+                            <img src="{{ asset('storage/' . $photo) }}" alt="Profile">
                         @else
                             <i class="bi bi-person-circle" style="font-size: 35px; color: var(--primary-orange);"></i>
                         @endif
