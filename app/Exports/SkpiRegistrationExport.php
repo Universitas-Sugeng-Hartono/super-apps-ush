@@ -12,16 +12,20 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class SkpiRegistrationExport implements FromView, ShouldAutoSize, WithStyles
 {
     protected $studyProgramId;
+    protected $status;
+    protected $search;
 
-    public function __construct($studyProgramId = null)
+    public function __construct($studyProgramId = null, $status = null, $search = null)
     {
         $this->studyProgramId = $studyProgramId;
+        $this->status = $status;
+        $this->search = $search;
     }
 
     public function view(): View
     {
-        // Load the registrations with student relationship, filtering only approved ones
-        $query = SkpiRegistration::with('student')->where('status', 'approved');
+        // Load the registrations with student relationship
+        $query = SkpiRegistration::with('student');
 
         if ($this->studyProgramId) {
             $query->whereHas('student', function ($q) {
@@ -32,7 +36,21 @@ class SkpiRegistrationExport implements FromView, ShouldAutoSize, WithStyles
             });
         }
 
-        $registrations = $query->get();
+        if ($this->status) {
+            $query->where('status', $this->status);
+        }
+
+        if ($this->search !== null && $this->search !== '') {
+            $query->where(function ($q) {
+                $q->where('nama_lengkap', 'like', "%{$this->search}%")
+                    ->orWhere('nim', 'like', "%{$this->search}%")
+                    ->orWhereHas('student', function ($studentQuery) {
+                        $studentQuery->where('program_studi', 'like', "%{$this->search}%");
+                    });
+            });
+        }
+
+        $registrations = $query->latest('submitted_at')->latest('created_at')->get();
         
         return view('admin.skpi.exports.skpi_registrations', [
             'registrations' => $registrations

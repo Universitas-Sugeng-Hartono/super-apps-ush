@@ -31,39 +31,42 @@
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Status Mahasiswa</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tahun Masuk</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tanggal Lulus</th>
-            <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Status Pendaftaran SKPI</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Nomor Ijazah</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tanggal Pengajuan SKPI</th>
+            <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Status Pendaftaran SKPI</th>
         </tr>
     </thead>
     <tbody>
     @foreach($registrations as $index => $reg)
         @php
             $student = $reg->student;
+            $tglLahir = $reg->tanggal_lahir ?: ($student && $student->tanggal_lahir ? \Carbon\Carbon::parse($student->tanggal_lahir) : null);
         @endphp
         <tr>
             <td style="text-align: center;">{{ $index + 1 }}</td>
-            <td style="text-align: center;">'{{ $student->nim ?? '-' }}</td>
+            <td style="text-align: center;">'{{ $reg->nim ?: ($student->nim ?? '-') }}</td>
             <td style="text-align: center;">'{{ $student->nik ?? '-' }}</td>
             <td style="text-align: center;">'{{ $student->nisn ?? '-' }}</td>
-            <td>{{ $student->nama_lengkap ?? '-' }}</td>
+            <td>{{ $reg->nama_lengkap ?: ($student->nama_lengkap ?? '-') }}</td>
             <td>{{ $student->nama_orangtua ?? '-' }}</td>
             <td>{{ $student->nama_ibu_kandung ?? '-' }}</td>
-            <td style="text-align: center;">{{ $student->jenis_kelamin === 'L' ? 'Laki-laki' : ($student->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}</td>
-            <td>{{ $student->tempat_lahir ?? '-' }}</td>
-            <td style="text-align: center;">{{ $student->tanggal_lahir ? \Carbon\Carbon::parse($student->tanggal_lahir)->locale('id')->translatedFormat('d F Y') : '-' }}</td>
+            <td style="text-align: center;">{{ $student ? ($student->jenis_kelamin === 'L' ? 'Laki-laki' : ($student->jenis_kelamin === 'P' ? 'Perempuan' : '-')) : '-' }}</td>
+            <td>{{ $reg->tempat_lahir ?: ($student->tempat_lahir ?? '-') }}</td>
+            <td style="text-align: center;">{{ $tglLahir ? $tglLahir->locale('id')->translatedFormat('d F Y') : '-' }}</td>
             <td>{{ $student->alamat ?? '-' }}</td>
             <td style="text-align: center;">'{{ $student->no_telepon ?? '-' }}</td>
             <td style="text-align: center;">'{{ $student->no_telepon_orangtua ?? '-' }}</td>
             <td>{{ $student->email ?? '-' }}</td>
-            <td style="text-align: center;">{{ $student->angkatan ?? '-' }}</td>
+            <td style="text-align: center;">{{ $reg->angkatan ?: ($student->angkatan ?? '-') }}</td>
             <td style="text-align: center;">{{ $student->program_studi ?? '-' }}</td>
             <td style="text-align: center;">{{ $student->fakultas ?? '-' }}</td>
-            <td style="text-align: center;">{{ $student->ipk ?? '-' }}</td>
-            <td style="text-align: center;">{{ $student->sks ?? '-' }}</td>
+            <td style="text-align: center;">{{ $reg->ipk ?: ($student->ipk ?? '-') }}</td>
+            <td style="text-align: center;">{{ $reg->sks ?: ($student->sks ?? '-') }}</td>
             <td style="text-align: center;">{{ $student->status_mahasiswa ?? '-' }}</td>
-            <td style="text-align: center;">{{ $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->locale('id')->translatedFormat('Y') : '-' }}</td>
+            <td style="text-align: center;">{{ $student && $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->locale('id')->translatedFormat('Y') : '-' }}</td>
             <td style="text-align: center;">{{ $reg->periode_lulus ? \Carbon\Carbon::parse($reg->periode_lulus)->locale('id')->translatedFormat('d F Y') : '-' }}</td>
+            <td>'{{ $reg->nomor_ijazah ?? '-' }}</td>
+            <td style="text-align: center;">{{ $reg->created_at ? $reg->created_at->format('d-m-Y H:i') : '-' }}</td>
             <td style="text-align: center;">
                 @if($reg->status === 'draft')
                     Draft
@@ -77,8 +80,6 @@
                     {{ ucfirst($reg->status) }}
                 @endif
             </td>
-            <td>'{{ $reg->nomor_ijazah ?? '-' }}</td>
-            <td style="text-align: center;">{{ $reg->created_at ? $reg->created_at->format('d-m-Y H:i') : '-' }}</td>
         </tr>
     @endforeach
     </tbody>

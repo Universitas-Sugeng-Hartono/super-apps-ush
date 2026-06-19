@@ -96,7 +96,7 @@
                     <i class="bi bi-funnel"></i> Filter
                 </button>
                 
-                <a href="{{ route('admin.skpi.daftar-skpi.export', ['study_program_id' => $studyProgramId]) }}" class="btn-search-modern" style="background-color: #10b981; color: white;" title="Export Excel">
+                <a href="{{ route('admin.skpi.daftar-skpi.export', ['study_program_id' => $studyProgramId, 'status' => $status, 'search' => $search]) }}" class="btn-search-modern" style="background-color: #10b981; color: white;" title="Export Excel">
                     <i class="bi bi-file-earmark-excel"></i> Export
                 </a>
             </div>

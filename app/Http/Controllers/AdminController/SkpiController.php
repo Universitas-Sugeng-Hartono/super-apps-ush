@@ -74,7 +74,14 @@ class SkpiController extends Controller
 
     public function exportExcel(Request $request)
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\SkpiRegistrationExport($request->study_program_id), 'daftar_pengajuan_skpi_' . date('Ymd_His') . '.xlsx');
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SkpiRegistrationExport(
+                $request->study_program_id,
+                $request->status,
+                $request->search
+            ), 
+            'daftar_pengajuan_skpi_' . date('Ymd_His') . '.xlsx'
+        );
     }
 
     public function approveDaftarSkpi(Request $request, $id)
