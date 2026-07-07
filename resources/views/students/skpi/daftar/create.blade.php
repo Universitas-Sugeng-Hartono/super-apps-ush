@@ -13,7 +13,7 @@
     <div class="page-card">
         <div>
             <span class="page-eyebrow">{{ ($skpiRegistration && $skpiRegistration->status === 'needs_revision') ? 'Form Revisi' : 'Form Draft' }}</span>
-            <h3>Form Pengajuan SKPI</h3>
+            <h3>Form Pengajuan Kelulusan</h3>
         </div>
         <div class="page-badge-wrap">
             <span class="status-badge {{ $registrationStatus['badge_class'] }}">{{ $registrationStatus['label'] }}</span>
@@ -76,7 +76,7 @@
     <div class="form-card">
         <div class="card-head">
             <div>
-                <h4>Form Pengajuan SKPI</h4>
+                <h4>Form Pengajuan Kelulusan</h4>
                 <p>Silakan tinjau dan lengkapi semua field berikut.</p>
             </div>
         </div>

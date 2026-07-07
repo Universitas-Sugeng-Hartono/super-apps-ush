@@ -220,7 +220,7 @@
                         <i class="bi bi-person-vcard"></i>
                     </div>
                     <div class="action-text">
-                        <h5>Form Identitas Kelulusan </h5>
+                        <h5>Form Pendaftaran Kelulusan </h5>
                         <p>Isi dan simpan data nama, NIM, tempat/tanggal lahir, dan gelar.</p>
                     </div>
                     <i class="bi bi-chevron-right action-arrow"></i>

@@ -463,7 +463,7 @@ class SkpiController extends Controller
                 'required' => true,
             ],
             [
-                'title' => 'Form Identitas Kelulusan ',
+                'title' => 'Form Pendaftaran Kelulusan ',
                 'description' => 'Lengkapi Data Diri Untuk Pengajuan SKPI Kelulusan .',
                 'ready' => (bool)$formIdentitasLengkap,
                 'required' => true,

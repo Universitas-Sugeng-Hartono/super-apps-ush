@@ -72,7 +72,7 @@
                     <i class="bi bi-trophy"></i>
                 </div>
                 <div class="stat-info">
-                    <h5>Prestasi</h5>
+                    <h5>Organisai, Kompetensi</h5>
                     <p>{{ $student->achievements_count ?? 0 }}</p>
                 </div>
             </div>
