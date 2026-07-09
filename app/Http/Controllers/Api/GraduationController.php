@@ -14,7 +14,7 @@ class GraduationController extends Controller
     {
  
         $query = SkpiRegistration::with('student')
-            ->where('status', 'approved');
+            ->where('payment_status', 'approved');
 
  
         if ($request->has('angkatan')) {
