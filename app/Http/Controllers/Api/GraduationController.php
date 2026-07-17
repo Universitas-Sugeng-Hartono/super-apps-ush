@@ -14,7 +14,8 @@ class GraduationController extends Controller
     {
  
         $query = SkpiRegistration::with('student')
-            ->where('payment_status', 'approved');
+            ->where('payment_status', 'approved')
+            ->where('status', 'approved');
 
  
         if ($request->has('angkatan')) {
@@ -23,6 +24,10 @@ class GraduationController extends Controller
 
         if ($request->has('periode_lulus')) {
             $query->where('periode_lulus', $request->periode_lulus);
+        }
+
+        if ($request->has('nim')) {
+            $query->where('nim', $request->nim);
         }
 
         $registrations = $query->get();
@@ -54,12 +59,16 @@ class GraduationController extends Controller
                 'jenis_dan_jenjang_pendidikan' => $academicProfile ? $academicProfile->jenis_dan_jenjang_pendidikan : null,
                 'gelar_lulusan' => $academicProfile ? $academicProfile->gelar_lulusan : $reg->gelar,
                 'tanggal_pembayaran_disetujui' => $reg->updated_at ? $reg->updated_at->format('Y-m-d H:i:s') : null,
+                'nomor_ijazah' => $reg->nomor_ijazah,
+                'judul_skripsi_indo' => $reg->judul_ta_indo,
+                'judul_skripsi_inggris' => $reg->judul_ta_inggris,
+                'tanggal_lulus' => $student && $student->tanggal_lulus ? $student->tanggal_lulus->format('Y-m-d') : null,
             ];
         });
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Data mahasiswa yang sudah selesai pembayaran wisuda berhasil diambil',
+            'message' => 'Data mahasiswa yang sudah selesai pembayaran wisuda dan SKPI disetujui berhasil diambil',
             'data' => $data
         ]);
     }
