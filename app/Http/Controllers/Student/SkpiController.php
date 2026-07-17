@@ -225,7 +225,7 @@ class SkpiController extends Controller
             $student->setRelation('skpiRegistration', $skpiRegistration);
         }
 
-        $canEditRegistration = $this->canEditRegistration($skpiRegistration);
+        $canEditRegistration = $this->canEditRegistration($skpiRegistration) || ($skpiRegistration?->payment_status === 'rejected');
 
         return view('students.skpi.pembayaran.create', compact(
             'student',
@@ -255,7 +255,7 @@ class SkpiController extends Controller
             $student->setRelation('skpiRegistration', $skpiRegistration);
         }
 
-        if (!$this->canEditRegistration($skpiRegistration)) {
+        if (!$this->canEditRegistration($skpiRegistration) && $skpiRegistration?->payment_status !== 'rejected') {
             return redirect()
                 ->route('student.skpi.daftar.index')
                 ->with('error', 'Dokumen tidak dapat diubah karena status pengajuan saat ini tidak mengizinkan pengeditan.');

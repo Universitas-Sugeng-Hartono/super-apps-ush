@@ -198,7 +198,7 @@
         <div class="ush-col-side">
             
             {{-- Action Cards --}}
-            @if(!in_array($status, ['pending', 'approved']))
+            @if(!in_array($status, ['pending', 'approved']) || ($skpiRegistration && $skpiRegistration->payment_status === 'rejected'))
             <div class="ush-card no-padding bg-transparent shadow-none border-0">
                 <h4 class="side-title">Menu Utama</h4>
 
@@ -214,6 +214,7 @@
                     <i class="bi bi-chevron-right action-arrow"></i>
                 </a>
 
+                @if(!in_array($status, ['pending', 'approved']))
                 {{-- LANGKAH 2: Form Identitas --}}
                 <a href="{{ route('student.skpi.daftar.create') }}" class="ush-action-card">
                     <div class="action-icon orange">
@@ -236,6 +237,7 @@
                     </div>
                     <i class="bi bi-chevron-right action-arrow"></i>
                 </a>
+                @endif
             </div>
             @endif
             {{-- Guide Card --}}
