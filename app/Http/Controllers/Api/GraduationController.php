@@ -63,6 +63,7 @@ class GraduationController extends Controller
                 'judul_skripsi_indo' => $reg->judul_ta_indo,
                 'judul_skripsi_inggris' => $reg->judul_ta_inggris,
                 'tanggal_lulus' => $student && $student->tanggal_lulus ? $student->tanggal_lulus->format('Y-m-d') : null,
+                'foto_mahasiswa' => $student ? $student->foto : null,
             ];
         });
 
