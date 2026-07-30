@@ -260,6 +260,7 @@ class SkpiController extends Controller
             'total' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->count(),
             'pending' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->where('payment_status', 'pending')->count(),
             'approved' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->where('payment_status', 'approved')->count(),
+            'revision' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->where('payment_status', 'revision')->count(),
             'rejected' => SkpiRegistration::whereNotNull('doc_pembayaran_wisuda')->where('payment_status', 'rejected')->count(),
         ];
 
@@ -285,6 +286,24 @@ class SkpiController extends Controller
             ->route('admin.skpi.verifikasi-pembayaran.index')
             ->with('success', 'Pembayaran mahasiswa berhasil disetujui.');
     }
+
+    public function revisionPembayaran(Request $request, $id)
+{
+    $registration = \App\Models\SkpiRegistration::findOrFail($id);
+
+    $request->validate([
+        'payment_approval_notes' => 'nullable|string',
+    ]);
+
+    $registration->update([
+        'payment_status' => 'revision',
+        'payment_approval_notes' => $request->payment_approval_notes,
+    ]);
+
+    return redirect()
+        ->route('admin.skpi.verifikasi-pembayaran.index')
+        ->with('success', 'Status verifikasi berhasil diubah menjadi Revisi.');
+}
 
     public function rejectPembayaran(Request $request, $id)
     {

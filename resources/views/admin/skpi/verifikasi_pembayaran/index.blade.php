@@ -27,6 +27,10 @@
                 <span class="stat-label" style="color: rgba(255,255,255,0.8);">Approved</span>
                 <span class="stat-value" style="color: #ffffffff;">{{ $stats['approved'] }}</span>
             </div>
+            <div class="stat-box" style="background: rgba(255, 255, 255, 0.1); border-left: 4px solid #ffc107;">
+            <span class="stat-label" style="color: rgba(255,255,255,0.8);">Revision</span>
+            <span class="stat-value" style="color: #ffffff;">{{ $stats['revision'] ?? 0 }}</span>
+            </div>
             <div class="stat-box" style="background: rgba(255,255,255,0.1); border-left: 4px solid #ef4444; color: white;">
                 <span class="stat-label" style="color: rgba(255,255,255,0.8);">Rejected</span>
                 <span class="stat-value" style="color: #ffffffff;">{{ $stats['rejected'] }}</span>
@@ -70,6 +74,7 @@
                     <option value="">Semua Status</option>
                     <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="revision" {{ $status === 'revision' ? 'selected' : '' }}>Revision</option>
                     <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
             </div>
@@ -142,13 +147,27 @@
                                 <br><small class="text-danger mt-1 d-block"><i class="bi bi-info-circle"></i> {{ Str::limit($reg->payment_approval_notes, 30) }}</small>
                             @endif
                         </td>
-                        <td>
-                            <div class="btn-group-modern">
+                        <td class="td-action">
+                        <div class="btn-group-modern d-flex justify-content-center align-items-center gap-1">
                                 @if($reg->payment_status !== 'approved')
                                 <button class="btn-table btn-table-success" onclick="showApproveModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Approve">
                                     <i class="bi bi-check-lg"></i>
                                 </button>
                                 @endif
+                              @if($reg->payment_status !== 'revision')
+                                <form action="{{ route('admin.skpi.verifikasi-pembayaran.revision', $reg->id) }}" method="POST" class="d-inline m-0 p-0">
+                                 @csrf
+                                 @method('PATCH')
+                                <button type="submit" 
+                                class="btn-action btn-warning text-white" 
+                                style="background-color: #ffc107; border-color: #ffc107; color: #fff;" 
+                                title="Minta Revisi" 
+                                onclick="showRevisionModal('{{ $reg->id }}', '{{ $reg->student->name ?? '' }}')">
+                                <i class="bi bi-arrow-repeat me-1"></i>
+                                </button>
+                                </form>
+                                @endif
+                                
                                 <button class="btn-table btn-table-danger" onclick="showRejectModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Tolak">
                                     <i class="bi bi-trash3"></i>
                                 </button>
@@ -197,6 +216,7 @@
                     <textarea name="payment_approval_notes" class="form-control-modern" rows="3" placeholder="Tulis catatan jika diperlukan..."></textarea>
                 </div>
             </div>
+            
             <div class="modal-footer-modern">
                 <button type="button" class="btn-cancel-modern" onclick="closeApproveModal()">Batal</button>
                 <button type="submit" class="btn-submit-modern bg-success">Ya, Setujui</button>
@@ -295,6 +315,16 @@
         document.getElementById('rejectModal').style.display = 'none';
     }
 
+    function showRevisionModal(id, name) {
+    document.getElementById('revision_target_name').innerText = name;
+    document.getElementById('revisionForm').action = `/admin/skpi/verifikasi-pembayaran/${id}/revision`;
+    document.getElementById('revisionModal').style.display = 'flex';
+    }
+
+    function closeRevisionModal() {
+    document.getElementById('revisionModal').style.display = 'none';
+    }
+
     function showDetailDokumenModal(urlPembayaran, urlNaskah, name) {
         document.getElementById('dokumen_target_name').innerText = name;
         
@@ -333,4 +363,42 @@
         }
     }
 </script>
+
+<style>
+    /* 1. Menyelaraskan form agar tidak merusak tata letak Flex */
+    .btn-group-modern {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+    }
+
+    .form-action {
+        display: inline-flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 2. Styling khusus tombol revisi agar ukurannya seragam */
+    .btn-group-modern .btn-revision {
+        background-color: #ffc107 !important;
+        border-color: #ffc107 !important;
+        color: #ffffff !important;
+    }
+
+    /* 3. Efek Transisi dan Animasi Hover (Naik ke Atas) */
+    .btn-group-modern .btn-action {
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Kursor mengarah ke tombol -> terangkat 3px ke atas */
+    .btn-group-modern .btn-action:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
 @endpush

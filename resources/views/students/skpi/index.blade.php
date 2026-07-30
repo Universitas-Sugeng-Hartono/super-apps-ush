@@ -87,19 +87,39 @@
                 @endif
 
                 <div class="card-top-bar">
-                    <div class="ush-main-icon">
-                        <i class="bi bi-send-check"></i>
-                    </div>
-                    <div>
-                        @if($isLockedByTA)
-                        <span class="ush-badge-danger"><i class="bi bi-lock-fill"></i> Terkunci</span>
-                        @else
-                        <span class="ush-badge-{{ $skpiRegistration ? 'info' : ($registrationMeta['ready'] ? 'success' : 'warning') }}">
-                            {{ $skpiRegistration ? $registrationStatus['label'] : ($registrationMeta['ready'] ? 'Data Dasar Siap' : 'Mulai Draft') }}
-                        </span>
-                        @endif
-                    </div>
-                </div>
+    <div class="ush-main-icon">
+        <i class="bi bi-send-check"></i>
+    </div>
+    <div>
+        @if($isLockedByTA)
+            <span class="ush-badge-danger"><i class="bi bi-lock-fill"></i> Terkunci</span>
+        @else
+            @php
+                // Tentukan warna badge & label berdasarkan status registrasi/pembayaran
+                $statusKey = $skpiRegistration->payment_status ?? $skpiRegistration->status ?? null;
+                
+                $badgeClass = match($statusKey) {
+                    'approved' => 'success',
+                    'revision' => 'warning',
+                    'rejected' => 'danger',
+                    'pending'  => 'info',
+                    default    => ($registrationMeta['ready'] ? 'success' : 'warning')
+                };
+
+                $statusLabel = match($statusKey) {
+                    'approved' => 'Disetujui',
+                    'revision' => 'Perlu Revisi',
+                    'rejected' => 'Ditolak',
+                    'pending'  => 'Menunggu Verifikasi',
+                    default    => ($registrationMeta['ready'] ? 'Data Dasar Siap' : 'Mulai Draft')
+                };
+            @endphp
+            <span class="ush-badge-{{ $badgeClass }}">
+                {{ $statusLabel }}
+            </span>
+        @endif
+    </div>
+</div>
 
                 <div class="card-body-content">
                     <div class="card-titles">

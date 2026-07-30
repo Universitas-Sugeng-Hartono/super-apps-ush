@@ -114,6 +114,7 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
         // verifikai pembayaran
         Route::get('/verifikasi-pembayaran', 'verifikasiPembayaran')->name('verifikasi-pembayaran.index');
         Route::patch('/verifikasi-pembayaran/{id}/approve', 'approvePembayaran')->name('verifikasi-pembayaran.approve');
+        Route::patch('/verifikasi-pembayaran/{id}/revision', 'revisionPembayaran')->name('verifikasi-pembayaran.revision');
         Route::patch('/verifikasi-pembayaran/{id}/reject', 'rejectPembayaran')->name('verifikasi-pembayaran.reject');
     });
 

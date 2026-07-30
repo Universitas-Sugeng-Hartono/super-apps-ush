@@ -55,6 +55,17 @@
             Lanjut Mengisi Form Identitas SKPI <i class="bi bi-arrow-right"></i>
         </a>
     </div>
+    @elseif($paymentStatus === 'revision')
+<div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
+    <i class="bi bi-exclamation-triangle-fill" style="color: #D97706; font-size: 22px; margin-top: 2px; flex-shrink: 0;"></i>
+    <div>
+        <strong style="color: #92400E; font-size: 15px;">Dokumen Perlu Revisi</strong>
+        @if($skpiRegistration->payment_approval_notes)
+            <p style="margin: 4px 0 6px; color: #B45309; font-size: 13px;"><strong>Catatan Admin:</strong> {{ $skpiRegistration->payment_approval_notes }}</p>
+        @endif
+        <p style="margin: 4px 0 0; color: #B45309; font-size: 13px;">Silakan perbaiki atau unggah ulang dokumen yang diminta di bawah ini.</p>
+    </div>
+</div>
     @elseif($paymentStatus === 'rejected')
     <div style="background: #FFEBEE; border: 1px solid #ef9a9a; border-radius: 16px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
         <i class="bi bi-x-octagon-fill" style="color: #c62828; font-size: 22px; margin-top: 2px; flex-shrink: 0;"></i>
@@ -64,6 +75,17 @@
             <p style="margin: 4px 0 6px; color: #c62828; font-size: 13px;"><strong>Catatan Admin:</strong> {{ $skpiRegistration->payment_approval_notes }}</p>
             @endif
             <p style="margin: 4px 0 0; color: #d32f2f; font-size: 13px;">Silakan unggah ulang dokumen yang benar di bawah ini.</p>
+        </div>
+    </div>
+    @elseif($paymentStatus === 'revision')
+    <div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
+        <i class="bi bi-exclamation-triangle-fill" style="color: #D97706; font-size: 22px; margin-top: 2px; flex-shrink: 0;"></i>
+        <div>
+            <strong style="color: #92400E; font-size: 15px;">Dokumen Perlu Revisi</strong>
+            @if($skpiRegistration->payment_approval_notes)
+                <p style="margin: 4px 0 6px; color: #B45309; font-size: 13px;"><strong>Catatan Admin:</strong> {{ $skpiRegistration->payment_approval_notes }}</p>
+            @endif
+            <p style="margin: 4px 0 0; color: #B45309; font-size: 13px;">Silakan perbaiki atau unggah ulang dokumen yang diminta di bawah ini.</p>
         </div>
     </div>
     @elseif($hasFiles)
@@ -82,13 +104,15 @@
     </div>
     @endif
 
-    <div id="upload-form-container" class="form-card" style="background: white; border-radius: 20px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); {{ $showForm ? '' : 'display: none;' }}">
-        @if(!$showForm)
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #333;">Upload Ulang Dokumen</h4>
-            <button type="button" onclick="toggleForm()" style="background: none; border: none; color: #888; cursor: pointer; font-size: 20px;"><i class="bi bi-x-lg"></i></button>
-        </div>
-        @endif
+    <div id="upload-form-container" class="form-card" style="background: white; border-radius: 20px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 20px; {{ $paymentStatus === 'revision' ? 'display: block !important;' : '' }}">
+    @if(!$showForm && $paymentStatus !== 'revision')
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #333;">Upload Ulang Dokumen</h4>
+        <button type="button" onclick="toggleForm()" style="background: none; border: none; color: #888; cursor: pointer;">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    @endif
 
         <form action="{{ route('student.skpi.pembayaran.upload') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -131,11 +155,11 @@
 
             @if($canEditRegistration)
             <div style="text-align: right; border-top: 1px solid #eee; padding-top: 20px; display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
-                @if(!$showForm)
-                <button type="button" onclick="toggleForm()" style="background: none; border: none; color: #888; font-weight: 600; cursor: pointer; padding: 12px 16px;">
-                    Batal
-                </button>
-                @endif
+            @if(!$showForm && $paymentStatus !== 'revision')
+            <button type="button" onclick="toggleForm()" style="background: none; border: none; color: #888; font-weight: 500;">
+            Batal
+            </button>
+            @endif
                 <button type="submit" style="background: linear-gradient(135deg, #FF9800, #FF7043); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
                     <i class="bi bi-upload"></i> Unggah Dokumen
                 </button>
