@@ -8,3 +8,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('/skpi/payment-completed', [\App\Http\Controllers\Api\GraduationController::class, 'getCompletedPayments'])->middleware('api-key');
+Route::get('/skpi/student/{nim}', [\App\Http\Controllers\Api\GraduationController::class, 'checkStudentSkpi'])->middleware('api-key');
+Route::get('/skpi/download/{nim}', [\App\Http\Controllers\Api\GraduationController::class, 'downloadSkpiDocument'])->name('api.skpi.download.signed')->middleware('signed');

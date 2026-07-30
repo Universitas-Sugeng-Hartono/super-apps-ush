@@ -72,4 +72,60 @@ class GraduationController extends Controller
             'data' => $data
         ]);
     }
+
+    public function checkStudentSkpi($nim)
+    {
+        $registration = SkpiRegistration::where('nim', $nim)
+            ->whereNotNull('skpi_document')
+            ->first();
+
+        if ($registration) {
+            // Generate a signed URL valid for 24 hours
+            $pdfUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'api.skpi.download.signed',
+                now()->addHours(24),
+                ['nim' => $nim]
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'exists' => true,
+                    'pdf_url' => $pdfUrl,
+                ]
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'SKPI not found'], 404);
+    }
+
+    public function downloadSkpiDocument($nim)
+    {
+        $registration = SkpiRegistration::where('nim', $nim)
+            ->whereNotNull('skpi_document') // Ensure it is already generated
+            ->first();
+
+        if (!$registration) {
+            return response()->json(['message' => 'Dokumen SKPI belum digenerate atau tidak ditemukan'], 404);
+        }
+
+        try {
+            // Decrypt from database
+            $decrypted = \App\Services\SkpiDocumentEncryption::decrypt($registration->skpi_document);
+            
+            $safeNim = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $registration->nim);
+            $fileName = 'SKPI_' . $safeNim . '.docx';
+
+            // Return file stream as docx download
+            return response($decrypted, 200, [
+                'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                'Content-Length'      => strlen($decrypted),
+            ]);
+
+        } catch (\Throwable $e) {
+            \Log::error('Gagal dekripsi SKPI NIM=' . $registration->nim . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Gagal membaca dokumen SKPI'], 500);
+        }
+    }
 }
