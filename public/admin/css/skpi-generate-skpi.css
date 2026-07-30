@@ -1,0 +1,266 @@
+/* =============================================================
+   SKPI — Generate SKPI Draft
+   File : public/admin/css/skpi-generate-skpi.css
+   ============================================================= */
+
+.page-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.hero-card,
+.content-card,
+.summary-card,
+.empty-state {
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.hero-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    background: linear-gradient(135deg, #FFF8EE, #FFFFFF);
+    border: 1px solid #F4E5CD;
+}
+
+.hero-badge,
+.summary-label,
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.hero-badge,
+.summary-label {
+    background: #FFF1DA;
+    color: #D97706;
+}
+
+.hero-card h3,
+.section-header h4,
+.summary-card h4,
+.achievement-body h5,
+.empty-state h4 {
+    margin: 10px 0 8px;
+    color: #213555;
+    font-weight: 700;
+}
+
+.hero-card p,
+.section-header p,
+.summary-card p,
+.detail-item span,
+.achievement-body p,
+.empty-state p,
+.form-group small {
+    margin: 0;
+    color: #6B7280;
+    line-height: 1.6;
+}
+
+.hero-stats {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    width: min(420px, 100%);
+}
+
+.stat-chip {
+    padding: 16px;
+    border: 1px solid #ECE6DA;
+    border-radius: 16px;
+    background: #FFFFFF;
+}
+
+.stat-chip span {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 8px;
+    color: #6B7280;
+}
+
+.stat-chip strong {
+    font-size: 18px;
+    color: #213555;
+}
+
+/* ===== Table Styles ===== */
+.custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    font-size: 14px;
+}
+
+.custom-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.custom-table td {
+    background: white;
+    padding: 12px 16px;
+    border-top: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.custom-table tr td:first-child {
+    border-left: 1px solid #f1f5f9;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+
+.custom-table tr td:last-child {
+    border-right: 1px solid #f1f5f9;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.custom-table tr:hover td { background: #fdfdfd; border-color: #cbd5e1; }
+.row-selected td { background: #eff6ff !important; border-color: #bfdbfe !important; }
+
+.badge-missing {
+    background: #fff1f2;
+    color: #e11d48;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    display: inline-block;
+    border: 1px solid #fecdd3;
+}
+
+.badge-success { background: #f0fdf4; color: #16a34a; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1px solid #bbf7d0; }
+.badge-error { background: #ef4444; color: white; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+
+.btn-icon-sm {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-icon-sm:hover { background: #e2e8f0; color: #1e293b; }
+.btn-download { background: #2b5797; color: white; border: none; }
+.btn-download:hover { background: #1e3e6d; color: white; }
+
+.text-success { color: #16a34a; font-weight: 600; }
+.text-danger { color: #dc2626; font-weight: 500; }
+
+.prodi-section { border-left: 5px solid #2563EB; }
+
+/* ===== Transcript Tables ===== */
+.transkrip-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.transkrip-table th,
+.transkrip-table td {
+    border: 1px solid #E5E7EB;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+.transkrip-table thead th {
+    background: #213555;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.transkrip-table .cat-row td { background: #FFF8E1; font-weight: 700; color: #92400E; }
+.transkrip-table .total-row td { background: #213555; color: white; font-weight: 700; font-size: 15px; }
+.transkrip-table .subtotal-row td { background: #F3F4F6; font-weight: 700; color: #213555; }
+
+/* ===== Rincian Styles ===== */
+.rincian-cat-title {
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    background: #FFF1DA;
+    border-radius: 10px;
+    color: #92400E;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.rincian-sub-title {
+    margin: 18px 0 8px;
+    padding: 8px 14px;
+    background: #F1F5F9;
+    border-radius: 8px;
+    color: #334155;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* =============================================================
+   RESPONSIVE
+   ============================================================= */
+
+@media (max-width: 1100px) {
+    .hero-card { flex-direction: column; }
+    .hero-stats { width: 100%; }
+}
+
+@media (max-width: 768px) {
+    .hero-stats { grid-template-columns: 1fr; }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .custom-table { min-width: 700px; }
+    .transkrip-table { min-width: 600px; }
+
+    #selected-student-focus .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-secondary, .btn-cancel {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-card h3 { font-size: 20px; }
+    .content-card { padding: 16px; }
+    .stat-chip { padding: 12px; }
+}
