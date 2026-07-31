@@ -25,7 +25,12 @@ class SkpiRegistrationExport implements FromView, ShouldAutoSize, WithStyles
     public function view(): View
     {
         // Load the registrations with student relationship
-        $query = SkpiRegistration::with('student');
+        $query = SkpiRegistration::with([
+            'student.finalProject',
+            'student.achievements' => function ($q) {
+                $q->where('status', 'approved');
+            }
+        ]);
 
         if ($this->studyProgramId) {
             $query->whereHas('student', function ($q) {
