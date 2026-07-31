@@ -9,6 +9,7 @@ class SkpiRegistration extends Model
 {
     protected $fillable = [
         'student_id',
+        'nomor_skpi',
         'nama_lengkap',
         'tempat_lahir',
         'tanggal_lahir',

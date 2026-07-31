@@ -268,9 +268,18 @@
 
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label>Nomor SKPI Terakhir</label>
+                                    <label>Nomor SKPI Terakhir (Manual Fallback)</label>
                                     <input type="text" name="nomor_skpi" class="form-control"
                                         value="{{ old('nomor_skpi', $documentMeta['nomor_skpi'] ?? '') }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Format Pola Nomor SKPI Dinamis</label>
+                                    <input type="text" name="nomor_skpi_format" class="form-control"
+                                        placeholder="{no}/SKPI/USH/{tahun}"
+                                        value="{{ old('nomor_skpi_format', $documentMeta['nomor_skpi_format'] ?? '{no}/SKPI/USH/{tahun}') }}">
+                                    <small style="color: #666; margin-top: 4px; display: block;">
+                                        Gunakan tag <code>{no}</code> untuk nomor urut (001, 002), <code>{tahun}</code> untuk tahun lulusan, dan <code>{NIM}</code> untuk NIM. Contoh hasil: <strong>001/SKPI/USH/2026</strong>
+                                    </small>
                                 </div>
                                 <div class="form-group">
                                     <label>Kota & Tanggal Pengesahan</label>
