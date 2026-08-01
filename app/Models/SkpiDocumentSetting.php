@@ -9,6 +9,7 @@ class SkpiDocumentSetting extends Model
 {
     protected $fillable = [
         'nomor_skpi',
+        'nomor_skpi_format',
         'authorization_place_date',
         'vice_rector_name',
         'vice_rector_title',

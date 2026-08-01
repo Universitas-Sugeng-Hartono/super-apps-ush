@@ -477,7 +477,8 @@ class SkpiWordController extends Controller
             $skripsiTitleEn = $registration->judul_ta_inggris ?: optional($student?->finalProject)->title_en ?: '-';
 
             // ─── Bagian 1: Data Diri ──────────────────────────────────────
-            $templateProcessor->setValue('NOMOR_SKPI',              htmlspecialchars($documentMeta['nomor_skpi'] ?? ''));
+            $nomorSkpi = $this->generateSkpiNumberForRegistration($registration, $documentMeta['nomor_skpi_format'] ?? '{no}/SKPI/USH/{tahun}');
+            $templateProcessor->setValue('NOMOR_SKPI',              htmlspecialchars($nomorSkpi));
             $templateProcessor->setValue('NAMA_LENGKAP',            htmlspecialchars($registration->nama_lengkap ?? '-'));
             $templateProcessor->setValue('TTL',                     htmlspecialchars($ttl ?: '-'));
             $templateProcessor->setValue('NIM',                     htmlspecialchars($registration->nim ?? '-'));
@@ -963,11 +964,62 @@ class SkpiWordController extends Controller
 
         return [
             'nomor_skpi'               => $setting?->nomor_skpi ?? '',
+            'nomor_skpi_format'        => $setting?->nomor_skpi_format ?: '{no}/SKPI/USH/{tahun}',
             'authorization_place_date' => $setting?->authorization_place_date ?: $defaultPlaceDate,
             'vice_rector_name'         => $setting?->vice_rector_name ?? '',
             'vice_rector_title'        => $setting?->vice_rector_title ?: 'Wakil Rektor I Universitas Sugeng Hartono',
             'signature_path'           => $setting?->signature_path,
         ];
+    }
+
+    private function generateSkpiNumberForRegistration(SkpiRegistration $registration, string $pattern): string
+    {
+        if (!empty($registration->nomor_skpi) && $registration->nomor_skpi !== '-') {
+            return $registration->nomor_skpi;
+        }
+
+        $tahun = now()->format('Y');
+        if (!empty($registration->periode_lulus) && preg_match('/\b(20\d{2})\b/', $registration->periode_lulus, $m)) {
+            $tahun = $m[1];
+        } elseif ($registration->submitted_at) {
+            $tahun = $registration->submitted_at->format('Y');
+        } elseif ($registration->created_at) {
+            $tahun = $registration->created_at->format('Y');
+        }
+
+        $yearStart = "{$tahun}-01-01 00:00:00";
+        $yearEnd   = "{$tahun}-12-31 23:59:59";
+
+        $count = SkpiRegistration::query()
+            ->whereNotNull('nomor_skpi')
+            ->where('nomor_skpi', '!=', '')
+            ->where('nomor_skpi', '!=', '-')
+            ->where(function ($q) use ($yearStart, $yearEnd) {
+                $q->whereBetween('created_at', [$yearStart, $yearEnd])
+                  ->orWhereBetween('submitted_at', [$yearStart, $yearEnd]);
+            })
+            ->count() + 1;
+
+        $noFormatted = sprintf('%03d', $count);
+
+        // Jika pattern kosong/default
+        if (empty($pattern) || $pattern === '-') {
+            $pattern = '{no}/SKPI/USH/{tahun}';
+        }
+
+        $generatedNumber = str_replace(
+            ['{no}', '{tahun}', '{YYYY}', '{NIM}'],
+            [$noFormatted, $tahun, $tahun, $registration->nim ?? ''],
+            $pattern
+        );
+
+        try {
+            $registration->update(['nomor_skpi' => $generatedNumber]);
+        } catch (\Throwable $e) {
+            Log::warning('[SkpiWord] Gagal update nomor_skpi pada registration ID ' . $registration->id . ': ' . $e->getMessage());
+        }
+
+        return $generatedNumber;
     }
 
     /**

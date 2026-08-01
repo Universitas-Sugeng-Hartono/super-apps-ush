@@ -185,16 +185,27 @@
                             </div>
                         </td>
                         <td>
-                            @if($reg->nomor_ijazah)
-                            <div class="ijazah-box">
+                            <div>
+                                <div style="font-size: 11px; color: #888;">Nomor Ijazah:</div>
+                                @if($reg->nomor_ijazah)
                                 <code>{{ $reg->nomor_ijazah }}</code>
-                                <button class="btn-edit-inline" onclick="showEditIjazahModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}', '{{ $reg->nomor_ijazah }}')" title="Edit Nomor Ijazah">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
+                                @else
+                                <span class="empty-text">-</span>
+                                @endif
+
+                                <div style="font-size: 11px; color: #888; margin-top: 4px;">Nomor SKPI:</div>
+                                @if($reg->nomor_skpi)
+                                <code style="color: #2e7d32;">{{ $reg->nomor_skpi }}</code>
+                                @else
+                                <span class="empty-text" style="color: #e65100;">Otomatis</span>
+                                @endif
+
+                                <div style="margin-top: 4px;">
+                                    <button class="btn-edit-inline" onclick="showEditIjazahModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}', '{{ $reg->nomor_ijazah }}', '{{ $reg->nomor_skpi }}')" title="Edit Nomor Ijazah & SKPI">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </button>
+                                </div>
                             </div>
-                            @else
-                            <span class="empty-text">Belum diinput</span>
-                            @endif
                         </td>
                         <td>
                             <span class="badge-status status-{{ $reg->status ?? 'draft' }}">
@@ -277,13 +288,13 @@
     </div>
 </div>
 
-{{-- Modal Edit Ijazah (Koreksi) --}}
+{{-- Modal Edit Ijazah & SKPI (Koreksi) --}}
 <div id="editIjazahModal" class="modal-backdrop-modern" style="display: none;">
     <div class="modal-dialog-modern">
         <div class="modal-header-modern bg-primary">
             <div class="modal-icon-wrap"><i class="bi bi-pencil-fill"></i></div>
             <div class="modal-title-wrap">
-                <h4>Koreksi Nomor Ijazah</h4>
+                <h4>Koreksi Nomor Ijazah & SKPI</h4>
                 <p id="edit_ijazah_target_name"></p>
             </div>
         </div>
@@ -292,14 +303,18 @@
             @method('PATCH')
             <div class="modal-body-modern">
                 <div class="form-group-modern">
-                    <label>Nomor Ijazah Baru <span class="text-danger">*</span></label>
-                    <input type="text" id="edit_nomor_ijazah_input" name="nomor_ijazah" class="form-control-modern" placeholder="Masukkan nomor ijazah yang benar..." required>
-                    <small class="helper-text">Perubahan ini hanya memperbarui data tanpa mengubah status approval.</small>
+                    <label>Nomor Ijazah</label>
+                    <input type="text" id="edit_nomor_ijazah_input" name="nomor_ijazah" class="form-control-modern" placeholder="Masukkan nomor ijazah...">
+                </div>
+                <div class="form-group-modern mt-3">
+                    <label>Nomor SKPI (Opsional)</label>
+                    <input type="text" id="edit_nomor_skpi_input" name="nomor_skpi" class="form-control-modern" placeholder="Kosongkan jika ingin auto-generate...">
+                    <small class="helper-text" style="display: block; margin-top: 4px; color: #666;">Jika dikosongkan, sistem akan meng-generate nomor secara otomatis sesuai pola (contoh: 001/SKPI/USH/2026).</small>
                 </div>
             </div>
             <div class="modal-footer-modern">
                 <button type="button" class="btn-cancel-modern" onclick="closeEditIjazahModal()">Batal</button>
-                <button type="submit" class="btn-submit-modern bg-primary">Update Nomor</button>
+                <button type="submit" class="btn-submit-modern bg-primary">Simpan Nomor</button>
             </div>
         </form>
     </div>
@@ -441,9 +456,10 @@
         document.getElementById('approveModal').style.display = 'none';
     }
 
-    function showEditIjazahModal(id, name, currentNumber) {
+    function showEditIjazahModal(id, name, currentIjazah, currentSkpi) {
         document.getElementById('edit_ijazah_target_name').innerText = name;
-        document.getElementById('edit_nomor_ijazah_input').value = currentNumber;
+        document.getElementById('edit_nomor_ijazah_input').value = (currentIjazah && currentIjazah !== 'null') ? currentIjazah : '';
+        document.getElementById('edit_nomor_skpi_input').value = (currentSkpi && currentSkpi !== 'null') ? currentSkpi : '';
         document.getElementById('editIjazahForm').action = `/admin/skpi/daftar-skpi/${id}/update-ijazah`;
         document.getElementById('editIjazahModal').style.display = 'flex';
     }

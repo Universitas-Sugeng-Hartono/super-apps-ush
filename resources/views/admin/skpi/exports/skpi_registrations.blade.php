@@ -28,9 +28,12 @@
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Fakultas</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">IPK</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">SKS</th>
+            <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Judul Skripsi / Tugas Akhir</th>
+            <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Total Nilai SKPI (SKP)</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Status Mahasiswa</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tahun Masuk</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tanggal Lulus</th>
+            <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Nomor SKPI</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Nomor Ijazah</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Tanggal Pengajuan SKPI</th>
             <th style="font-weight: bold; text-align: center; background-color: #f8cbad;">Status Pendaftaran SKPI</th>
@@ -41,6 +44,9 @@
         @php
             $student = $reg->student;
             $tglLahir = $reg->tanggal_lahir ?: ($student && $student->tanggal_lahir ? \Carbon\Carbon::parse($student->tanggal_lahir) : null);
+            $judulSkripsi = $reg->judul_ta_indo ?: optional($student?->finalProject)->title ?: '-';
+            $manualCategories = array_keys(\App\Models\StudentAchievement::manualCategoryOptions());
+            $totalSkp = $student && $student->achievements ? $student->achievements->whereIn('category', $manualCategories)->sum('skp_points') : 0;
         @endphp
         <tr>
             <td style="text-align: center;">{{ $index + 1 }}</td>
@@ -62,9 +68,12 @@
             <td style="text-align: center;">{{ $student->fakultas ?? '-' }}</td>
             <td style="text-align: center;">{{ $reg->ipk ?: ($student->ipk ?? '-') }}</td>
             <td style="text-align: center;">{{ $reg->sks ?: ($student->sks ?? '-') }}</td>
+            <td>{{ $judulSkripsi }}</td>
+            <td style="text-align: center;">{{ $totalSkp }}</td>
             <td style="text-align: center;">{{ $student->status_mahasiswa ?? '-' }}</td>
             <td style="text-align: center;">{{ $student && $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->locale('id')->translatedFormat('Y') : '-' }}</td>
             <td style="text-align: center;">{{ $reg->periode_lulus ? \Carbon\Carbon::parse($reg->periode_lulus)->locale('id')->translatedFormat('d F Y') : '-' }}</td>
+            <td style="text-align: center;">'{{ $reg->nomor_skpi ?? '-' }}</td>
             <td>'{{ $reg->nomor_ijazah ?? '-' }}</td>
             <td style="text-align: center;">{{ $reg->created_at ? $reg->created_at->format('d-m-Y H:i') : '-' }}</td>
             <td style="text-align: center;">

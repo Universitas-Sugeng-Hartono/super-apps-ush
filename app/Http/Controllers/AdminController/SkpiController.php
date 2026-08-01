@@ -330,17 +330,19 @@ class SkpiController extends Controller
         $registration = SkpiRegistration::findOrFail($id);
 
         $request->validate([
-            'nomor_ijazah' => 'required|string|max:100',
+            'nomor_ijazah' => 'nullable|string|max:100',
+            'nomor_skpi'   => 'nullable|string|max:100',
         ]);
 
         $registration->update([
-            'nomor_ijazah' => $request->nomor_ijazah,
-            'skpi_document' => null, 
+            'nomor_ijazah'  => $request->nomor_ijazah,
+            'nomor_skpi'    => $request->nomor_skpi,
+            'skpi_document' => null,
         ]);
 
         return redirect()
             ->back()
-            ->with('success', 'Nomor ijazah mahasiswa ' . $registration->nama_lengkap . ' berhasil diperbarui.');
+            ->with('success', 'Data ijazah & nomor SKPI mahasiswa ' . $registration->nama_lengkap . ' berhasil diperbarui.');
     }
 
     public function inputDataAkademi(Request $request)
@@ -701,6 +703,7 @@ class SkpiController extends Controller
             'achievement_ids' => 'nullable|array',
             'achievement_ids.*' => 'integer',
             'nomor_skpi' => 'nullable|string|max:255',
+            'nomor_skpi_format' => 'nullable|string|max:255',
             'authorization_place_date' => 'nullable|string|max:255',
             'vice_rector_name' => 'nullable|string|max:255',
             'vice_rector_title' => 'nullable|string|max:255',
@@ -724,6 +727,7 @@ class SkpiController extends Controller
         }
 
         $setting->nomor_skpi = trim((string) ($validated['nomor_skpi'] ?? ''));
+        $setting->nomor_skpi_format = trim((string) ($validated['nomor_skpi_format'] ?? '{no}/SKPI/USH/{tahun}')) ?: '{no}/SKPI/USH/{tahun}';
         $setting->authorization_place_date = trim((string) ($validated['authorization_place_date'] ?? ''))
             ?: ('Sukoharjo, ' . now()->translatedFormat('d F Y'));
         $setting->vice_rector_name = trim((string) ($validated['vice_rector_name'] ?? ''));
@@ -961,6 +965,7 @@ class SkpiController extends Controller
 
         return [
             'nomor_skpi' => $setting?->nomor_skpi ?? '',
+            'nomor_skpi_format' => $setting?->nomor_skpi_format ?: '{no}/SKPI/USH/{tahun}',
             'authorization_place_date' => $setting?->authorization_place_date ?: $defaultPlaceDate,
             'vice_rector_name' => $setting?->vice_rector_name ?? '',
             'vice_rector_title' => $setting?->vice_rector_title ?: 'Wakil Rektor I Universitas Sugeng Hartono',
