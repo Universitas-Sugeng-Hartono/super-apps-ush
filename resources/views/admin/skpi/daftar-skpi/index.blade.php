@@ -171,7 +171,7 @@
                                         'sks' => $reg->sks,
                                         'judul_ta' => $reg->judul_ta_indo,
                                         'periode_lulus' => $reg->periode_lulus,
-                                        'lama_studi' => $reg->lama_studi,
+                                        'lama_studi' => $reg->lama_studi ?: \App\Models\SkpiRegistration::calculateLamaStudi($s?->tanggal_masuk ? $s->tanggal_masuk->format('Y-m-d') : null, $reg->angkatan ?? $s?->angkatan, $reg->periode_lulus),
                                         'doc_ijasah' => $reg->doc_ijasah ? asset('storage/' . $reg->doc_ijasah) : null,
                                         'doc_ktp' => $reg->doc_ktp ? asset('storage/' . $reg->doc_ktp) : null,
                                         'doc_pembayaran_wisuda' => $reg->doc_pembayaran_wisuda ? asset('storage/' . $reg->doc_pembayaran_wisuda) : null,
