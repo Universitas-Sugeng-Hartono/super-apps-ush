@@ -496,8 +496,12 @@ class SkpiWordController extends Controller
             $templateProcessor->setValue('JENJANG_KUALIFIKASI_KKNI', htmlspecialchars($academicProfile?->jenjang_kualifikasi_kkni ?? '-'));
             $templateProcessor->setValue('PERSYARATAN_PENERIMAAN',   htmlspecialchars($academicProfile?->persyaratan_penerimaan ?? '-'));
             $templateProcessor->setValue('BAHASA_PENGANTAR',         htmlspecialchars($academicProfile?->bahasa_pengantar_kuliah ?? 'Inggris / Indonesia'));
-            $templateProcessor->setValue('NO_AKREDITASI_PT',         htmlspecialchars($academicProfile?->nomor_akreditasi_perguruan_tinggi ?? '-'));
-            $templateProcessor->setValue('LAMA_STUDI',               htmlspecialchars($registration->lama_studi ?? '-'));
+            $calculatedLamaStudi = \App\Models\SkpiRegistration::calculateLamaStudi(
+                $student?->tanggal_masuk ? $student->tanggal_masuk->format('Y-m-d') : null,
+                $registration->angkatan ?? $student?->angkatan,
+                $registration->periode_lulus
+            ) ?? ($registration->lama_studi ?? '-');
+            $templateProcessor->setValue('LAMA_STUDI',               htmlspecialchars($calculatedLamaStudi));
             $templateProcessor->setValue('NO_AKREDITASI_PRODI',      htmlspecialchars($academicProfile?->nomor_akreditasi_program_studi ?? '-'));
             $templateProcessor->setValue('STATUS_PROFESI',           htmlspecialchars($academicProfile?->status_profesi ?? '-'));
 
