@@ -156,7 +156,15 @@ class SkpiController extends Controller
 
         $finalProject = $student->finalProject;
 
-        $lamaStudiStr = $validated['lama_studi'];
+        $effectiveTanggalMasuk = ($student->tanggal_masuk && $student->tanggal_masuk->year <= ($student->angkatan ?? 9999))
+            ? $student->tanggal_masuk->format('Y-m-d')
+            : ($student->angkatan ? $student->angkatan . '-09-01' : null);
+
+        $lamaStudiStr = \App\Models\SkpiRegistration::calculateLamaStudi(
+            $effectiveTanggalMasuk,
+            $student->angkatan,
+            $validated['periode_lulus']
+        ) ?? $validated['lama_studi'];
 
         $registrationData = [
             'status'           => 'draft',
@@ -559,7 +567,14 @@ class SkpiController extends Controller
             'judul_ta_indo'   => $registration?->judul_ta_indo ?? $finalProject?->title,
             'judul_ta_inggris'=> $registration?->judul_ta_inggris ?? $finalProject?->title_en,
             'periode_lulus'   => $registration?->periode_lulus,
-            'lama_studi'      => $registration?->lama_studi,
+            'lama_studi'      => $registration?->lama_studi
+                ?: \App\Models\SkpiRegistration::calculateLamaStudi(
+                    ($student->tanggal_masuk && $student->tanggal_masuk->year <= ($student->angkatan ?? 9999))
+                        ? $student->tanggal_masuk->format('Y-m-d')
+                        : ($student->angkatan ? $student->angkatan . '-09-01' : null),
+                    $student->angkatan,
+                    $registration?->periode_lulus
+                ),
             'doc_ktp'         => $registration?->doc_ktp,
             'doc_ijasah'      => $registration?->doc_ijasah,
         ];

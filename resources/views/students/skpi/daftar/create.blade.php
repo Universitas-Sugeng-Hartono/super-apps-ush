@@ -83,7 +83,12 @@
 
         <form method="POST" action="{{ route('student.skpi.daftar.store') }}" enctype="multipart/form-data">
             @csrf
-            <input type="hidden" id="tanggal_masuk" value="{{ $student->tanggal_masuk ? $student->tanggal_masuk->format('Y-m') : '' }}">
+            @php
+                $effectiveTanggalMasuk = ($student->tanggal_masuk && $student->tanggal_masuk->year <= ($student->angkatan ?? 9999))
+                    ? $student->tanggal_masuk->format('Y-m')
+                    : ($student->angkatan ? $student->angkatan . '-09' : '');
+            @endphp
+            <input type="hidden" id="tanggal_masuk" value="{{ $effectiveTanggalMasuk }}">
             <div class="form-grid">
 
                 <div class="form-group">
