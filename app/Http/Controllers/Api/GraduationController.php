@@ -16,7 +16,14 @@ class GraduationController extends Controller
         $query = SkpiRegistration::with('student')
             ->where('payment_status', 'approved');
 
- 
+        if ($request->has('has_document')) {
+            if ($request->has_document === 'true' || $request->has_document == '1') {
+                $query->whereNotNull('skpi_document');
+            } elseif ($request->has_document === 'false' || $request->has_document == '0') {
+                $query->whereNull('skpi_document');
+            }
+        }
+
         if ($request->has('angkatan')) {
             $query->where('angkatan', $request->angkatan);
         }
