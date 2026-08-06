@@ -34,7 +34,10 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
             </a>
             <h3><i class="bi bi-file-earmark-text"></i> Generator SKPI</h3>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+            <button type="button" class="btn-success" id="btnBatchGenerate" title="Generate Semua SKPI" style="background-color: #10b981; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="bi bi-gear-wide-connected"></i> Generate Semua SKPI
+            </button>
             @php
                 $prodiNameLabel = '';
                 if (isset($selectedStudyProgramIdFilter) && $selectedStudyProgramIdFilter) {
@@ -64,7 +67,11 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
     @endif
 
     <div class="search-box">
-        <form method="GET" action="{{ route('admin.skpi.generate-skpi.index') }}" class="search-form" id="filterForm">
+        <form method="GET" action="{{ route('admin.skpi.generate-skpi.index') }}" class="search-form" id="filterForm" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div class="search-input-wrapper" style="position: relative; display: flex; align-items: center; min-width: 250px; flex: 1;">
+                <i class="bi bi-search" style="position: absolute; left: 12px; color: #9ca3af; font-size: 14px;"></i>
+                <input type="text" name="search" id="searchInput" class="filter-input" placeholder="Cari Nama / NIM (otomatis)..." value="{{ request('search') }}" style="padding-left: 36px; padding-right: 12px; height: 38px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; width: 100%; outline: none;" autocomplete="off">
+            </div>
             <select name="study_program_id" class="filter-select" onchange="this.form.submit()">
                 <option value="">Semua Program Studi</option>
                 @foreach($studyPrograms as $sp)
@@ -78,6 +85,11 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
                 <option value="belum" {{ ($generateStatusFilter ?? '') === 'belum' ? 'selected' : '' }}>Belum Generate</option>
                 <option value="sudah" {{ ($generateStatusFilter ?? '') === 'sudah' ? 'selected' : '' }}>Sudah Generate</option>
             </select>
+            @if(request('search') || request('study_program_id') || request('generate_status'))
+                <a href="{{ route('admin.skpi.generate-skpi.index') }}" class="btn-cancel" style="height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; color: #6b7280; border: 1px solid #d1d5db; background: #fff;">
+                    <i class="bi bi-x-circle"></i> Reset Filter
+                </a>
+            @endif
         </form>
     </div>
 
@@ -280,11 +292,47 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
 
 @push('css')
 <link rel="stylesheet" href="{{ asset('admin/css/skpi-generator.css') }}">
+<style>
+.skpi-modal-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.skpi-modal-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+.skpi-modal-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 8px;
+}
+.skpi-modal-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+</style>
 @endpush
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Automatic Search with Debounce
+    const searchInput = document.getElementById('searchInput');
+    const filterForm = document.getElementById('filterForm');
+    let searchTimeout = null;
+
+    if (searchInput && filterForm) {
+        if (searchInput.value) {
+            searchInput.focus();
+            const valLen = searchInput.value.length;
+            searchInput.setSelectionRange(valLen, valLen);
+        }
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function () {
+                filterForm.submit();
+            }, 400);
+        });
+    }
+
     // Modal Tabs
     document.querySelectorAll('.mtab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -302,13 +350,15 @@ document.addEventListener('DOMContentLoaded', function () {
         btnBulk.onclick = () => {
             const prodiSelect = document.querySelector('select[name="study_program_id"]');
             const genSelect = document.querySelector('select[name="generate_status"]');
-            
+            const searchInput = document.querySelector('input[name="search"]');
+
             const prodiId = prodiSelect?.value || '';
             const genStatus = genSelect?.value || '';
+            const searchVal = searchInput?.value.trim() || '';
 
             let url = "{{ route('admin.skpi.generate-skpi.download-all') }}";
             let params = new URLSearchParams();
-            
+
             if (prodiId) {
                 params.append('study_program_id', prodiId);
                 const selectedOption = prodiSelect.options[prodiSelect.selectedIndex];
@@ -316,9 +366,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     params.append('study_program_name', selectedOption.text.trim());
                 }
             }
-            
+
             if (genStatus) {
                 params.append('generate_status', genStatus);
+            }
+
+            if (searchVal) {
+                params.append('search', searchVal);
             }
 
             const queryString = params.toString();
@@ -327,6 +381,134 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             window.location.href = url;
+        };
+    }
+
+    // Batch Generate SKPI
+    const btnBatchGen = document.getElementById('btnBatchGenerate');
+    if (btnBatchGen) {
+        btnBatchGen.onclick = () => {
+            const doSubmit = () => {
+                const prodiSelect = document.querySelector('select[name="study_program_id"]');
+                const genSelect = document.querySelector('select[name="generate_status"]');
+                const searchInput = document.querySelector('input[name="search"]');
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{{ route('admin.skpi.generate-skpi.batch-generate') }}";
+
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '_token';
+                tokenInput.value = "{{ csrf_token() }}";
+                form.appendChild(tokenInput);
+
+                if (prodiSelect && prodiSelect.value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'study_program_id';
+                    input.value = prodiSelect.value;
+                    form.appendChild(input);
+                }
+
+                if (genSelect && genSelect.value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'generate_status';
+                    input.value = genSelect.value;
+                    form.appendChild(input);
+                }
+
+                if (searchInput && searchInput.value.trim()) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'search';
+                    input.value = searchInput.value.trim();
+                    form.appendChild(input);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            };
+
+            const buttons = Array.from(document.querySelectorAll('.btn-view'));
+            const students = buttons.map(btn => ({
+                nama: btn.dataset.nama || 'Mahasiswa',
+                nim: btn.dataset.nim || '-',
+                prodi: btn.dataset.prodi || '-'
+            }));
+
+            if (students.length === 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Tidak Ada Data',
+                        text: 'Tidak ada mahasiswa yang sesuai dengan filter saat ini untuk di-generate.',
+                        icon: 'warning',
+                        confirmButtonColor: '#10b981'
+                    });
+                } else {
+                    alert('Tidak ada mahasiswa yang sesuai dengan filter saat ini untuk di-generate.');
+                }
+                return;
+            }
+
+            const escapeHtml = (str) => {
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            };
+
+            const studentListHtml = students.map((s, idx) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-bottom: 1px solid #f1f5f9; ${idx === students.length - 1 ? 'border-bottom: none;' : ''}">
+                    <div style="text-align: left; max-width: 65%;">
+                        <strong style="color: #1e293b; display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${idx + 1}. ${escapeHtml(s.nama)}</strong>
+                        <span style="font-size: 11.5px; color: #64748b; font-family: monospace;">NIM: ${escapeHtml(s.nim)}</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block;">
+                            ${escapeHtml(s.prodi)}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+
+            const modalContent = `
+                <div style="text-align: left; font-size: 13.5px; color: #334155;">
+                    <p style="margin-bottom: 10px; color: #475569;">
+                        Apakah Anda yakin ingin meng-generate dokumen SKPI untuk <strong style="color: #0f172a;">${students.length} mahasiswa</strong> berikut?
+                    </p>
+                    <div class="skpi-modal-scroll" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);">
+                        ${studentListHtml}
+                    </div>
+                </div>
+            `;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Generate SKPI Mahasiswa',
+                    html: modalContent,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#10b981',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: '<i class="bi bi-gear-wide-connected"></i> Ya, Generate (' + students.length + ')',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'rounded-4 shadow-lg'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        doSubmit();
+                    }
+                });
+            } else {
+                if (confirm(`Apakah Anda yakin ingin meng-generate dokumen SKPI untuk ${students.length} mahasiswa?`)) {
+                    doSubmit();
+                }
+            }
         };
     }
 });

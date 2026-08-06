@@ -754,6 +754,7 @@ class SkpiController extends Controller
 
         $selectedStudyProgramIdFilter = $request->integer('study_program_id');
         $generateStatusFilter         = $request->input('generate_status');
+        $searchFilter                 = $request->input('search');
 
         $approvedRegistrationsQuery = SkpiRegistration::query()
             ->with('student')
@@ -774,6 +775,14 @@ class SkpiController extends Controller
             $approvedRegistrationsQuery->whereNull('skpi_document');
         } elseif ($generateStatusFilter === 'sudah') {
             $approvedRegistrationsQuery->whereNotNull('skpi_document');
+        }
+
+        if (filled($searchFilter)) {
+            $search = trim($searchFilter);
+            $approvedRegistrationsQuery->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nim', 'like', "%{$search}%");
+            });
         }
 
         $approvedRegistrations = $approvedRegistrationsQuery->paginate(10)->appends($request->query());

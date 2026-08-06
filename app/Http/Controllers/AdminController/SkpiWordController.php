@@ -49,6 +49,13 @@ class SkpiWordController extends Controller
                     } elseif ($request->generate_status === 'sudah') {
                         $q->whereNotNull('skpi_document');
                     }
+                })
+                ->when($request->filled('search'), function ($q) use ($request) {
+                    $search = trim($request->search);
+                    $q->where(function ($sub) use ($search) {
+                        $sub->where('nama_lengkap', 'like', "%{$search}%")
+                           ->orWhere('nim', 'like', "%{$search}%");
+                    });
                 });
         }
 
@@ -64,15 +71,118 @@ class SkpiWordController extends Controller
                 ->with('error', 'Tidak ada data mahasiswa yang cocok dengan filter untuk di-generate.');
         }
 
-        $documentMeta     = $this->resolveDocumentMeta();
-        $manualCategories = array_keys(StudentAchievement::manualCategoryOptions());
+        $tempDir = storage_path('app/temp_skpi_' . uniqid());
+        if (!File::exists($tempDir)) {
+            File::makeDirectory($tempDir, 0755, true);
+        }
+
+        $generatedFiles = $this->generateDocumentsForRegistrations($registrations, $tempDir);
+
+        // Jika hanya 1 file karena filter registration_id spesifik, return langsung docx-nya
+        if (count($generatedFiles) === 1 && $request->filled('registration_id')) {
+            $singleFile = $generatedFiles[0];
+            return response()->download($singleFile, basename($singleFile))->deleteFileAfterSend(true);
+        }
+
+        // ─── Buat nama ZIP berdasarkan filter prodi ───────────────────────
+        if ($request->filled('study_program_name')) {
+            $safeProdi   = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim($request->study_program_name));
+            $safeProdi   = trim($safeProdi, '_');
+            $zipFileName = 'SKPI_' . $safeProdi . '_' . date('Ymd_His') . '.zip';
+        } else {
+            $zipFileName = 'SKPI_All_Prodi_' . date('Ymd_His') . '.zip';
+        }
+        $zipPath = storage_path('app/' . $zipFileName);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+            foreach ($generatedFiles as $file) {
+                $zip->addFile($file, basename($file));
+            }
+            $zip->close();
+        }
+
+        File::deleteDirectory($tempDir);
+
+        return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+
+    public function batchGenerate(Request $request)
+    {
+        if ($request->filled('registration_ids')) {
+            $ids = explode(',', $request->registration_ids);
+            $registrationsQuery = SkpiRegistration::query()
+                ->with(['student.finalProject', 'approver'])
+                ->whereIn('id', $ids);
+        } elseif ($request->filled('registration_id')) {
+            $registrationsQuery = SkpiRegistration::query()
+                ->with(['student.finalProject', 'approver'])
+                ->where('status', 'approved')
+                ->where('id', $request->registration_id);
+        } else {
+            $registrationsQuery = SkpiRegistration::query()
+                ->with(['student.finalProject', 'approver'])
+                ->where('status', 'approved')
+                ->whereHas('student', function ($query) use ($request) {
+                    if ($request->filled('study_program_id')) {
+                        $studyProgram = StudyProgram::find($request->study_program_id);
+                        if ($studyProgram) {
+                            $query->where('program_studi', $studyProgram->name);
+                        }
+                    }
+                })
+                ->when($request->filled('generate_status'), function ($q) use ($request) {
+                    if ($request->generate_status === 'belum') {
+                        $q->whereNull('skpi_document');
+                    } elseif ($request->generate_status === 'sudah') {
+                        $q->whereNotNull('skpi_document');
+                    }
+                })
+                ->when($request->filled('search'), function ($q) use ($request) {
+                    $search = trim($request->search);
+                    $q->where(function ($sub) use ($search) {
+                        $sub->where('nama_lengkap', 'like', "%{$search}%")
+                           ->orWhere('nim', 'like', "%{$search}%");
+                    });
+                });
+        }
+
+        $registrations = $registrationsQuery->get();
+
+        if ($registrations->isEmpty()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Tidak ada data mahasiswa yang cocok dengan filter.'], 404);
+            }
+            return redirect()
+                ->back()
+                ->with('error', 'Tidak ada data mahasiswa yang cocok dengan filter untuk di-generate.');
+        }
 
         $tempDir = storage_path('app/temp_skpi_' . uniqid());
         if (!File::exists($tempDir)) {
             File::makeDirectory($tempDir, 0755, true);
         }
 
-        $generatedFiles = [];
+        $generatedFiles = $this->generateDocumentsForRegistrations($registrations, $tempDir);
+
+        File::deleteDirectory($tempDir);
+
+        $count = count($generatedFiles);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'count' => $count, 'message' => "Berhasil meng-generate {$count} dokumen SKPI."]);
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', "Berhasil meng-generate {$count} dokumen SKPI.");
+    }
+
+    private function generateDocumentsForRegistrations($registrations, string $tempDir): array
+    {
+        $documentMeta     = $this->resolveDocumentMeta();
+        $manualCategories = array_keys(StudentAchievement::manualCategoryOptions());
+        $generatedFiles   = [];
 
         foreach ($registrations as $registration) {
             $student         = $registration->student;
@@ -932,33 +1042,7 @@ class SkpiWordController extends Controller
             $generatedFiles[] = $savePath;
         }
 
-        // Jika hanya 1 file karena filter registration_id spesifik, return langsung docx-nya
-        if (count($generatedFiles) === 1 && $request->filled('registration_id')) {
-            $singleFile = $generatedFiles[0];
-            return response()->download($singleFile, basename($singleFile))->deleteFileAfterSend(true);
-        }
-
-        // ─── Buat nama ZIP berdasarkan filter prodi ───────────────────────
-        if ($request->filled('study_program_name')) {
-            $safeProdi   = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim($request->study_program_name));
-            $safeProdi   = trim($safeProdi, '_');
-            $zipFileName = 'SKPI_' . $safeProdi . '_' . date('Ymd_His') . '.zip';
-        } else {
-            $zipFileName = 'SKPI_All_Prodi_' . date('Ymd_His') . '.zip';
-        }
-        $zipPath = storage_path('app/' . $zipFileName);
-
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-            foreach ($generatedFiles as $file) {
-                $zip->addFile($file, basename($file));
-            }
-            $zip->close();
-        }
-
-        File::deleteDirectory($tempDir);
-
-        return response()->download($zipPath)->deleteFileAfterSend(true);
+        return $generatedFiles;
     }
 
     private function resolveDocumentMeta(): array
