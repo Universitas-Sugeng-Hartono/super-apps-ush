@@ -420,12 +420,18 @@ class StudentsController extends Controller
         $request->validate([
             'category'           => "required|string|in:{$categoryKeys}",
             'activity_type'      => 'required|string|max:100',
+            'event'              => 'required|string|max:255',
+            'organizer'          => 'required|string|max:255',
+            'event_year'         => 'required|string|max:10',
             'level'              => 'required|string|max:100',
             'participation_role' => 'required|string|max:100',
             'certificate'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ], [
             'category.required'      => 'Kategori SKPI harus dipilih.',
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
+            'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
+            'organizer.required'     => 'Penyelenggara acara wajib diisi.',
+            'event_year.required'    => 'Tahun kegiatan wajib diisi.',
             'level.required'         => 'Tingkat kegiatan harus dipilih.',
             'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
             'certificate.required'   => 'Bukti fisik wajib diunggah.',
@@ -448,7 +454,9 @@ class StudentsController extends Controller
                 'student_id'         => $student->id,
                 'category'           => $request->category,
                 'activity_type'      => $request->activity_type,
-                'event'              => '-',
+                'event'              => $request->event,
+                'organizer'          => $request->organizer,
+                'event_year'         => $request->event_year,
                 'achievement'        => '-',
                 'level'              => $request->level,
                 'participation_role' => $request->participation_role,
@@ -475,7 +483,7 @@ class StudentsController extends Controller
                     'Data Aktivitas SKPI Menunggu Verifikasi',
                     $student->nama_lengkap . ' mengajukan data "' . ($achievement->activity_type_label ?? $achievement->activity_type)
                         . '" (' . $achievement->category_label . ', ' . $skpPoints . ' SKP) untuk verifikasi SKPI.',
-                    route('superuser.skpi.verifikasi-data.index'),
+                    route('admin.skpi.verifikasi-data.index'),
                     ['student_achievement_id' => $achievement->id]
                 );
             } catch (\Exception $e) {
@@ -503,12 +511,18 @@ class StudentsController extends Controller
         $request->validate([
             'category'           => "required|string|in:{$categoryKeys}",
             'activity_type'      => 'required|string|max:100',
+            'event'              => 'required|string|max:255',
+            'organizer'          => 'required|string|max:255',
+            'event_year'         => 'required|string|max:10',
             'level'              => 'required|string|max:100',
             'participation_role' => 'required|string|max:100',
             'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ], [
             'category.required'      => 'Kategori SKPI harus dipilih.',
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
+            'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
+            'organizer.required'     => 'Penyelenggara acara wajib diisi.',
+            'event_year.required'    => 'Tahun kegiatan wajib diisi.',
             'level.required'         => 'Tingkat kegiatan harus dipilih.',
             'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
             'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
@@ -528,7 +542,9 @@ class StudentsController extends Controller
             $achievement->fill([
                 'category'           => $request->category,
                 'activity_type'      => $request->activity_type,
-                'event'              => '-',
+                'event'              => $request->event,
+                'organizer'          => $request->organizer,
+                'event_year'         => $request->event_year,
                 'achievement'        => '-',
                 'level'              => $request->level,
                 'participation_role' => $request->participation_role,
@@ -560,7 +576,7 @@ class StudentsController extends Controller
                         'Data Aktivitas SKPI Diperbarui',
                         $student->nama_lengkap . ' memperbarui data "' . ($achievement->activity_type_label ?? $achievement->activity_type)
                             . '" (' . $achievement->category_label . ', ' . $skpPoints . ' SKP) dan mengirim ulang untuk verifikasi.',
-                        route('superuser.skpi.verifikasi-data.index'),
+                        route('admin.skpi.verifikasi-data.index'),
                         ['student_achievement_id' => $achievement->id]
                     );
                 } catch (\Exception $e) {

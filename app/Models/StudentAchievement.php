@@ -27,6 +27,8 @@ class StudentAchievement extends Model
         'category',
         'activity_type',
         'event',
+        'organizer',
+        'event_year',
         'achievement',
         'level',
         'participation_role',

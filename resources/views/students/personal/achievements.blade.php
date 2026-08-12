@@ -174,6 +174,27 @@ break;
                         </div>
                     </div>
 
+                    <div class="col-md-12">
+                        <div class="form-floating-custom">
+                            <label class="custom-label">Nama Acara / Kegiatan <span class="text-danger">*</span></label>
+                            <input type="text" name="event" id="event" class="custom-input" value="{{ old('event') }}" placeholder="Contoh: Seminar Nasional AI, Dies Natalis USH, Lomba Coding" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="form-floating-custom">
+                            <label class="custom-label">Diselenggarakan Oleh <span class="text-danger">*</span></label>
+                            <input type="text" name="organizer" id="organizer" class="custom-input" value="{{ old('organizer') }}" placeholder="Contoh: Universitas Sugeng Hartono, Kemenristek, Google" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-floating-custom">
+                            <label class="custom-label">Tahun Kegiatan <span class="text-danger">*</span></label>
+                            <input type="number" name="event_year" id="event_year" class="custom-input" value="{{ old('event_year', date('Y')) }}" min="2000" max="2100" placeholder="2024" required>
+                        </div>
+                    </div>
+
                     <div class="col-md-6" id="rowTingkat">
                         <div class="form-floating-custom">
                             <label class="custom-label">Cakupan / Tingkat</label>
@@ -264,10 +285,17 @@ break;
                                 <div class="activity-info">
                                     @if($achievement->event && $achievement->event !== '-')
                                     <strong>{{ $achievement->event }}</strong>
-                                    <span>{{ $achievement->activity_type_label ?? 'Lainnya' }}</span>
+                                    <span>
+                                        {{ $achievement->participation_role ?? '-' }}
+                                        @if($achievement->organizer) • {{ $achievement->organizer }} @endif
+                                        @if($achievement->event_year) ({{ $achievement->event_year }}) @endif
+                                    </span>
+                                    <small class="text-muted" style="font-size: 11px;">Kategori: {{ $achievement->activity_type_label ?? 'Lainnya' }}</small>
                                     @else
                                     <strong>{{ $achievement->activity_type_label ?? '-' }}</strong>
-                                    <span>Kategori Manual</span>
+                                    <span class="text-warning fw-semibold" style="font-size: 11px;">
+                                        <i class="bi bi-pencil-square"></i> Lengkapi detail Acara (Klik Edit)
+                                    </span>
                                     @endif
                                 </div>
                             </td>
@@ -304,7 +332,7 @@ break;
                             </td>
                             <td>
                                 @if ($achievement->certificate)
-                                <a href="{{ asset('storage/' . $achievement->certificate) }}" target="_blank" class="btn-table-action view">
+                                <a href="{{ asset('storage/' . $achievement->certificate) }}" target="_blank" class="btn-table-action view" title="Lihat Bukti">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 @else
@@ -313,11 +341,9 @@ break;
                             </td>
                             <td>
                                 <div style="display: flex; gap: 8px;">
-                                    @if($achievement->status === 'rejected')
-                                    <button type="button" class="btn-table-action" style="color: #FF9800; background: rgba(255,152,0,0.1);" data-bs-toggle="modal" data-bs-target="#editAchievementModal-{{ $achievement->id }}" title="Perbaiki & Re-upload">
+                                    <button type="button" class="btn-table-action" style="color: #D97706; background: #FEF3C7; border: 1px solid #FCD34D;" data-bs-toggle="modal" data-bs-target="#editAchievementModal-{{ $achievement->id }}" title="Edit Data Prestasi">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
-                                    @endif
                                     
                                     <form action="{{ route('student.personal.achievement.delete', $achievement->id) }}" method="POST" onsubmit="return confirm('Hapus data prestasi ini?')">
                                         @csrf
@@ -343,49 +369,118 @@ break;
     </div>
 </div>
 
-{{-- MODAL UNTUK MENGUP ULANG REJECTED ACHIEVEMENTS --}}
+{{-- MODAL UNTUK EDIT ACHIEVEMENTS --}}
 @foreach($student->achievements as $achievement)
-    @if($achievement->status === 'rejected')
     <div class="modal fade" id="editAchievementModal-{{ $achievement->id }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                 <form action="{{ route('student.personal.achievement.update', $achievement->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-orange), #FFB347); color: white; border-radius: 16px 16px 0 0;">
-                        <h5 class="modal-title fw-bold"><i class="bi bi-arrow-repeat"></i> Upload Ulang Prestasi</h5>
+                    <div class="modal-header" style="background: linear-gradient(135deg, var(--exclusive-orange), #FFB347); color: white; border-radius: 16px 16px 0 0;">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square"></i> Edit Data Prestasi & Aktivitas</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-4">
-                        <div class="alert alert-danger" style="border-radius: 12px; font-size: 14px;">
+                        @if($achievement->status === 'rejected')
+                        <div class="alert alert-danger mb-3" style="border-radius: 12px; font-size: 14px;">
                             <strong><i class="bi bi-exclamation-triangle-fill"></i> Catatan Penolakan:</strong><br>
-                            {{ $achievement->approval_notes ?? 'Berkas tidak valid.' }}
+                            {{ $achievement->approval_notes ?? 'Berkas/data tidak valid.' }}
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Jenis Kegiatan</label>
-                            <input type="text" class="form-control" value="{{ $achievement->activity_type_label ?? $achievement->activity_type }}" disabled style="background-color: #f8f9fa;">
-                            <input type="hidden" name="category" value="{{ $achievement->category }}">
-                            <input type="hidden" name="activity_type" value="{{ $achievement->activity_type }}">
-                            <input type="hidden" name="level" value="{{ $achievement->level }}">
-                            <input type="hidden" name="participation_role" value="{{ $achievement->participation_role }}">
+                        @elseif($achievement->status === 'approved')
+                        <div class="alert alert-warning mb-3" style="border-radius: 12px; font-size: 13px;">
+                            <i class="bi bi-info-circle-fill"></i> <strong>Perhatian:</strong> Data ini sudah terverifikasi. Mengubah data ini akan mengembalikan status ke <strong>Pending (Menunggu Review Ulang)</strong>.
                         </div>
+                        @endif
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Unggah Berkas Baru <span class="text-danger">*</span></label>
-                            <input type="file" name="certificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-                            <small class="text-muted"><i class="bi bi-info-circle"></i> Format: PDF/JPG/PNG max 2MB.</small>
+                        <input type="hidden" name="category" value="{{ $achievement->category }}">
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Jenis Kegiatan <span class="text-danger">*</span></label>
+                                <select name="activity_type" class="form-select edit-activity-type" required>
+                                    @foreach(\App\Models\StudentAchievement::manualCategoryOptions() as $cat => $catLabel)
+                                    @if(isset($activityTypes[$cat]))
+                                    <optgroup label="{{ $catLabel }}">
+                                        @foreach($activityTypes[$cat] as $type => $typeLabel)
+                                        <option value="{{ $type }}" {{ $achievement->activity_type === $type ? 'selected' : '' }}>
+                                            {{ $typeLabel }}
+                                        </option>
+                                        @endforeach
+                                    </optgroup>
+                                    @endif
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Nama Acara / Kegiatan <span class="text-danger">*</span></label>
+                                <input type="text" name="event" class="form-control" value="{{ old('event', $achievement->event !== '-' ? $achievement->event : '') }}" placeholder="Contoh: Seminar Nasional AI, Dies Natalis USH, Lomba Coding" required>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Diselenggarakan Oleh <span class="text-danger">*</span></label>
+                                <input type="text" name="organizer" class="form-control" value="{{ old('organizer', $achievement->organizer) }}" placeholder="Contoh: Universitas Sugeng Hartono, Kemenristek" required>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Tahun Kegiatan <span class="text-danger">*</span></label>
+                                <input type="number" name="event_year" class="form-control" value="{{ old('event_year', $achievement->event_year ?? ($achievement->created_at ? $achievement->created_at->format('Y') : date('Y'))) }}" min="2000" max="2100" required>
+                            </div>
+
+                            @php
+                                $levels = $levelOptions[$achievement->activity_type] ?? [];
+                                $roles  = $roleOptions[$achievement->activity_type] ?? [];
+                            @endphp
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tingkat / Cakupan <span class="text-danger">*</span></label>
+                                @if(!empty($levels))
+                                <select name="level" class="form-select" required>
+                                    @foreach($levels as $lVal => $lLbl)
+                                    <option value="{{ $lVal }}" {{ $achievement->level === $lVal ? 'selected' : '' }}>{{ $lLbl }}</option>
+                                    @endforeach
+                                </select>
+                                @else
+                                <input type="text" name="level" class="form-control" value="{{ $achievement->level }}" required>
+                                @endif
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Peran / Jabatan <span class="text-danger">*</span></label>
+                                @if(!empty($roles))
+                                <select name="participation_role" class="form-select" required>
+                                    @foreach($roles as $rVal => $rLbl)
+                                    <option value="{{ $rVal }}" {{ $achievement->participation_role === $rVal ? 'selected' : '' }}>{{ $rLbl }}</option>
+                                    @endforeach
+                                </select>
+                                @else
+                                <input type="text" name="participation_role" class="form-control" value="{{ $achievement->participation_role }}" required>
+                                @endif
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Unggah Berkas Bukti (Opsional)</label>
+                                <input type="file" name="certificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                <small class="text-muted"><i class="bi bi-info-circle"></i> Format: PDF/JPG/PNG max 2MB. Kosongkan jika tidak ingin mengubah berkas.</small>
+                                @if($achievement->certificate)
+                                <div class="mt-1">
+                                    <a href="{{ asset('storage/' . $achievement->certificate) }}" target="_blank" class="text-primary text-decoration-none fw-semibold" style="font-size: 13px;">
+                                        <i class="bi bi-file-earmark-check"></i> Lihat Berkas Saat Ini
+                                    </a>
+                                </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px;">Batal</button>
-                        <button type="submit" class="btn btn-primary" style="background: var(--primary-orange); border: none; border-radius: 8px;">Kirim Ulang</button>
+                        <button type="submit" class="btn btn-primary" style="background: var(--exclusive-orange); border: none; border-radius: 8px;">Simpan Perubahan</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    @endif
 @endforeach
 
 @endsection
@@ -851,6 +946,24 @@ break;
         box-shadow: 0 0 0 4px rgba(255, 143, 0, 0.1);
     }
 
+    .custom-input {
+        background-color: #F8FAFC;
+        border: 2px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 16px;
+        font-size: 15px;
+        color: var(--text-premium);
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+    .custom-input:focus {
+        border-color: var(--exclusive-orange);
+        background-color: white;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(255, 143, 0, 0.1);
+    }
+
     .custom-select optgroup {
         font-weight: 800;
         color: #1E293B;
@@ -1128,6 +1241,11 @@ break;
     }
 
     /* TABLE STYLES EXCLUSIVE */
+    .exclusive-table-container {
+        overflow-x: auto;
+        padding: 0 10px;
+    }
+
     .exclusive-table-wrapper {
         padding: 0 0 20px;
     }
@@ -1139,12 +1257,12 @@ break;
     }
 
     .exclusive-table thead th {
-        padding: 0 30px 10px;
+        padding: 0 14px 10px;
         font-size: 11px;
         font-weight: 800;
         color: #94A3B8;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 1px;
         border: none;
     }
 
@@ -1154,7 +1272,7 @@ break;
     }
 
     .exclusive-table tbody tr td {
-        padding: 20px 30px;
+        padding: 14px 16px;
         background: white;
         border-top: 1px solid #F3F4F6;
         border-bottom: 1px solid #F3F4F6;
@@ -1752,11 +1870,26 @@ break;
 
             $role.addEventListener('change', updateSkp);
 
-            if ($actType.value) {
-                $actType.dispatchEvent(new Event('change', {
-                    bubbles: true
-                }));
-            }
+            document.querySelectorAll('.edit-activity-type').forEach(function(selectEl) {
+                selectEl.addEventListener('change', function() {
+                    const type = this.value;
+                    const modal = this.closest('.modal');
+                    const catInput = modal.querySelector('input[name="category"]');
+                    const levelSelect = modal.querySelector('select[name="level"]');
+                    const roleSelect = modal.querySelector('select[name="participation_role"]');
+
+                    if (TYPE_CATEGORY[type] && catInput) {
+                        catInput.value = TYPE_CATEGORY[type];
+                    }
+
+                    if (levelSelect && LEVEL_OPTIONS[type]) {
+                        fillSelect(levelSelect, LEVEL_OPTIONS[type], '— Pilih Tingkat —');
+                    }
+                    if (roleSelect && ROLE_OPTIONS[type]) {
+                        fillSelect(roleSelect, ROLE_OPTIONS[type], '— Pilih —');
+                    }
+                });
+            });
         }
     });
 

@@ -377,23 +377,35 @@ class SkpiWordController extends Controller
                     $actType = $item->activity_type;
                     $labelId = $excelLabelMap[$actType] ?? $item->activity_type_label ?? $actType;
 
-                    // Teks Indonesia
-                    $textId = $labelId;
-                    if (filled($item->level) && $item->level !== '-') {
-                        $textId .= ' (' . $item->level . ')';
-                    }
-                    if (filled($item->participation_role) && $item->participation_role !== '-') {
-                        $textId .= ' - ' . $item->participation_role;
-                    }
+                    if (filled($item->event) && $item->event !== '-') {
+                        $roleId = (filled($item->participation_role) && $item->participation_role !== '-') ? $item->participation_role : '';
+                        $roleEn = (filled($item->participation_role) && $item->participation_role !== '-') ? ($roleEnMap[$item->participation_role] ?? $item->participation_role) : '';
 
-                    // Bahasa Inggris
-                    $labelEn = $activityEnMap[$actType] ?? $item->activity_type_label ?? $actType;
-                    $textEn  = $labelEn;
-                    if (filled($item->level) && $item->level !== '-') {
-                        $textEn .= ' (' . ($levelEnMap[$item->level] ?? $item->level) . ')';
-                    }
-                    if (filled($item->participation_role) && $item->participation_role !== '-') {
-                        $textEn .= ' - ' . ($roleEnMap[$item->participation_role] ?? $item->participation_role);
+                        $eventStr     = $item->event;
+                        $organizerStr = filled($item->organizer) ? $item->organizer : '';
+                        $yearStr      = filled($item->event_year) ? $item->event_year : ($item->created_at ? $item->created_at->format('Y') : '');
+
+                        $textId = implode(' - ', array_filter([$roleId, $eventStr, $organizerStr, $yearStr], fn($v) => filled($v)));
+                        $textEn = implode(' - ', array_filter([$roleEn, $eventStr, $organizerStr, $yearStr], fn($v) => filled($v)));
+                    } else {
+                        // Teks Indonesia (fallback data lama)
+                        $textId = $labelId;
+                        if (filled($item->level) && $item->level !== '-') {
+                            $textId .= ' (' . $item->level . ')';
+                        }
+                        if (filled($item->participation_role) && $item->participation_role !== '-') {
+                            $textId .= ' - ' . $item->participation_role;
+                        }
+
+                        // Bahasa Inggris (fallback data lama)
+                        $labelEn = $activityEnMap[$actType] ?? $item->activity_type_label ?? $actType;
+                        $textEn  = $labelEn;
+                        if (filled($item->level) && $item->level !== '-') {
+                            $textEn .= ' (' . ($levelEnMap[$item->level] ?? $item->level) . ')';
+                        }
+                        if (filled($item->participation_role) && $item->participation_role !== '-') {
+                            $textEn .= ' - ' . ($roleEnMap[$item->participation_role] ?? $item->participation_role);
+                        }
                     }
 
                     // Gunakan bullet karakter • manual agar tidak auto-numbering lintas kategori
@@ -765,13 +777,24 @@ class SkpiWordController extends Controller
                 foreach ($items as $i => $item) {
                     $r = $table->addRow($l4RowH);
                     $r->addCell($cNo,    $cellBorder)->addText((string)($i + 1), $fnt9, $mid);
-                    $labelName = $excelLabelMap[$item->activity_type] ?? $item->activity_type_label ?? $item->activity_type ?? '-';
-                    if (filled($item->participation_role) && $item->participation_role !== '-') {
-                        $labelName .= ' - ' . $item->participation_role;
+                    if (filled($item->event) && $item->event !== '-') {
+                        $labelName = $item->event;
+                        if (filled($item->organizer)) {
+                            $labelName .= ' (' . $item->organizer . ')';
+                        }
+                        if (filled($item->participation_role) && $item->participation_role !== '-') {
+                            $labelName .= ' - ' . $item->participation_role;
+                        }
+                    } else {
+                        $labelName = $excelLabelMap[$item->activity_type] ?? $item->activity_type_label ?? $item->activity_type ?? '-';
+                        if (filled($item->participation_role) && $item->participation_role !== '-') {
+                            $labelName .= ' - ' . $item->participation_role;
+                        }
                     }
+                    $yearVal = filled($item->event_year) ? $item->event_year : ($item->created_at ? $item->created_at->format('Y') : '-');
                     $r->addCell($cNama,  $cellBorderWrap)->addText(htmlspecialchars($labelName), $fnt9, $left);
                     $r->addCell($cTmpat, $cellBorder)->addText(htmlspecialchars($item->level ?? '-'), $fnt9, $mid);
-                    $r->addCell($cThn,   $cellBorder)->addText($item->created_at ? $item->created_at->format('Y') : '-', $fnt9, $mid);
+                    $r->addCell($cThn,   $cellBorder)->addText($yearVal, $fnt9, $mid);
                     $r->addCell($cSkp,   $cellBorder)->addText((string)($item->skp_points ?? 0), $fnt9, $mid);
                     $skpDict = \App\Services\SkpPointCalculator::getDictionary();
                     $buktiText = '-';

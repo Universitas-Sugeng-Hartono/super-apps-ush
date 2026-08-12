@@ -558,6 +558,7 @@ class SkpiController extends Controller
             ->orderBy('name')
             ->get();
         $categoryOptions = StudentAchievement::manualCategoryOptions();
+        $skpDictionary = \App\Services\SkpPointCalculator::getDictionary();
 
         return view('admin.skpi.verifikasi-data.index', compact(
             'students',
@@ -567,7 +568,8 @@ class SkpiController extends Controller
             'search',
             'stats',
             'status',
-            'studyPrograms'
+            'studyPrograms',
+            'skpDictionary'
         ));
     }
 
@@ -645,6 +647,92 @@ class SkpiController extends Controller
         return redirect()
             ->route('admin.skpi.verifikasi-data.index')
             ->with('success', 'Prestasi mahasiswa berhasil ditolak.');
+    }
+
+    public function updateVerifikasiData(Request $request, $id)
+    {
+        $achievement = StudentAchievement::with('student')->findOrFail($id);
+
+        $categoryKeys = implode(',', array_keys(StudentAchievement::manualCategoryOptions()));
+
+        $request->validate([
+            'category'           => "required|string|in:{$categoryKeys}",
+            'activity_type'      => 'required|string|max:100',
+            'event'              => 'required|string|max:255',
+            'organizer'          => 'required|string|max:255',
+            'event_year'         => 'required|string|max:10',
+            'level'              => 'required|string|max:100',
+            'participation_role' => 'required|string|max:100',
+            'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5048',
+            'status'             => 'required|string|in:pending,approved,rejected',
+            'approval_notes'     => 'nullable|string',
+        ], [
+            'category.required'           => 'Kategori wajib dipilih.',
+            'activity_type.required'      => 'Jenis kegiatan wajib dipilih.',
+            'event.required'              => 'Nama acara/kegiatan wajib diisi.',
+            'organizer.required'          => 'Penyelenggara wajib diisi.',
+            'event_year.required'         => 'Tahun kegiatan wajib diisi.',
+            'level.required'              => 'Tingkat wajib dipilih.',
+            'participation_role.required' => 'Peran/jabatan wajib dipilih.',
+            'certificate.mimes'           => 'File sertifikat harus berupa PDF, JPG, JPEG, atau PNG.',
+            'certificate.max'             => 'Ukuran file sertifikat maksimal 5 MB.',
+            'status.required'             => 'Status wajib dipilih.',
+        ]);
+
+        $skpPoints = \App\Services\SkpPointCalculator::calculate(
+            $request->category,
+            $request->activity_type,
+            $request->level,
+            $request->participation_role
+        );
+
+        $updateData = [
+            'category'           => $request->category,
+            'activity_type'      => $request->activity_type,
+            'event'              => $request->event,
+            'organizer'          => $request->organizer,
+            'event_year'         => $request->event_year,
+            'level'              => $request->level,
+            'participation_role' => $request->participation_role,
+            'skp_points'         => $skpPoints,
+            'status'             => $request->status,
+            'approval_notes'     => $request->approval_notes,
+        ];
+
+        if ($request->status === 'approved') {
+            $updateData['approved_by'] = auth()->id();
+            $updateData['approved_at'] = now();
+        } elseif ($request->status === 'pending') {
+            $updateData['approved_by'] = null;
+            $updateData['approved_at'] = null;
+        }
+
+        if ($request->hasFile('certificate')) {
+            if ($achievement->certificate && Storage::disk('public')->exists($achievement->certificate)) {
+                Storage::disk('public')->delete($achievement->certificate);
+            }
+            $updateData['certificate'] = $request->file('certificate')
+                ->store('students/achievements/' . $achievement->student_id, 'public');
+        }
+
+        $achievement->update($updateData);
+
+        try {
+            NotificationHelper::notifyStudent(
+                $achievement->student_id,
+                'skpi.achievement.updated_by_admin',
+                'Data Sertifikat/Aktivitas Disunting Admin',
+                'Data "' . ($achievement->activity_type_label ?? $achievement->activity_type) . '" telah disunting/dilengkapi oleh Admin.',
+                route('student.personal.achievements.index'),
+                ['student_achievement_id' => $achievement->id]
+            );
+        } catch (\Exception $e) {
+            \Log::warning('Notifikasi edit achievement gagal: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.skpi.verifikasi-data.index')
+            ->with('success', 'Data sertifikat/prestasi mahasiswa berhasil diperbarui.');
     }
 
     public function approveAllVerifikasiData(Request $request)

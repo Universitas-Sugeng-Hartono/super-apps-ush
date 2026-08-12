@@ -105,6 +105,7 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
         Route::post('/verifikasi-data/{id}/approve', 'approveVerifikasiData')->name('verifikasi-data.approve');
         Route::post('/verifikasi-data/{id}/unapprove', 'unapproveVerifikasiData')->name('verifikasi-data.unapprove');
         Route::post('/verifikasi-data/{id}/reject', 'rejectVerifikasiData')->name('verifikasi-data.reject');
+        Route::post('/verifikasi-data/{id}/update', 'updateVerifikasiData')->name('verifikasi-data.update');
         Route::post('/verifikasi-data/approve-all', 'approveAllVerifikasiData')->name('verifikasi-data.approve-all');
         Route::get('/generate-skpi', 'generateSkpi')->name('generate-skpi.index');
         Route::post('/generate-skpi/metadata', 'storeGenerateMetadata')->name('generate-skpi.metadata.store');

@@ -125,8 +125,13 @@
 
                 return [
                 'id' => $ach->id,
+                'category_raw' => $ach->category,
+                'activity_type_raw' => $ach->activity_type,
                 'kategori' => $ach->category_label,
                 'kegiatan' => $ach->activity_type_label ?? $ach->activity_type,
+                'event' => ($ach->event && $ach->event !== '-') ? $ach->event : null,
+                'organizer' => $ach->organizer ?: '-',
+                'event_year' => $ach->event_year ?: '-',
                 'tingkat' => $ach->level,
                 'peran' => $ach->participation_role ?? '-',
                 'skp' => $ach->skp_points ?? 0,
@@ -215,6 +220,18 @@
                 <div class="detail-info-item">
                     <span class="detail-info-label">Jenis Kegiatan</span>
                     <strong id="detail_kegiatan" class="detail-info-value"></strong>
+                </div>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Nama Acara / Kegiatan</span>
+                    <strong id="detail_event" class="detail-info-value" style="color: #1D4ED8;"></strong>
+                </div>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Diselenggarakan Oleh</span>
+                    <strong id="detail_organizer" class="detail-info-value"></strong>
+                </div>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Tahun Kegiatan</span>
+                    <strong id="detail_event_year" class="detail-info-value"></strong>
                 </div>
                 <div class="detail-info-item">
                     <span class="detail-info-label">Tingkat</span>
@@ -342,6 +359,108 @@
         </form>
     </div>
 </div>
+
+{{-- MODAL: Edit / Sunting Data Sertifikat Mahasiswa --}}
+<div id="editAchievementModal" class="modal" style="display: none; z-index: 10001;">
+    <div class="modal-content modal-form" style="max-width: 650px; width: 90%; max-height: 90vh; overflow-y: auto; text-align: left;">
+        <div class="modal-hdr" style="padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h4 class="modal-hdr-title" style="margin: 0; color: #1E293B; font-size: 18px; font-weight: 700; text-align: left;">
+                    <i class="bi bi-pencil-square" style="color: #2563EB;"></i> Sunting / Lengkapi Data Sertifikat
+                </h4>
+                <p class="modal-hdr-sub" id="edit_modal_subtitle" style="margin: 4px 0 0; color: #64748B; font-size: 13px; text-align: left;"></p>
+            </div>
+            <button type="button" onclick="closeEditAchievementModal()" class="modal-close-btn">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <form id="editAchievementForm" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_category" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Kategori SKPI *</label>
+                    <select id="edit_category" name="category" class="form-control" required onchange="onEditCategoryChange()">
+                        @foreach($categoryOptions as $catVal => $catLabel)
+                        <option value="{{ $catVal }}">{{ $catLabel }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_activity_type" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Jenis Kegiatan *</label>
+                    <select id="edit_activity_type" name="activity_type" class="form-control" required onchange="onEditActivityTypeChange()">
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 14px; margin-bottom: 0;">
+                <label for="edit_event" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Nama Acara / Kegiatan *</label>
+                <input type="text" id="edit_event" name="event" class="form-control" required placeholder="Contoh: Seminar Nasional Teknologi 2026">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_organizer" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Penyelenggara *</label>
+                    <input type="text" id="edit_organizer" name="organizer" class="form-control" required placeholder="Contoh: BEM USH / Kemendikbud">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_event_year" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Tahun Kegiatan *</label>
+                    <input type="text" id="edit_event_year" name="event_year" class="form-control" required placeholder="Contoh: 2025">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_level" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Tingkat Kegiatan *</label>
+                    <select id="edit_level" name="level" class="form-control" required onchange="onEditLevelOrRoleChange()">
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_participation_role" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Peran / Posisi / Juara *</label>
+                    <select id="edit_participation_role" name="participation_role" class="form-control" required onchange="onEditLevelOrRoleChange()">
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: #475569; font-weight: 600;">Kalkulasi Poin SKP:</span>
+                <span id="edit_skp_badge" style="background: #2563EB; color: white; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 13px;">0 SKP</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_status" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Status Verifikasi *</label>
+                    <select id="edit_status" name="status" class="form-control" required>
+                        <option value="approved">Approved (Disetujui)</option>
+                        <option value="pending">Pending (Menunggu)</option>
+                        <option value="rejected">Rejected (Ditolak)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_certificate" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Ganti File Bukti / Sertifikat (Opsional)</label>
+                    <input type="file" id="edit_certificate" name="certificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                    <div id="edit_current_file_preview" style="font-size: 12px; margin-top: 4px;"></div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 14px; margin-bottom: 0;">
+                <label for="edit_approval_notes" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Catatan Reviewer / Catatan Revisi (Opsional)</label>
+                <textarea id="edit_approval_notes" name="approval_notes" class="form-control textarea-control" rows="3" placeholder="Catatan untuk mahasiswa atau alasan perubahan data..."></textarea>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-cancel" onclick="closeEditAchievementModal()">Batal</button>
+                <button type="submit" class="btn-approve confirm" style="background: #2563EB;">
+                    <i class="bi bi-save"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('css')
@@ -352,6 +471,18 @@
 
 @push('scripts')
 <script>
+    const SKP_DICTIONARY = @json($skpDictionary ?? []);
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     function showApproveModal(achievementId) {
         const modal = document.getElementById('approveModal');
         const form = document.getElementById('approveForm');
@@ -397,7 +528,6 @@
 
         let achievements = [];
         try {
-            // Decode base64 dengan dukungan UTF-8
             const jsonStr = decodeURIComponent(escape(atob(achievementsBase64)));
             achievements = JSON.parse(jsonStr);
         } catch (e) {
@@ -420,26 +550,25 @@
                         <th>Kategori & Kegiatan</th>
                         <th style="width: 120px;">Tingkat</th>
                         <th style="width: 120px;">Status</th>
-                        <th style="min-width: 150px;">Aksi</th>
+                        <th style="min-width: 220px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
             achievements.forEach((ach, index) => {
-                // Karena data ini akan dilempar ke detailModal, kita harus mengubahnya menjadi string JSON lagi yang aman,
-                // atau menggunakan data-* attributes di tombol. 
-                // Untuk amannya, kita akan simpan object json-nya di window atau menggunakan HTML encoding
-
-                // Encode data ke base64 agar aman ditaruh di dalam HTML attribute
+                ach.nama = nama;
                 const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(ach))));
+
+                const titleText = ach.event ? ach.event : ach.kegiatan;
+                const subText = ach.event ? `${ach.kegiatan} ${ach.organizer && ach.organizer !== '-' ? '• ' + ach.organizer : ''} ${ach.event_year && ach.event_year !== '-' ? '(' + ach.event_year + ')' : ''}` : ach.kategori;
 
                 tableHtml += `
                 <tr>
                     <td>${index + 1}</td>
                     <td>
-                        <strong style="font-size: 13px;">${ach.kategori}</strong><br>
-                        <span style="font-size: 12px; color: #666;">${ach.kegiatan}</span>
+                        <strong style="font-size: 13px; color: #1E293B;">${escapeHtml(titleText)}</strong><br>
+                        <span style="font-size: 12px; color: #64748B;">${escapeHtml(subText)}</span>
                     </td>
                     <td>
                         <span class="badge-year">${ach.tingkat}</span>
@@ -448,22 +577,25 @@
                         <span class="status-badge ${ach.statusClass}">${ach.statusLabel}</span>
                     </td>
                     <td>
-                        <div style="display: flex; gap: 6px;">
-                            <button type="button" class="btn-view" data-ach="${encodedData}" data-nama="${nama}" onclick="showDetailModalFromEncoded(this)" style="padding: 4px 8px; font-size: 11px;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn-view" data-ach="${encodedData}" data-nama="${escapeHtml(nama)}" onclick="showDetailModalFromEncoded(this)" style="padding: 4px 8px; font-size: 11px;">
                                 <i class="bi bi-eye"></i> Detail
+                            </button>
+                            <button type="button" class="btn-edit" data-ach="${encodedData}" data-nama="${escapeHtml(nama)}" onclick="showEditModalFromEncoded(this)" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background-color: #D97706; color: white; border: none; cursor: pointer;" title="Sunting Data Sertifikat">
+                                <i class="bi bi-pencil-square"></i> Sunting
                             </button>
                             ${ach.status === 'approved' ? `
                                 <form action="/admin/skpi/verifikasi-data/${ach.id}/unapprove" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin membatalkan approval data ini? Status akan kembali menjadi pending.');">
                                     @csrf
                                     <button type="submit" class="btn-reject" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background-color: #64748B; color: white; border: none;" title="Batal Approve">
-                                        <i class="bi bi-arrow-counterclockwise"></i> Batal Approve
+                                        <i class="bi bi-arrow-counterclockwise"></i> Batal
                                     </button>
                                 </form>
                             ` : `
-                                <button type="button" class="btn-approve" onclick="showApproveModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;">
+                                <button type="button" class="btn-approve" onclick="showApproveModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;" title="Approve">
                                     <i class="bi bi-check-lg"></i>
                                 </button>
-                                <button type="button" class="btn-reject" onclick="showRejectModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;">
+                                <button type="button" class="btn-reject" onclick="showRejectModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;" title="Reject">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             `}
@@ -495,11 +627,14 @@
             return;
         }
 
-        data.nama = nama; // Tambahkan nama mahasiswa
+        data.nama = nama;
 
         document.getElementById('detail_nama').textContent = data.nama;
         document.getElementById('detail_kategori').textContent = data.kategori;
         document.getElementById('detail_kegiatan').textContent = data.kegiatan;
+        if (document.getElementById('detail_event')) document.getElementById('detail_event').textContent = data.event || '-';
+        if (document.getElementById('detail_organizer')) document.getElementById('detail_organizer').textContent = data.organizer || '-';
+        if (document.getElementById('detail_event_year')) document.getElementById('detail_event_year').textContent = data.event_year || '-';
         document.getElementById('detail_tingkat').textContent = data.tingkat;
         document.getElementById('detail_peran').textContent = data.peran;
         document.getElementById('detail_skp').textContent = data.skp;
@@ -514,11 +649,15 @@
             fileContainer.innerHTML = `<div style="color: #64748B; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;"><i class="bi bi-file-earmark-x" style="font-size: 24px; opacity: 0.5;"></i><span>Mahasiswa belum mengunggah file pendukung.</span></div>`;
         }
 
-        // Konfigurasi tombol Approve & Reject
         const actionContainer = document.getElementById('detail_action_container');
+        const encodedDataForAction = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+
         if (data.status === 'approved') {
             actionContainer.innerHTML = `
-            <form action="/admin/skpi/verifikasi-data/${data.id}/unapprove" method="POST" style="display:inline; width: 100%;" onsubmit="return confirm('Yakin ingin membatalkan approval data ini? Status akan kembali menjadi pending.');">
+            <button type="button" class="btn-edit" data-ach="${encodedDataForAction}" data-nama="${escapeHtml(data.nama)}" onclick="showEditModalFromEncoded(this)" style="flex: 1; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; background-color: #D97706; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="bi bi-pencil-square"></i> Sunting Data
+            </button>
+            <form action="/admin/skpi/verifikasi-data/${data.id}/unapprove" method="POST" style="display:inline; flex: 1;" onsubmit="return confirm('Yakin ingin membatalkan approval data ini? Status akan kembali menjadi pending.');">
                 @csrf
                 <button type="submit" class="btn-reject" style="width: 100%; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; background-color: #64748B; color: white;">
                     <i class="bi bi-arrow-counterclockwise"></i> Batal Approve
@@ -526,30 +665,165 @@
             </form>
             `;
             actionContainer.style.display = 'flex';
+            actionContainer.style.gap = '10px';
         } else {
             actionContainer.innerHTML = `
-            <button type="button" class="btn-approve" onclick="showApproveModal(${data.id})" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
+            <button type="button" class="btn-edit" data-ach="${encodedDataForAction}" data-nama="${escapeHtml(data.nama)}" onclick="showEditModalFromEncoded(this)" style="flex: 1; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; background-color: #D97706; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="bi bi-pencil-square"></i> Sunting Data
+            </button>
+            <button type="button" class="btn-approve" onclick="showApproveModal(${data.id})" style="flex: 1; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
                 <i class="bi bi-check-circle"></i> Approve
             </button>
-            <button type="button" class="btn-reject" onclick="showRejectModal(${data.id})" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
+            <button type="button" class="btn-reject" onclick="showRejectModal(${data.id})" style="flex: 1; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
                 <i class="bi bi-x-circle"></i> Reject
             </button>
             `;
             actionContainer.style.display = 'flex';
+            actionContainer.style.gap = '10px';
         }
 
-        // Sembunyikan Modal 1 sementara, munculkan Modal 2
         document.getElementById('studentAchievementsModal').style.display = 'none';
         document.getElementById('detailModal').style.display = 'flex';
     }
 
-    function showDetailModal(btn) {
-        // Fungsi lama untuk compatibility, biarkan kosong atau arahkan
-    }
-
     function closeDetailModal() {
         document.getElementById('detailModal').style.display = 'none';
-        // Munculkan kembali Modal 1 (Daftar Prestasi) jika sedang ada mahasiswa yang di-view
+        const studentName = document.getElementById('student_achievements_nama').textContent;
+        if (studentName) {
+            document.getElementById('studentAchievementsModal').style.display = 'flex';
+        }
+    }
+
+    // ── LOGIK EDIT SERTIFIKAT / PRESTASI OLEH ADMIN ──
+    function onEditCategoryChange(selectedType = null) {
+        const cat = document.getElementById('edit_category').value;
+        const $actType = document.getElementById('edit_activity_type');
+        $actType.innerHTML = '';
+
+        if (SKP_DICTIONARY[cat] && SKP_DICTIONARY[cat].types) {
+            const types = SKP_DICTIONARY[cat].types;
+            Object.entries(types).forEach(([typeKey, typeData]) => {
+                const opt = document.createElement('option');
+                opt.value = typeKey;
+                opt.textContent = typeData.label || typeKey;
+                if (selectedType && selectedType === typeKey) {
+                    opt.selected = true;
+                }
+                $actType.appendChild(opt);
+            });
+        }
+
+        onEditActivityTypeChange();
+    }
+
+    function onEditActivityTypeChange(selectedLevel = null, selectedRole = null) {
+        const cat = document.getElementById('edit_category').value;
+        const actType = document.getElementById('edit_activity_type').value;
+        const $level = document.getElementById('edit_level');
+        const $role = document.getElementById('edit_participation_role');
+
+        $level.innerHTML = '';
+        $role.innerHTML = '';
+
+        if (SKP_DICTIONARY[cat] && SKP_DICTIONARY[cat].types && SKP_DICTIONARY[cat].types[actType]) {
+            const typeData = SKP_DICTIONARY[cat].types[actType];
+
+            if (typeData.levels) {
+                Object.entries(typeData.levels).forEach(([lvlKey, lvlLabel]) => {
+                    const opt = document.createElement('option');
+                    opt.value = lvlKey;
+                    opt.textContent = lvlLabel;
+                    if (selectedLevel && selectedLevel === lvlKey) {
+                        opt.selected = true;
+                    }
+                    $level.appendChild(opt);
+                });
+            }
+
+            if (typeData.roles) {
+                Object.entries(typeData.roles).forEach(([roleKey, roleLabel]) => {
+                    const opt = document.createElement('option');
+                    opt.value = roleKey;
+                    opt.textContent = roleLabel;
+                    if (selectedRole && selectedRole === roleKey) {
+                        opt.selected = true;
+                    }
+                    $role.appendChild(opt);
+                });
+            }
+        }
+
+        onEditLevelOrRoleChange();
+    }
+
+    function onEditLevelOrRoleChange() {
+        const cat = document.getElementById('edit_category').value;
+        const actType = document.getElementById('edit_activity_type').value;
+        const level = document.getElementById('edit_level').value;
+        const role = document.getElementById('edit_participation_role').value;
+        const $badge = document.getElementById('edit_skp_badge');
+
+        let points = 0;
+        try {
+            if (SKP_DICTIONARY[cat] && SKP_DICTIONARY[cat].types[actType] && SKP_DICTIONARY[cat].types[actType].points) {
+                const pTable = SKP_DICTIONARY[cat].types[actType].points;
+                if (pTable[level] && pTable[level][role] !== undefined) {
+                    points = pTable[level][role];
+                }
+            }
+        } catch (e) {
+            points = 0;
+        }
+
+        $badge.textContent = points + ' SKP';
+    }
+
+    function showEditModalFromEncoded(btn) {
+        const encodedData = btn.dataset.ach;
+        const nama = btn.dataset.nama;
+        let data = {};
+        try {
+            data = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
+        } catch (e) {
+            console.error("Gagal decode data achievement", e);
+            return;
+        }
+        data.nama = nama;
+        showEditModalFromData(data);
+    }
+
+    function showEditModalFromData(data) {
+        document.getElementById('editAchievementForm').action = `/admin/skpi/verifikasi-data/${data.id}/update`;
+        document.getElementById('edit_modal_subtitle').textContent = `Mahasiswa: ${data.nama || ''}`;
+
+        const $cat = document.getElementById('edit_category');
+        if (data.category_raw) {
+            $cat.value = data.category_raw;
+        }
+
+        onEditCategoryChange(data.activity_type_raw);
+        onEditActivityTypeChange(data.tingkat, data.peran);
+
+        document.getElementById('edit_event').value = (data.event && data.event !== '-') ? data.event : '';
+        document.getElementById('edit_organizer').value = (data.organizer && data.organizer !== '-') ? data.organizer : '';
+        document.getElementById('edit_event_year').value = (data.event_year && data.event_year !== '-') ? data.event_year : '';
+        document.getElementById('edit_status').value = data.status || 'approved';
+        document.getElementById('edit_approval_notes').value = (data.catatan && data.catatan !== 'Belum ada catatan review.') ? data.catatan : '';
+
+        const previewDiv = document.getElementById('edit_current_file_preview');
+        if (data.file) {
+            previewDiv.innerHTML = `<a href="${data.file}" target="_blank" style="color: #2563EB; font-weight: 600; text-decoration: none;"><i class="bi bi-file-earmark-check"></i> File saat ini (Klik untuk lihat)</a>`;
+        } else {
+            previewDiv.innerHTML = `<span style="color: #94A3B8;">Belum ada file diunggah.</span>`;
+        }
+
+        document.getElementById('studentAchievementsModal').style.display = 'none';
+        document.getElementById('detailModal').style.display = 'none';
+        document.getElementById('editAchievementModal').style.display = 'flex';
+    }
+
+    function closeEditAchievementModal() {
+        document.getElementById('editAchievementModal').style.display = 'none';
         const studentName = document.getElementById('student_achievements_nama').textContent;
         if (studentName) {
             document.getElementById('studentAchievementsModal').style.display = 'flex';
