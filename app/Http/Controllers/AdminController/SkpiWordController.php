@@ -19,6 +19,11 @@ class SkpiWordController extends Controller
 {
     public function downloadAllApproved(Request $request)
     {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
+        $format = strtolower($request->input('format', 'docx'));
+
         // Jika ada list ID spesifik (dari JS), tidak perlu filter status — JS sudah kirim ID sesuai filter tampilan
         if ($request->filled('registration_ids')) {
             $ids = explode(',', $request->registration_ids);
@@ -78,19 +83,49 @@ class SkpiWordController extends Controller
 
         $generatedFiles = $this->generateDocumentsForRegistrations($registrations, $tempDir);
 
-        // Jika hanya 1 file karena filter registration_id spesifik, return langsung docx-nya
+        if ($format === 'pdf') {
+            $wordApp = null;
+            if (class_exists('COM')) {
+                try {
+                    $wordApp = new \COM("Word.Application");
+                    if ($wordApp) {
+                        $wordApp->Visible = 0;
+                        $wordApp->DisplayAlerts = 0;
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('[SkpiWord] Could not instantiate MS Word COM: ' . $e->getMessage());
+                    $wordApp = null;
+                }
+            }
+
+            $pdfFiles = [];
+            foreach ($generatedFiles as $docxFile) {
+                $pdfFiles[] = $this->convertDocxToPdf($docxFile, $wordApp);
+            }
+
+            if ($wordApp) {
+                try {
+                    $wordApp->Quit();
+                } catch (\Throwable $e) {}
+            }
+
+            $generatedFiles = $pdfFiles;
+        }
+
+        // Jika hanya 1 file karena filter registration_id spesifik, return langsung file-nya
         if (count($generatedFiles) === 1 && $request->filled('registration_id')) {
             $singleFile = $generatedFiles[0];
             return response()->download($singleFile, basename($singleFile))->deleteFileAfterSend(true);
         }
 
-        // ─── Buat nama ZIP berdasarkan filter prodi ───────────────────────
+        // ─── Buat nama ZIP berdasarkan filter prodi & format ──────────────
+        $prefix = $format === 'pdf' ? 'SKPI_PDF_' : 'SKPI_';
         if ($request->filled('study_program_name')) {
             $safeProdi   = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim($request->study_program_name));
             $safeProdi   = trim($safeProdi, '_');
-            $zipFileName = 'SKPI_' . $safeProdi . '_' . date('Ymd_His') . '.zip';
+            $zipFileName = $prefix . $safeProdi . '_' . date('Ymd_His') . '.zip';
         } else {
-            $zipFileName = 'SKPI_All_Prodi_' . date('Ymd_His') . '.zip';
+            $zipFileName = $prefix . 'All_Prodi_' . date('Ymd_His') . '.zip';
         }
         $zipPath = storage_path('app/' . $zipFileName);
 
@@ -1275,5 +1310,80 @@ class SkpiWordController extends Controller
         }
 
         $zip->close();
+    }
+
+    /**
+     * Konversi file DOCX ke PDF.
+     * Menggunakan MS Word COM (terbaik/native pada Windows), atau LibreOffice, atau DomPDF.
+     */
+    private function convertDocxToPdf(string $docxPath, $wordApp = null): string
+    {
+        $pdfPath     = preg_replace('/\.docx$/i', '.pdf', $docxPath);
+        $winDocxPath = str_replace('/', '\\', realpath($docxPath) ?: $docxPath);
+        $winPdfPath  = str_replace('/', '\\', $pdfPath);
+
+        // 1. Coba konversi via MS Word COM (Sangat rapi, format 100% identik dengan Word)
+        if ($wordApp) {
+            try {
+                $doc = $wordApp->Documents->Open($winDocxPath);
+                if ($doc) {
+                    // 17 = wdFormatPDF
+                    $doc->ExportAsFixedFormat($winPdfPath, 17);
+                    $doc->Close(false);
+
+                    if (File::exists($pdfPath) && filesize($pdfPath) > 0) {
+                        return $pdfPath;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[SkpiWord] MS Word COM conversion failed for ' . $docxPath . ': ' . $e->getMessage());
+            }
+        } elseif (class_exists('COM')) {
+            try {
+                $word = new \COM("Word.Application");
+                if ($word) {
+                    $word->Visible = 0;
+                    $word->DisplayAlerts = 0;
+                    $doc = $word->Documents->Open($winDocxPath);
+                    if ($doc) {
+                        $doc->ExportAsFixedFormat($winPdfPath, 17);
+                        $doc->Close(false);
+                    }
+                    $word->Quit();
+
+                    if (File::exists($pdfPath) && filesize($pdfPath) > 0) {
+                        return $pdfPath;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[SkpiWord] MS Word COM single instance conversion failed: ' . $e->getMessage());
+            }
+        }
+
+        // 2. Coba konversi via LibreOffice CLI jika soffice tersedia
+        try {
+            $cmd = 'soffice --headless --convert-to pdf --outdir ' . escapeshellarg(dirname($winPdfPath)) . ' ' . escapeshellarg($winDocxPath);
+            @exec($cmd);
+            if (File::exists($pdfPath) && filesize($pdfPath) > 0) {
+                return $pdfPath;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[SkpiWord] LibreOffice conversion failed: ' . $e->getMessage());
+        }
+
+        // 3. Fallback: PhpWord + DomPDF
+        try {
+            \PhpOffice\PhpWord\Settings::setPdfRendererName(\PhpOffice\PhpWord\Settings::PDF_RENDERER_DOMPDF);
+            \PhpOffice\PhpWord\Settings::setPdfRendererPath(base_path('vendor/dompdf/dompdf'));
+
+            $phpWord   = \PhpOffice\PhpWord\IOFactory::load($docxPath);
+            $xmlWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
+            $xmlWriter->save($pdfPath);
+
+            return $pdfPath;
+        } catch (\Throwable $e) {
+            Log::error('[SkpiWord] Fallback DomPDF failed for ' . $docxPath . ': ' . $e->getMessage());
+            return $docxPath;
+        }
     }
 }

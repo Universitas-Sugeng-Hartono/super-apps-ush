@@ -52,6 +52,9 @@ $thesisTitle = $selectedStudent?->finalProject?->title ?? '-';
             <button type="button" class="btn-primary" id="btnBulkDocx" title="Unduh ZIP Word">
                 <i class="bi bi-file-earmark-word"></i> ZIP Word {{ $prodiNameLabel }}
             </button>
+            <button type="button" class="btn-danger" id="btnBulkPdf" title="Unduh ZIP PDF" style="background-color: #ef4444; color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="bi bi-file-earmark-pdf"></i> ZIP PDF {{ $prodiNameLabel }}
+            </button>
         </div>
     </div>
 
@@ -358,6 +361,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
             let url = "{{ route('admin.skpi.generate-skpi.download-all') }}";
             let params = new URLSearchParams();
+
+            if (prodiId) {
+                params.append('study_program_id', prodiId);
+                const selectedOption = prodiSelect.options[prodiSelect.selectedIndex];
+                if (selectedOption) {
+                    params.append('study_program_name', selectedOption.text.trim());
+                }
+            }
+
+            if (genStatus) {
+                params.append('generate_status', genStatus);
+            }
+
+            if (searchVal) {
+                params.append('search', searchVal);
+            }
+
+            const queryString = params.toString();
+            if (queryString) {
+                url += '?' + queryString;
+            }
+
+            window.location.href = url;
+        };
+    }
+
+    // Bulk ZIP PDF
+    const btnBulkPdf = document.getElementById('btnBulkPdf');
+    if (btnBulkPdf) {
+        btnBulkPdf.onclick = () => {
+            const prodiSelect = document.querySelector('select[name="study_program_id"]');
+            const genSelect = document.querySelector('select[name="generate_status"]');
+            const searchInput = document.querySelector('input[name="search"]');
+
+            const prodiId = prodiSelect?.value || '';
+            const genStatus = genSelect?.value || '';
+            const searchVal = searchInput?.value.trim() || '';
+
+            let url = "{{ route('admin.skpi.generate-skpi.download-all') }}";
+            let params = new URLSearchParams();
+            params.append('format', 'pdf');
 
             if (prodiId) {
                 params.append('study_program_id', prodiId);
