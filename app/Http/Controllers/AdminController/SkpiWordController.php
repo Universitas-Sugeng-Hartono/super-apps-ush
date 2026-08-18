@@ -623,10 +623,17 @@ class SkpiWordController extends Controller
                 public_path('FIXED TEMPLATE SKPI USH ver.2003.docx')
             );
 
-            $ttl = collect([
+            $ttlId = collect([
                 $registration->tempat_lahir,
                 $registration->tanggal_lahir
                     ? $registration->tanggal_lahir->translatedFormat('d F Y')
+                    : null,
+            ])->filter()->implode(', ');
+
+            $ttlEn = collect([
+                $registration->tempat_lahir,
+                $registration->tanggal_lahir
+                    ? $registration->tanggal_lahir->format('F d, Y')
                     : null,
             ])->filter()->implode(', ');
 
@@ -637,30 +644,63 @@ class SkpiWordController extends Controller
             $nomorSkpi = $this->generateSkpiNumberForRegistration($registration, $documentMeta['nomor_skpi_format'] ?? '{no}/SKPI/USH/{tahun}');
             $templateProcessor->setValue('NOMOR_SKPI',              htmlspecialchars($nomorSkpi));
             $templateProcessor->setValue('NAMA_LENGKAP',            htmlspecialchars($registration->nama_lengkap ?? '-'));
-            $templateProcessor->setValue('TTL',                     htmlspecialchars($ttl ?: '-'));
+            $templateProcessor->setValue('TTL',                     $this->formatBilingual($ttlId, $ttlEn));
             $templateProcessor->setValue('NIM',                     htmlspecialchars($registration->nim ?? '-'));
             $templateProcessor->setValue('TAHUN_MASUK',             htmlspecialchars($registration->angkatan ?? '-'));
             $templateProcessor->setValue('NOMOR_IJAZAH',            htmlspecialchars($registration->nomor_ijazah ?? '-'));
-            $templateProcessor->setValue('GELAR',                   htmlspecialchars($academicProfile?->gelar_lulusan ?? $registration->gelar ?? '-'));
+
+            $gelarId = $academicProfile?->gelar_lulusan ?? $registration->gelar ?? '-';
+            $gelarEn = $this->translateDegree($gelarId, $student?->program_studi);
+            $templateProcessor->setValue('GELAR',                   $this->formatBilingual($gelarId, $gelarEn));
 
             // ─── Bagian 2: Data Akademik ──────────────────────────────────
             $templateProcessor->setValue('SK_PENDIRIAN',             htmlspecialchars($academicProfile?->sk_pendirian_perguruan_tinggi ?? '-'));
-            $templateProcessor->setValue('NAMA_PT',                  htmlspecialchars($academicProfile?->nama_perguruan_tinggi ?? 'UNIVERSITAS SUGENG HARTONO'));
-            $templateProcessor->setValue('AKREDITASI_PT',            htmlspecialchars($academicProfile?->akreditasi_perguruan_tinggi ?? '-'));
-            $templateProcessor->setValue('PROGRAM_STUDI',            htmlspecialchars($student?->program_studi ?? '-'));
-            $templateProcessor->setValue('AKREDITASI_PRODI',         htmlspecialchars($academicProfile?->akreditasi_program_studi ?? '-'));
-            $templateProcessor->setValue('JENIS_JENJANG_PENDIDIKAN', htmlspecialchars($academicProfile?->jenis_dan_jenjang_pendidikan ?? '-'));
-            $templateProcessor->setValue('JENJANG_KUALIFIKASI_KKNI', htmlspecialchars($academicProfile?->jenjang_kualifikasi_kkni ?? '-'));
-            $templateProcessor->setValue('PERSYARATAN_PENERIMAAN',   htmlspecialchars($academicProfile?->persyaratan_penerimaan ?? '-'));
-            $templateProcessor->setValue('BAHASA_PENGANTAR',         htmlspecialchars($academicProfile?->bahasa_pengantar_kuliah ?? 'Inggris / Indonesia'));
+
+            $namaPtId = $academicProfile?->nama_perguruan_tinggi ?? 'Universitas Sugeng Hartono';
+            $namaPtEn = 'Sugeng Hartono University';
+            $templateProcessor->setValue('NAMA_PT',                  $this->formatBilingual($namaPtId, $namaPtEn));
+
+            $akredPtId = $academicProfile?->akreditasi_perguruan_tinggi ?? '-';
+            $akredPtEn = $this->translateAccreditation($akredPtId);
+            $templateProcessor->setValue('AKREDITASI_PT',            $this->formatBilingual($akredPtId, $akredPtEn));
+
+            $prodiId = $student?->program_studi ?? '-';
+            $prodiEn = $this->translateStudyProgram($prodiId);
+            $templateProcessor->setValue('PROGRAM_STUDI',            $this->formatBilingual($prodiId, $prodiEn));
+
+            $akredProdiId = $academicProfile?->akreditasi_program_studi ?? '-';
+            $akredProdiEn = $this->translateAccreditation($akredProdiId);
+            $templateProcessor->setValue('AKREDITASI_PRODI',         $this->formatBilingual($akredProdiId, $akredProdiEn));
+
+            $jenisPendidikanId = $academicProfile?->jenis_dan_jenjang_pendidikan ?? '-';
+            $jenisPendidikanEn = $this->translateEducationLevel($jenisPendidikanId);
+            $templateProcessor->setValue('JENIS_JENJANG_PENDIDIKAN', $this->formatBilingual($jenisPendidikanId, $jenisPendidikanEn));
+
+            $kkniId = $academicProfile?->jenjang_kualifikasi_kkni ?? '-';
+            $kkniEn = str_contains(strtolower($kkniId), 'level') ? $kkniId : ($kkniId !== '-' ? 'Level ' . $kkniId : '-');
+            $templateProcessor->setValue('JENJANG_KUALIFIKASI_KKNI', $this->formatBilingual($kkniId, $kkniEn));
+
+            $persyaratanId = $academicProfile?->persyaratan_penerimaan ?? '-';
+            $persyaratanEn = $this->translateRequirements($persyaratanId);
+            $templateProcessor->setValue('PERSYARATAN_PENERIMAAN',   $this->formatBilingual($persyaratanId, $persyaratanEn));
+
+            $bahasaId = $academicProfile?->bahasa_pengantar_kuliah ?? 'Bahasa Indonesia';
+            $bahasaEn = $this->translateInstructionLanguage($bahasaId);
+            $templateProcessor->setValue('BAHASA_PENGANTAR',         $this->formatBilingual($bahasaId, $bahasaEn));
+
             $calculatedLamaStudi = \App\Models\SkpiRegistration::calculateLamaStudi(
                 $student?->tanggal_masuk ? $student->tanggal_masuk->format('Y-m-d') : null,
                 $registration->angkatan ?? $student?->angkatan,
                 $registration->periode_lulus
             ) ?? ($registration->lama_studi ?? '-');
-            $templateProcessor->setValue('LAMA_STUDI',               htmlspecialchars($calculatedLamaStudi));
+            $lamaStudiEn = $this->translateLengthOfStudy($calculatedLamaStudi);
+            $templateProcessor->setValue('LAMA_STUDI',               $this->formatBilingual($calculatedLamaStudi, $lamaStudiEn));
+
             $templateProcessor->setValue('NO_AKREDITASI_PRODI',      htmlspecialchars($academicProfile?->nomor_akreditasi_program_studi ?? '-'));
-            $templateProcessor->setValue('STATUS_PROFESI',           htmlspecialchars($academicProfile?->status_profesi ?? '-'));
+
+            $statusProfesiId = $academicProfile?->status_profesi ?? '-';
+            $statusProfesiEn = $this->translateProfessionalStatus($statusProfesiId);
+            $templateProcessor->setValue('STATUS_PROFESI',           $this->formatBilingual($statusProfesiId, $statusProfesiEn));
 
             $formatRepeater = function ($items) {
                 if (empty($items)) return '-';
@@ -1385,5 +1425,193 @@ class SkpiWordController extends Controller
             Log::error('[SkpiWord] Fallback DomPDF failed for ' . $docxPath . ': ' . $e->getMessage());
             return $docxPath;
         }
+    }
+
+    /**
+     * Format teks bilingual untuk kolom kanan tabel SKPI.
+     * Baris 1: Bahasa Indonesia (normal)
+     * Baris 2: Bahasa Inggris (italic)
+     */
+    private function formatBilingual(?string $idText, ?string $enText): string
+    {
+        $idText = trim($idText ?? '-');
+        if ($idText === '' || $idText === '-') {
+            return '-';
+        }
+
+        $idEscaped = htmlspecialchars($idText);
+        $enText = trim($enText ?? '');
+
+        if ($enText === '' || strtolower($enText) === strtolower($idText)) {
+            return $idEscaped;
+        }
+
+        $enEscaped = htmlspecialchars($enText);
+        return $idEscaped . '</w:t><w:br/><w:rPr><w:i/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">' . $enEscaped;
+    }
+
+    private function translateStudyProgram(?string $prodi): string
+    {
+        if (!$prodi) return '-';
+        $map = [
+            'ilmu komputer'            => 'Computer Science',
+            'bisnis digital'           => 'Digital Business',
+            'gizi'                     => 'Nutrition',
+            'manajemen ritel'          => 'Retail Management',
+            'informatika'              => 'Informatics',
+            'sistem informasi'         => 'Information Systems',
+            'teknik informatika'       => 'Informatics Engineering',
+            'manajemen'                => 'Management',
+            'akuntansi'                => 'Accounting',
+            'hukum'                    => 'Law',
+            'farmasi'                  => 'Pharmacy',
+            'kebidanan'                => 'Midwifery',
+            'keperawatan'              => 'Nursing',
+            'kesehatan masyarakat'    => 'Public Health',
+            'desain komunikasi visual' => 'Visual Communication Design',
+            'teknik sipil'             => 'Civil Engineering',
+            'teknik industri'          => 'Industrial Engineering',
+            'teknik elektro'           => 'Electrical Engineering',
+            'teknik mesin'             => 'Mechanical Engineering',
+            'arsitektur'               => 'Architecture',
+            'psikologi'                => 'Psychology',
+        ];
+
+        return $map[strtolower(trim($prodi))] ?? $prodi;
+    }
+
+    private function translateDegree(?string $gelar, ?string $prodi): string
+    {
+        if (!$gelar && !$prodi) return '-';
+
+        $map = [
+            's.kom.' => 'Bachelor of Computer Science (B.C.S.)',
+            'sarjana komputer' => 'Bachelor of Computer Science (B.C.S.)',
+            'sarjana komputer (s.kom.)' => 'Bachelor of Computer Science (B.C.S.)',
+            's.bns.' => 'Bachelor of Business (B.Bns.)',
+            'sarjana bisnis' => 'Bachelor of Business (B.Bns.)',
+            'sarjana bisnis (s.bns.)' => 'Bachelor of Business (B.Bns.)',
+            's.gz.' => 'Bachelor of Nutrition (B.Nut.)',
+            'sarjana gizi' => 'Bachelor of Nutrition (B.Nut.)',
+            'sarjana gizi (s.gz.)' => 'Bachelor of Nutrition (B.Nut.)',
+            's.e.' => 'Bachelor of Economics (B.Econ.)',
+            'sarjana ekonomi' => 'Bachelor of Economics (B.Econ.)',
+            's.m.' => 'Bachelor of Management (B.Mgmt.)',
+            'sarjana manajemen' => 'Bachelor of Management (B.Mgmt.)',
+            's.ak.' => 'Bachelor of Accounting (B.Acc.)',
+            'sarjana akuntansi' => 'Bachelor of Accounting (B.Acc.)',
+            's.t.' => 'Bachelor of Engineering (B.Eng.)',
+            'sarjana teknik' => 'Bachelor of Engineering (B.Eng.)',
+            's.h.' => 'Bachelor of Laws (LL.B.)',
+            'sarjana hukum' => 'Bachelor of Laws (LL.B.)',
+        ];
+
+        $lowerGelar = strtolower(trim($gelar ?? ''));
+        if (isset($map[$lowerGelar])) {
+            return $map[$lowerGelar];
+        }
+
+        $lowerProdi = strtolower(trim($prodi ?? ''));
+        if (str_contains($lowerProdi, 'komputer') || str_contains($lowerProdi, 'informatika')) {
+            return 'Bachelor of Computer Science (B.C.S.)';
+        } elseif (str_contains($lowerProdi, 'bisnis')) {
+            return 'Bachelor of Business (B.Bns.)';
+        } elseif (str_contains($lowerProdi, 'gizi')) {
+            return 'Bachelor of Nutrition (B.Nut.)';
+        }
+
+        return $gelar ?? '-';
+    }
+
+    private function translateAccreditation(?string $akred): string
+    {
+        if (!$akred) return '-';
+        $map = [
+            'baik' => 'Good',
+            'baik sekali' => 'Very Good',
+            'unggul' => 'Excellent',
+            'terakreditasi' => 'Accredited',
+            'cukup' => 'Fair',
+            'tidak terakreditasi' => 'Not Accredited',
+        ];
+        return $map[strtolower(trim($akred))] ?? $akred;
+    }
+
+    private function translateEducationLevel(?string $level): string
+    {
+        if (!$level) return '-';
+        $lower = strtolower(trim($level));
+        $map = [
+            'sarjana' => 'Academic & Bachelor Degree (S1)',
+            'akademik & sarjana' => 'Academic & Bachelor Degree (S1)',
+            'akademik & sarjana (s1)' => 'Academic & Bachelor Degree (S1)',
+            'akademik - sarjana' => 'Academic & Bachelor Degree (S1)',
+            'sarjana komputer' => 'Academic & Bachelor Degree in Computer Science (S1)',
+            'sarjana bisnis' => 'Academic & Bachelor Degree in Business (S1)',
+            'sarjana gizi' => 'Academic & Bachelor Degree in Nutrition (S1)',
+            'magister' => 'Academic & Master Degree (S2)',
+            'doktor' => 'Academic & Doctoral Degree (S3)',
+            'diploma tiga' => 'Vocational & Associate Degree (D3)',
+            'diploma 3' => 'Vocational & Associate Degree (D3)',
+            'd3' => 'Vocational & Associate Degree (D3)',
+            'diploma empat' => 'Applied Bachelor Degree (D4)',
+            'diploma 4' => 'Applied Bachelor Degree (D4)',
+            'd4' => 'Applied Bachelor Degree (D4)',
+            'profesi' => 'Professional Education Program',
+        ];
+
+        if (isset($map[$lower])) {
+            return $map[$lower];
+        }
+
+        if (str_contains($lower, 'sarjana')) {
+            return 'Academic & Bachelor Degree (S1)';
+        }
+
+        return $level;
+    }
+
+    private function translateRequirements(?string $req): string
+    {
+        if (!$req) return '-';
+        $lower = strtolower(trim($req));
+        if (str_contains($lower, 'sekolah menengah') || str_contains($lower, 'sma') || str_contains($lower, 'smk')) {
+            return 'Graduated from Senior High School / Vocational High School or equivalent';
+        }
+        return $req;
+    }
+
+    private function translateInstructionLanguage(?string $lang): string
+    {
+        if (!$lang) return '-';
+        $lower = strtolower(trim($lang));
+        if ($lower === 'bahasa indonesia' || $lower === 'indonesia') {
+            return 'Indonesian';
+        } elseif (str_contains($lower, 'inggris') && str_contains($lower, 'indonesia')) {
+            return 'Indonesian & English';
+        } elseif ($lower === 'inggris' || $lower === 'english') {
+            return 'English';
+        }
+        return $lang;
+    }
+
+    private function translateLengthOfStudy(?string $lamaStudi): string
+    {
+        if (!$lamaStudi) return '-';
+        return str_replace(
+            ['Tahun', 'tahun', 'Semester', 'semester', 'Bulan', 'bulan'],
+            ['Years', 'Years', 'Semesters', 'Semesters', 'Months', 'Months'],
+            $lamaStudi
+        );
+    }
+
+    private function translateProfessionalStatus(?string $status): string
+    {
+        if (!$status) return 'None';
+        $lower = strtolower(trim($status));
+        if ($lower === 'tidak ada' || $lower === 'tidak ada.' || $lower === '-' || $lower === 'none' || $lower === '') {
+            return 'None';
+        }
+        return $status;
     }
 }
