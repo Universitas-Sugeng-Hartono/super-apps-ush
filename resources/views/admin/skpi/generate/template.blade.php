@@ -389,7 +389,7 @@
 
             <div style="margin-top:12px; font-size:10px; color:#555;">
                 <strong>Catatan Predikat SKPI S1:</strong><br>
-                Sangat Baik = &gt;251 SKP &nbsp;|&nbsp; Baik = 151&ndash;250 SKP &nbsp;|&nbsp; Cukup = 80&ndash;150 SKP
+                Sangat Baik = &gt;450 SKP &nbsp;|&nbsp; Baik = 300&ndash;450 SKP &nbsp;|&nbsp; Cukup = &lt;300 SKP
             </div>
 
             <table style="width:100%; border:none; margin-top:30px;">

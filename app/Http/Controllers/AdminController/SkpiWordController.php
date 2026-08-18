@@ -795,9 +795,9 @@ class SkpiWordController extends Controller
             $templateProcessor->setValue('L3_SKP_LAINNYA',           (string) ($skpByCategory['lainnya'] ?? 0));
             $templateProcessor->setValue('L3_TOTAL_SKP',             (string) $totalSkp);
 
-            if ($totalSkp > 251) {
+            if ($totalSkp > 450) {
                 $predikat = 'Sangat Baik';
-            } elseif ($totalSkp >= 151) {
+            } elseif ($totalSkp >= 300) {
                 $predikat = 'Baik';
             } elseif ($totalSkp >= 80) {
                 $predikat = 'Cukup';

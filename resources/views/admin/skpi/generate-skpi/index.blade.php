@@ -32,14 +32,14 @@ foreach ($transkripCategories as $catKey => $catLabel) {
 $totalSkp = array_sum($skpByCategory);
 
 // Predikat SKPI S1
-if ($totalSkp > 251) {
-$predikat = 'Sangat Baik';
-} elseif ($totalSkp >= 151) {
-$predikat = 'Baik';
+if ($totalSkp > 450) {
+    $predikat = 'Sangat Baik';
+} elseif ($totalSkp >= 300) {
+    $predikat = 'Baik';
 } elseif ($totalSkp >= 80) {
-$predikat = 'Cukup';
+    $predikat = 'Cukup';
 } else {
-$predikat = '-';
+    $predikat = '-';
 }
 
 // Build text for old template sections
