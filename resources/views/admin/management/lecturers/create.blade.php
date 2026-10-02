@@ -31,8 +31,8 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Program Studi *</label>
-                        <select name="program_studi" class="form-control" required>
+                        <label id="prodiLabel">Program Studi *</label>
+                        <select name="program_studi" id="prodiSelect" class="form-control" required>
                             <option value="">-- Pilih Program Studi --</option>
                             @foreach($studyPrograms as $prodi)
                                 <option value="{{ $prodi->name }}" {{ old('program_studi') == $prodi->name ? 'selected' : '' }}>
@@ -40,15 +40,18 @@
                                 </option>
                             @endforeach
                         </select>
+                        <small id="prodiHint" class="text-muted" style="display: none;">Role ini mencakup seluruh universitas. Program Studi bersifat opsional.</small>
                         @error('program_studi')<span class="error">{{ $message }}</span>@enderror
                     </div>
 
                     <div class="form-group">
                         <label>Role *</label>
-                        <select name="role" class="form-control" required>
+                        <select name="role" id="roleSelect" class="form-control" required>
                             <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Dosen</option>
                             <option value="superadmin" {{ old('role') == 'superadmin' ? 'selected' : '' }}>Kaprodi</option>
                             <option value="masteradmin" {{ old('role') == 'masteradmin' ? 'selected' : '' }}>Superuser</option>
+                            <option value="kemahasiswaan" {{ old('role') == 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
+                            <option value="keuangan" {{ old('role') == 'keuangan' ? 'selected' : '' }}>Keuangan</option>
                         </select>
                         @error('role')<span class="error">{{ $message }}</span>@enderror
                     </div>
@@ -210,5 +213,33 @@
         box-shadow: 0 6px 20px rgba(255, 112, 67, 0.4);
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const roleSelect = document.getElementById('roleSelect');
+        const prodiSelect = document.getElementById('prodiSelect');
+        const prodiLabel = document.getElementById('prodiLabel');
+        const prodiHint = document.getElementById('prodiHint');
+        const institutionalRoles = ['kemahasiswaan', 'keuangan', 'masteradmin'];
+
+        function updateProdiRequirement() {
+            if (!roleSelect || !prodiSelect) return;
+            if (institutionalRoles.includes(roleSelect.value)) {
+                prodiSelect.removeAttribute('required');
+                prodiLabel.innerHTML = 'Program Studi <span style="font-weight:400;color:#888;">(Opsional)</span>';
+                if (prodiHint) prodiHint.style.display = 'block';
+            } else {
+                prodiSelect.setAttribute('required', 'required');
+                prodiLabel.innerHTML = 'Program Studi *';
+                if (prodiHint) prodiHint.style.display = 'none';
+            }
+        }
+
+        roleSelect.addEventListener('change', updateProdiRequirement);
+        updateProdiRequirement();
+    });
+</script>
 @endpush
 

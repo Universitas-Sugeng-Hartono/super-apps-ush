@@ -10,10 +10,12 @@ class AppSettingController extends Controller
 {
     // Semua role yang tersedia di sistem
     const AVAILABLE_ROLES = [
-        'student'     => 'Mahasiswa',
-        'admin'       => 'Dosen',
-        'superadmin'  => 'Kaprodi',
-        'masteradmin' => 'Superuser',
+        'student'       => 'Mahasiswa',
+        'admin'         => 'Dosen',
+        'superadmin'    => 'Kaprodi',
+        'masteradmin'   => 'Superuser',
+        'kemahasiswaan' => 'Kemahasiswaan',
+        'keuangan'      => 'Keuangan',
     ];
 
     /**
@@ -39,7 +41,7 @@ class AppSettingController extends Controller
             'wa_tooltip_title'    => ['required', 'string', 'max:100'],
             'wa_tooltip_message'  => ['required', 'string', 'max:300'],
             'wa_visible_roles'    => ['nullable', 'array'],
-            'wa_visible_roles.*'  => ['in:student,admin,superadmin,masteradmin'],
+            'wa_visible_roles.*'  => ['in:student,admin,superadmin,masteradmin,kemahasiswaan,keuangan'],
         ], [
             'wa_number.regex'           => 'Nomor WA harus berformat angka, 10-15 digit (tanpa tanda + atau strip)',
             'wa_message_template.max'   => 'Template pesan maksimal 500 karakter',

@@ -20,7 +20,7 @@ class AuthController extends Controller
 
         if (Auth::check()) {
             $role = User::normalizeRole(Auth::user()->role);
-            if (in_array($role, ['admin', 'superadmin', 'masteradmin'], true)) {
+            if (in_array($role, ['admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'], true)) {
                 return redirect()->route('admin.dashboard');
             }
         }

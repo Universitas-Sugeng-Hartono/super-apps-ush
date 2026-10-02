@@ -97,7 +97,11 @@
                                 </td>
                                 <td>{{ $lecturer->email }}</td>
                                 <td>
-                                    <span class="badge-prodi">{{ $lecturer->program_studi }}</span>
+                                    @if(in_array($lecturer->role, ['kemahasiswaan', 'keuangan', 'masteradmin'], true) && empty($lecturer->program_studi))
+                                        <span class="badge-prodi text-muted" style="background:#ECEFF1;color:#607D8B;">Semua Prodi</span>
+                                    @else
+                                        <span class="badge-prodi">{{ $lecturer->program_studi ?? '-' }}</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="role-badge role-{{ $lecturer->role }}">
@@ -398,6 +402,16 @@
     .role-badge.role-masteradmin {
         background: #FFF3E0;
         color: #E65100;
+    }
+
+    .role-badge.role-kemahasiswaan {
+        background: #E0F2F1;
+        color: #00796B;
+    }
+
+    .role-badge.role-keuangan {
+        background: #E8F5E9;
+        color: #2E7D32;
     }
 
     .badge-count {

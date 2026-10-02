@@ -1,0 +1,1 @@
+@include('kemahasiswaan.dashboard.index')

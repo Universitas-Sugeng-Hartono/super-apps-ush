@@ -43,7 +43,7 @@ class UserManageController extends Controller
         $programStudi = $request->input('program_studi');
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
 
-        $lecturers = User::whereIn('role', ['admin', 'superadmin', 'masteradmin'])
+        $lecturers = User::whereIn('role', ['admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -285,12 +285,16 @@ class UserManageController extends Controller
     {
         $request->validate($this->rules());
 
-        $user = new User($request->only(['name', 'email', 'username', 'NIDNorNUPTK', 'role', 'program_studi']));
+        $user = new User($request->only(['name', 'email', 'username', 'NIDNorNUPTK', 'role']));
         $user->role = $request->role ?? 'admin';
 
-        // Default program studi dari master
-        $defaultProdi = StudyProgram::where('is_active', true)->orderBy('order')->first();
-        $user->program_studi = $request->program_studi ?? ($defaultProdi ? $defaultProdi->name : 'Bisnis Digital');
+        // Role institusi (kemahasiswaan, keuangan, masteradmin) tidak terikat pada satu program studi
+        if (in_array($user->role, ['kemahasiswaan', 'keuangan', 'masteradmin'], true)) {
+            $user->program_studi = $request->filled('program_studi') ? $request->program_studi : null;
+        } else {
+            $defaultProdi = StudyProgram::where('is_active', true)->orderBy('order')->first();
+            $user->program_studi = $request->program_studi ?? ($defaultProdi ? $defaultProdi->name : 'Bisnis Digital');
+        }
         $user->password = bcrypt('12345678'); // password default
 
         $user->photo = $this->handleUpload($request, 'photo', null, 'users/photo');
@@ -315,7 +319,13 @@ class UserManageController extends Controller
 
         $request->validate($this->rules($user->id));
 
-        $user->fill($request->only('name', 'email', 'username', 'NIDNorNUPTK', 'role', 'program_studi'));
+        $user->fill($request->only('name', 'email', 'username', 'NIDNorNUPTK', 'role'));
+
+        if (in_array($request->role, ['kemahasiswaan', 'keuangan', 'masteradmin'], true)) {
+            $user->program_studi = $request->filled('program_studi') ? $request->program_studi : null;
+        } else {
+            $user->program_studi = $request->program_studi;
+        }
 
         // Update password jika diisi
         if ($request->filled('password')) {
@@ -326,8 +336,6 @@ class UserManageController extends Controller
         $user->ttd   = $this->handleUpload($request, 'ttd', $user->ttd, 'users/ttd');
 
         $user->save();
-
-        
 
         // Redirect berdasarkan route yang dipanggil
         if (request()->routeIs('admin.management.lecturers.*')) {
@@ -343,13 +351,14 @@ class UserManageController extends Controller
     private function rules($id = null): array
     {
         $validPrograms = StudyProgram::where('is_active', true)->pluck('name')->toArray();
+        $isProdiRequired = in_array(request('role'), ['admin', 'superadmin'], true);
 
         return [
             'name'          => 'required|string|max:255',
             'email'         => 'required|email|unique:users,email,' . ($id ?? 'NULL') . ',id',
             'username'      => 'nullable|string|unique:users,username,' . ($id ?? 'NULL') . ',id',
-            'program_studi' => 'required|string|in:' . implode(',', $validPrograms),
-            'role'          => 'required|string|in:admin,superadmin,masteradmin',
+            'program_studi' => ($isProdiRequired ? 'required|string|in:' : 'nullable|string|in:') . implode(',', $validPrograms),
+            'role'          => 'required|string|in:admin,superadmin,masteradmin,kemahasiswaan,keuangan',
             'password'      => 'nullable|string|min:8',
             'photo'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'ttd'           => 'nullable|image|mimes:jpeg,png,jpg|max:2048',

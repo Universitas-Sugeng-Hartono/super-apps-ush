@@ -369,10 +369,12 @@
                             @foreach($availableRoles as $roleKey => $roleLabel)
                             @php
                                 $roleIcons = [
-                                    'student'     => 'bi-mortarboard-fill',
-                                    'admin'       => 'bi-person-workspace',
-                                    'superadmin'  => 'bi-shield-check',
-                                    'masteradmin' => 'bi-star-fill',
+                                    'student'       => 'bi-mortarboard-fill',
+                                    'admin'         => 'bi-person-workspace',
+                                    'superadmin'    => 'bi-shield-check',
+                                    'masteradmin'   => 'bi-star-fill',
+                                    'kemahasiswaan' => 'bi-award-fill',
+                                    'keuangan'      => 'bi-cash-coin',
                                 ];
                             @endphp
                             <div class="role-card">

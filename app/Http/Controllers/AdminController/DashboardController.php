@@ -31,6 +31,51 @@ class DashboardController extends Controller
     public function dashboard(Request $request)
     {
         $user = auth()->user();
+        $userRole = User::normalizeRole($user->role);
+
+        // Dashboard khusus role Kemahasiswaan
+        if ($userRole === 'kemahasiswaan') {
+            $pendingCount = \App\Models\StudentAchievement::where('status', 'pending')->count();
+            $approvedCount = \App\Models\StudentAchievement::where('status', 'approved')->count();
+            $rejectedCount = \App\Models\StudentAchievement::whereIn('status', ['rejected', 'revision'])->count();
+            $totalCount = \App\Models\StudentAchievement::count();
+
+            $recentAchievements = \App\Models\StudentAchievement::with('student')
+                ->latest()
+                ->limit(5)
+                ->get();
+
+            return view('kemahasiswaan.dashboard.index', compact(
+                'user',
+                'pendingCount',
+                'approvedCount',
+                'rejectedCount',
+                'totalCount',
+                'recentAchievements'
+            ));
+        }
+
+        // Dashboard khusus role Keuangan
+        if ($userRole === 'keuangan') {
+            $pendingCount = \App\Models\SkpiRegistration::where('payment_status', 'pending')->count();
+            $approvedCount = \App\Models\SkpiRegistration::where('payment_status', 'approved')->count();
+            $rejectedCount = \App\Models\SkpiRegistration::whereIn('payment_status', ['rejected', 'revision'])->count();
+            $totalCount = \App\Models\SkpiRegistration::count();
+
+            $recentRegistrations = \App\Models\SkpiRegistration::with('student')
+                ->latest()
+                ->limit(5)
+                ->get();
+
+            return view('keuangan.dashboard.index', compact(
+                'user',
+                'pendingCount',
+                'approvedCount',
+                'rejectedCount',
+                'totalCount',
+                'recentRegistrations'
+            ));
+        }
 
         // Data untuk Chart: Mahasiswa per Angkatan
         $studentsByBatch = Student::where('id_lecturer', $user->id)

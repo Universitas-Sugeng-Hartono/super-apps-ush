@@ -17,6 +17,8 @@ class User extends Authenticatable
         'superadmin' => 'Kaprodi',
         'masteradmin' => 'Superuser',
         'student' => 'Mahasiswa',
+        'kemahasiswaan' => 'Kemahasiswaan',
+        'keuangan' => 'Keuangan',
     ];
 
     public const ROLE_ALIASES = [

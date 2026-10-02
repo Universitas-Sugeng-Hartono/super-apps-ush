@@ -757,11 +757,18 @@
                         @php
                             $user = auth()->user();
                             $name = $user ? $user->name : session('user_name');
-                            $prodi = $user ? $user->program_studi : session('user_prodi');
+                            $userRole = $user ? \App\Models\User::normalizeRole($user->role) : null;
+                            $roleLabel = $user ? $user->role_label : 'User';
+                            if (in_array($userRole, ['kemahasiswaan', 'keuangan', 'masteradmin'], true)) {
+                                $subTitle = $roleLabel;
+                            } else {
+                                $prodi = $user ? $user->program_studi : session('user_prodi');
+                                $subTitle = $roleLabel . ($prodi ? ' • ' . $prodi : '');
+                            }
                             $photo = $user && $user->photo ? $user->photo : (session('user_photo') !== '0' && session('user_photo') !== 0 ? session('user_photo') : null);
                         @endphp
                         <h5>Halo, {{ explode(' ', $name ?? '')[0] }}!</h5>
-                        <p>Lecturer {{ $prodi ?? 'Dosen' }}</p>
+                        <p>{{ $subTitle }}</p>
                     </div>
                     <div class="user-avatar">
                         @if ($photo)

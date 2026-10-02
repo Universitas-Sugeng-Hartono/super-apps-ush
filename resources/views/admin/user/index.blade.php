@@ -143,6 +143,8 @@
                                 <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Dosen</option>
                                 <option value="superadmin" {{ old('role', $user->role) == 'superadmin' ? 'selected' : '' }}>Kaprodi</option>
                                 <option value="masteradmin" {{ old('role', $user->role) == 'masteradmin' ? 'selected' : '' }}>Superuser</option>
+                                <option value="kemahasiswaan" {{ old('role', $user->role) == 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
+                                <option value="keuangan" {{ old('role', $user->role) == 'keuangan' ? 'selected' : '' }}>Keuangan</option>
                             </select>
                         </div>
                     </div>

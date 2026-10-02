@@ -11,52 +11,59 @@ $menus = [
 'route' => 'admin.skpi.input-data-akademi.index',
 'badge' => 'Setup Data Akademik',
 'color' => '#2196F3',
-'gradient' => 'linear-gradient(135deg, #2196F3, #64B5F6)'
-],
-[
-'step' => '02',
-'title' => 'Verifikasi Data Prestasi',
-'description' => 'Validasi prestasi dan aktivitas mahasiswa sebelum masuk ke draf Kelulusan.',
-'icon' => 'bi bi-patch-check',
-'route' => 'admin.skpi.verifikasi-data.index',
-'badge' => 'Approval Prestasi Mahasiswa',
-'color' => '#FF9800',
-'gradient' => 'linear-gradient(135deg, #FF9800, #FFB347)'
-],
-
-[
-'step' => '03',
-'title' => 'Verifikasi Pembayaran Wisuda',
-'description' => 'Lakukan validasi Bukti pembayaran dan Naskah Publikasi',
-'icon' => 'bi bi-credit-card-2-front',
-'route' => 'admin.skpi.verifikasi-pembayaran.index',
-'badge' => 'Approval Pembayaran',
-'color' => '#1f5301ff',
-'gradient' => 'linear-gradient(135deg, #276a04ff, #57a33dff)'
-],
-
-[
-'step' => '04',
-'title' => 'Daftar Kelulusan',
-'description' => 'Kelola antrean pengajuan pendaftaran Kelulusan dan status verifikasi akhir.',
-'icon' => 'bi bi-people',
-'route' => 'admin.skpi.daftar-skpi.index',
-'badge' => 'Approval Kelulusan',
-'color' => '#4CAF50',
-'gradient' => 'linear-gradient(135deg, #4CAF50, #81C784)'
-],
-
-[
-'step' => '05',
-'title' => 'Generate Kelulusan',
-'description' => 'Proses akhir pembuatan dokumen Word/PDF dan penomoran resmi.',
-'icon' => 'bi bi-file-earmark-pdf',
-'route' => 'admin.skpi.generate-skpi.index',
-'badge' => 'Generate Final Kelulusan',
-'color' => '#E91E63',
-'gradient' => 'linear-gradient(135deg, #E91E63, #F06292)'
-],
+        'gradient' => 'linear-gradient(135deg, #2196F3, #64B5F6)',
+        'roles' => ['masteradmin'],
+    ],
+    [
+        'step' => '02',
+        'title' => 'Verifikasi Data Prestasi',
+        'description' => 'Validasi prestasi dan aktivitas mahasiswa sebelum masuk ke draf Kelulusan.',
+        'icon' => 'bi bi-patch-check',
+        'route' => 'admin.skpi.verifikasi-data.index',
+        'badge' => 'Approval Prestasi Mahasiswa',
+        'color' => '#FF9800',
+        'gradient' => 'linear-gradient(135deg, #FF9800, #FFB347)',
+        'roles' => ['masteradmin', 'kemahasiswaan'],
+    ],
+    [
+        'step' => '03',
+        'title' => 'Verifikasi Pembayaran Wisuda',
+        'description' => 'Lakukan validasi Bukti pembayaran dan Naskah Publikasi',
+        'icon' => 'bi bi-credit-card-2-front',
+        'route' => 'admin.skpi.verifikasi-pembayaran.index',
+        'badge' => 'Approval Pembayaran',
+        'color' => '#1f5301ff',
+        'gradient' => 'linear-gradient(135deg, #276a04ff, #57a33dff)',
+        'roles' => ['masteradmin', 'keuangan'],
+    ],
+    [
+        'step' => '04',
+        'title' => 'Daftar Kelulusan',
+        'description' => 'Kelola antrean pengajuan pendaftaran Kelulusan dan status verifikasi akhir.',
+        'icon' => 'bi bi-people',
+        'route' => 'admin.skpi.daftar-skpi.index',
+        'badge' => 'Approval Kelulusan',
+        'color' => '#4CAF50',
+        'gradient' => 'linear-gradient(135deg, #4CAF50, #81C784)',
+        'roles' => ['masteradmin'],
+    ],
+    [
+        'step' => '05',
+        'title' => 'Generate Kelulusan',
+        'description' => 'Proses akhir pembuatan dokumen Word/PDF dan penomoran resmi.',
+        'icon' => 'bi bi-file-earmark-pdf',
+        'route' => 'admin.skpi.generate-skpi.index',
+        'badge' => 'Generate Final Kelulusan',
+        'color' => '#E91E63',
+        'gradient' => 'linear-gradient(135deg, #E91E63, #F06292)',
+        'roles' => ['masteradmin'],
+    ],
 ];
+
+$userRole = \App\Models\User::normalizeRole(auth()->user()?->role);
+$menus = array_values(array_filter($menus, function($m) use ($userRole) {
+    return empty($m['roles']) || in_array($userRole, $m['roles'], true);
+}));
 @endphp
 
 <div class="skpi-dashboard-container">

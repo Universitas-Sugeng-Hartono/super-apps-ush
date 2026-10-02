@@ -29,7 +29,7 @@ class MenuManagementController extends Controller
             ->paginate(20)
             ->appends(['search' => $search, 'role' => $roleFilter]);
 
-        $roles = ['student', 'admin', 'superadmin', 'masteradmin'];
+        $roles = ['student', 'admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'];
 
         return view('admin.management.menus.index', compact('menuItems', 'search', 'roleFilter', 'roles'));
     }
@@ -39,7 +39,7 @@ class MenuManagementController extends Controller
      */
     public function create()
     {
-        $roles = ['student', 'admin', 'superadmin', 'masteradmin'];
+        $roles = ['student', 'admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'];
         return view('admin.management.menus.create', compact('roles'));
     }
 
@@ -48,7 +48,7 @@ class MenuManagementController extends Controller
      */
     public function store(Request $request)
     {
-        $allowedRoles = ['student', 'admin', 'superadmin', 'masteradmin'];
+        $allowedRoles = ['student', 'admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'];
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -92,7 +92,7 @@ class MenuManagementController extends Controller
     public function edit($id)
     {
         $menuItem = MenuItem::findOrFail($id);
-        $roles = ['student', 'admin', 'superadmin', 'masteradmin'];
+        $roles = ['student', 'admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'];
         return view('admin.management.menus.edit', compact('menuItem', 'roles'));
     }
 
@@ -102,7 +102,7 @@ class MenuManagementController extends Controller
     public function update(Request $request, $id)
     {
         $menuItem = MenuItem::findOrFail($id);
-        $allowedRoles = ['student', 'admin', 'superadmin', 'masteradmin'];
+        $allowedRoles = ['student', 'admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'];
 
         $request->validate([
             'name' => 'required|string|max:255',

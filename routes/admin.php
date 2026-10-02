@@ -82,12 +82,33 @@ Route::middleware(['auth', 'role:superadmin,masteradmin'])->group(function () {
         });
 });
 
-// Khusus Superuser
+// Akses Bersama SKPI - Index/Dashboard Kelulusan
+Route::middleware(['auth', 'role:masteradmin,kemahasiswaan,keuangan'])->prefix('admin/skpi')->name('admin.skpi.')->controller(SkpiController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+});
+
+// Akses SKPI - Verifikasi Data Prestasi (Masteradmin & Kemahasiswaan)
+Route::middleware(['auth', 'role:masteradmin,kemahasiswaan'])->prefix('admin/skpi')->name('admin.skpi.')->controller(SkpiController::class)->group(function () {
+    Route::get('/verifikasi-data', 'verifikasiData')->name('verifikasi-data.index');
+    Route::post('/verifikasi-data/{id}/approve', 'approveVerifikasiData')->name('verifikasi-data.approve');
+    Route::post('/verifikasi-data/{id}/unapprove', 'unapproveVerifikasiData')->name('verifikasi-data.unapprove');
+    Route::post('/verifikasi-data/{id}/reject', 'rejectVerifikasiData')->name('verifikasi-data.reject');
+    Route::post('/verifikasi-data/{id}/update', 'updateVerifikasiData')->name('verifikasi-data.update');
+    Route::post('/verifikasi-data/approve-all', 'approveAllVerifikasiData')->name('verifikasi-data.approve-all');
+});
+
+// Akses SKPI - Verifikasi Pembayaran Wisuda (Masteradmin & Keuangan)
+Route::middleware(['auth', 'role:masteradmin,keuangan'])->prefix('admin/skpi')->name('admin.skpi.')->controller(SkpiController::class)->group(function () {
+    Route::get('/verifikasi-pembayaran', 'verifikasiPembayaran')->name('verifikasi-pembayaran.index');
+    Route::patch('/verifikasi-pembayaran/{id}/approve', 'approvePembayaran')->name('verifikasi-pembayaran.approve');
+    Route::patch('/verifikasi-pembayaran/{id}/revision', 'revisionPembayaran')->name('verifikasi-pembayaran.revision');
+    Route::patch('/verifikasi-pembayaran/{id}/reject', 'rejectPembayaran')->name('verifikasi-pembayaran.reject');
+});
+
+// Khusus Superuser (Masteradmin)
 Route::middleware(['auth', 'role:masteradmin'])->group(function () {
 
-
     Route::prefix('admin/skpi')->name('admin.skpi.')->controller(SkpiController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
         Route::get('/daftar-skpi', 'daftarSkpi')->name('daftar-skpi.index');
         Route::get('/daftar-skpi/export', 'exportExcel')->name('daftar-skpi.export');
         Route::post('/daftar-skpi/AproveAll', 'AproveAllDaftarSkpi')->name('daftar-skpi.approve-all');
@@ -101,23 +122,11 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
         Route::post('/input-data-akademi/study-program', 'storeStudyProgram')->name('input-data-akademi.store-prodi');
         Route::delete('/input-data-akademi/study-program/{id}', 'destroyStudyProgram')->name('input-data-akademi.destroy-prodi');
         Route::post('/input-data-akademi/learning-outcome', 'storeLearningOutcome')->name('input-data-akademi.store-learning-outcome');
-        Route::get('/verifikasi-data', 'verifikasiData')->name('verifikasi-data.index');
-        Route::post('/verifikasi-data/{id}/approve', 'approveVerifikasiData')->name('verifikasi-data.approve');
-        Route::post('/verifikasi-data/{id}/unapprove', 'unapproveVerifikasiData')->name('verifikasi-data.unapprove');
-        Route::post('/verifikasi-data/{id}/reject', 'rejectVerifikasiData')->name('verifikasi-data.reject');
-        Route::post('/verifikasi-data/{id}/update', 'updateVerifikasiData')->name('verifikasi-data.update');
-        Route::post('/verifikasi-data/approve-all', 'approveAllVerifikasiData')->name('verifikasi-data.approve-all');
         Route::get('/generate-skpi', 'generateSkpi')->name('generate-skpi.index');
         Route::post('/generate-skpi/metadata', 'storeGenerateMetadata')->name('generate-skpi.metadata.store');
         Route::match(['get', 'post'], '/generate-skpi/download-all', [SkpiWordController::class, 'downloadAllApproved'])->name('generate-skpi.download-all');
         Route::post('/generate-skpi/batch-generate', [SkpiWordController::class, 'batchGenerate'])->name('generate-skpi.batch-generate');
         Route::get('/generate-skpi/{id}/download-saved', 'downloadSavedSkpi')->name('generate-skpi.download-saved');
-
-        // verifikai pembayaran
-        Route::get('/verifikasi-pembayaran', 'verifikasiPembayaran')->name('verifikasi-pembayaran.index');
-        Route::patch('/verifikasi-pembayaran/{id}/approve', 'approvePembayaran')->name('verifikasi-pembayaran.approve');
-        Route::patch('/verifikasi-pembayaran/{id}/revision', 'revisionPembayaran')->name('verifikasi-pembayaran.revision');
-        Route::patch('/verifikasi-pembayaran/{id}/reject', 'rejectPembayaran')->name('verifikasi-pembayaran.reject');
     });
 
     // Pengaturan Aplikasi (WhatsApp Button, dll)
@@ -128,8 +137,8 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
 });
 
 
-// Admin, Superadmin, Masteradmin
-Route::middleware(['auth', 'role:admin,superadmin,masteradmin'])->group(function () {
+// Admin, Superadmin, Masteradmin, Kemahasiswaan, Keuangan
+Route::middleware(['auth', 'role:admin,superadmin,masteradmin,kemahasiswaan,keuangan'])->group(function () {
 
     // Dashboard SuperApp
     Route::get('/admin/dashboard', [DashboardController::class, 'dashboard'])->name('admin.dashboard');
