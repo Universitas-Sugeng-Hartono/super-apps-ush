@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentAchievement;
 use App\Models\StudyProgram;
+use App\Services\PokemaEvaluatorService;
 use App\Services\SkpPointCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -44,7 +45,7 @@ class AchievementVerificationController extends Controller
             ->with(['achievements' => function ($query) use ($achievementsFilter) {
                 $achievementsFilter($query);
                 $query->with('approver')->latest();
-            }, 'skpiRegistration', 'finalProject'])
+            }, 'skpiRegistration', 'finalProject', 'counselings'])
             ->withSum(['achievements as total_skp_approved' => function ($q) {
                 $q->where('status', 'approved');
             }], 'skp_points')
@@ -76,11 +77,15 @@ class AchievementVerificationController extends Controller
                     $query->where(function ($q) {
                         $q->whereNull('beasiswa')
                             ->orWhere('beasiswa', '')
+                            ->orWhere('beasiswa', '0%')
+                            ->orWhere('beasiswa', '0')
                             ->orWhere('beasiswa', 'Non-Beasiswa');
                     });
                 } elseif ($beasiswaFilter === 'has_beasiswa') {
                     $query->whereNotNull('beasiswa')
                         ->where('beasiswa', '!=', '')
+                        ->where('beasiswa', '!=', '0%')
+                        ->where('beasiswa', '!=', '0')
                         ->where('beasiswa', '!=', 'Non-Beasiswa');
                 } else {
                     $query->where('beasiswa', $beasiswaFilter);
@@ -89,6 +94,11 @@ class AchievementVerificationController extends Controller
             ->orderBy('nama_lengkap')
             ->paginate(12)
             ->appends($request->query());
+
+        $students->getCollection()->transform(function ($student) {
+            $student->pokema_evaluation = PokemaEvaluatorService::evaluate($student);
+            return $student;
+        });
 
         $stats = [
             'total'          => StudentAchievement::count(),
@@ -108,12 +118,17 @@ class AchievementVerificationController extends Controller
         $categoryOptions = StudentAchievement::manualCategoryOptions();
         $skpDictionary = SkpPointCalculator::getDictionary();
 
-        // Opsi beasiswa unik yang sudah ada di database untuk filter
-        $availableBeasiswa = Student::whereNotNull('beasiswa')
+        // Opsi beasiswa persentase untuk filter (standar SK Rektor POKEMA & dari database)
+        $dbBeasiswa = Student::whereNotNull('beasiswa')
             ->where('beasiswa', '!=', '')
+            ->where('beasiswa', '!=', '0%')
+            ->where('beasiswa', '!=', '0')
+            ->where('beasiswa', '!=', 'Non-Beasiswa')
             ->distinct()
+            ->orderBy('beasiswa')
             ->pluck('beasiswa')
             ->toArray();
+        $availableBeasiswa = array_values(array_unique(array_merge(['100%', '75%', '50%', '25%'], $dbBeasiswa)));
 
         return view('kemahasiswaan.verifikasi-prestasi.index', compact(
             'students',
@@ -321,5 +336,92 @@ class AchievementVerificationController extends Controller
         }
 
         return redirect()->back()->with('success', 'Semua data pending (' . $achievements->count() . ' item) berhasil disetujui.');
+    }
+
+    /**
+     * Terapkan / perbarui status beasiswa mahasiswa berdasarkan evaluasi POKEMA
+     */
+    public function updateStudentBeasiswa(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+
+        $request->validate([
+            'beasiswa'  => 'required|string|max:20',
+            'sk_number' => 'nullable|string|max:100',
+            'notes'     => 'nullable|string|max:500',
+        ]);
+
+        $oldBeasiswa = $student->beasiswa ?: '0%';
+        $newBeasiswa = trim($request->beasiswa);
+        if (is_numeric($newBeasiswa)) {
+            $newBeasiswa .= '%';
+        }
+
+        $student->beasiswa = $newBeasiswa;
+
+        $logEntry = now()->format('d/m/Y H:i') . " - Penyesuaian Beasiswa dari {$oldBeasiswa} ke {$newBeasiswa}";
+        if ($request->filled('sk_number')) {
+            $logEntry .= " (Dasar SK: {$request->sk_number})";
+        }
+        if ($request->filled('notes')) {
+            $logEntry .= ". Catatan: {$request->notes}";
+        }
+
+        $student->notes = ($student->notes ? $student->notes . "\n" : '') . $logEntry;
+        $student->save();
+
+        // Notifikasi ke mahasiswa
+        try {
+            $newTierKey = PokemaEvaluatorService::normalizeTierKey($newBeasiswa);
+            $oldTierKey = PokemaEvaluatorService::normalizeTierKey($oldBeasiswa);
+            $newLevel = PokemaEvaluatorService::TIERS[$newTierKey]['level'] ?? 0;
+            $oldLevel = PokemaEvaluatorService::TIERS[$oldTierKey]['level'] ?? 0;
+
+            $isUpgrade = $newLevel > $oldLevel;
+            $title = $isUpgrade ? 'Selamat! Kenaikan Beasiswa Disetujui' : 'Pembaruan Status Beasiswa';
+            $body = "Status beasiswa Anda telah disesuaikan menjadi {$newBeasiswa}. " . ($request->notes ?: 'Berdasarkan hasil evaluasi capaian POKEMA & IPK.');
+
+            NotificationHelper::notifyStudent(
+                $student->id,
+                'beasiswa.updated',
+                $title,
+                $body,
+                route('student.personal.achievements.index'),
+                [
+                    'old_beasiswa' => $oldBeasiswa,
+                    'new_beasiswa' => $newBeasiswa,
+                    'sk_number' => $request->sk_number,
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::warning('Gagal kirim notifikasi beasiswa: ' . $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', "Status beasiswa {$student->nama_lengkap} berhasil diperbarui menjadi {$newBeasiswa}.");
+    }
+
+    /**
+     * Ambil data evaluasi POKEMA mahasiswa dalam format JSON (bisa spesifik tahun studi)
+     */
+    public function getStudentEvaluationData(Request $request, $id)
+    {
+        $student = Student::with(['achievements' => function ($q) {
+            $q->where('status', 'approved');
+        }, 'counselings'])->findOrFail($id);
+
+        $yearInput = $request->input('year');
+        $year = null;
+        if ($yearInput === 'total' || $yearInput === '4') {
+            $year = 'total';
+        } elseif (in_array((string) $yearInput, ['1', '2', '3'], true)) {
+            $year = (int) $yearInput;
+        }
+
+        $eval = PokemaEvaluatorService::evaluate($student, $year);
+
+        return response()->json([
+            'success' => true,
+            'evaluation' => $eval,
+        ]);
     }
 }

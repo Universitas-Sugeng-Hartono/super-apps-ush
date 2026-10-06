@@ -44,6 +44,18 @@
 
             <div class="form-row">
                 <div class="form-group">
+                    <label>Beasiswa (%)</label>
+                    <input type="text" class="form-control" value="{{ $student->beasiswa ?: '0%' }}" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label>Nilai IPK</label>
+                    <input type="text" class="form-control" value="{{ $student->ipk ? number_format((float)$student->ipk, 2) : 'Belum diisi / 0.00' }}" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
                     <label>Nama Lengkap</label>
                     <input type="text" class="form-control" value="{{ $student->nama_lengkap }}" disabled>
                 </div>

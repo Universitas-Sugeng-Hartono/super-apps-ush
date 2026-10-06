@@ -95,6 +95,7 @@ class StudentAmbassadorController extends Controller
             'periode_masuk' => 'required|date_format:Y-m',
             'program_studi' => 'required|string|in:' . implode(',', $validPrograms),
             'status'        => 'required|string|in:mahasiswa,studentambassador',
+            'ipk'           => 'nullable|numeric|min:0|max:4',
             'beasiswa'      => 'nullable|string|max:100',
             'gender'        => 'nullable|in:L,P',
             'address'       => 'nullable|string|max:500',
@@ -110,6 +111,9 @@ class StudentAmbassadorController extends Controller
             'periode_masuk.date_format' => 'Format Periode Masuk tidak valid.',
             'program_studi.required'    => 'Program Studi harus dipilih.',
             'status.required'           => 'Status harus dipilih (Mahasiswa atau Student Ambassador).',
+            'ipk.numeric'               => 'IPK harus berupa angka.',
+            'ipk.min'                   => 'IPK minimal 0.00.',
+            'ipk.max'                   => 'IPK maksimal 4.00.',
         ]);
 
         if ($validator->fails()) {
@@ -117,7 +121,17 @@ class StudentAmbassadorController extends Controller
         }
 
         $lecturerId = $request->id_lecturer ?: (User::whereIn('role', ['admin', 'superadmin', 'masteradmin'])->value('id') ?? 1);
-        $defaultProdi = StudyProgram::where('is_active', true)->orderBy('order')->first();
+        $beasiswa = $request->beasiswa;
+        if (filled($beasiswa)) {
+            $beasiswa = trim((string) $beasiswa);
+            if (is_numeric($beasiswa)) {
+                $beasiswa = $beasiswa . '%';
+            } elseif (!str_ends_with($beasiswa, '%') && preg_match('/^\d+(\.\d+)?$/', $beasiswa)) {
+                $beasiswa = $beasiswa . '%';
+            }
+        } else {
+            $beasiswa = null;
+        }
 
         Student::create([
             'id_lecturer'      => $lecturerId,
@@ -125,9 +139,10 @@ class StudentAmbassadorController extends Controller
             'nim'              => $request->nim,
             'password'         => Hash::make('12345678'),
             'angkatan'         => (int) substr($request->periode_masuk, 0, 4),
-            'program_studi'    => $request->program_studi ?? ($defaultProdi ? $defaultProdi->name : 'Bisnis Digital'),
+            'program_studi'    => $request->program_studi,
             'status'           => $request->status,
-            'beasiswa'         => $request->beasiswa,
+            'ipk'              => $request->filled('ipk') ? $request->ipk : null,
+            'beasiswa'         => $beasiswa,
             'status_mahasiswa' => 'Aktif',
             'email'            => $request->email,
             'no_telepon'       => $request->phone,
@@ -179,6 +194,7 @@ class StudentAmbassadorController extends Controller
             'periode_masuk' => 'required|date_format:Y-m',
             'program_studi' => 'required|string|in:' . implode(',', $validPrograms),
             'status'        => 'required|string|in:mahasiswa,studentambassador',
+            'ipk'           => 'nullable|numeric|min:0|max:4',
             'beasiswa'      => 'nullable|string|max:100',
             'gender'        => 'nullable|in:L,P',
             'address'       => 'nullable|string|max:500',
@@ -186,10 +202,26 @@ class StudentAmbassadorController extends Controller
             'email'         => 'nullable|email|max:100|unique:students,email,' . $student->id,
             'phone'         => 'nullable|string|max:15',
             'id_lecturer'   => 'nullable|exists:users,id',
+        ], [
+            'ipk.numeric'   => 'IPK harus berupa angka.',
+            'ipk.min'       => 'IPK minimal 0.00.',
+            'ipk.max'       => 'IPK maksimal 4.00.',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $beasiswa = $request->beasiswa;
+        if (filled($beasiswa)) {
+            $beasiswa = trim((string) $beasiswa);
+            if (is_numeric($beasiswa)) {
+                $beasiswa = $beasiswa . '%';
+            } elseif (!str_ends_with($beasiswa, '%') && preg_match('/^\d+(\.\d+)?$/', $beasiswa)) {
+                $beasiswa = $beasiswa . '%';
+            }
+        } else {
+            $beasiswa = null;
         }
 
         $student->update([
@@ -198,7 +230,8 @@ class StudentAmbassadorController extends Controller
             'angkatan'         => (int) substr($request->periode_masuk, 0, 4),
             'program_studi'    => $request->program_studi,
             'status'           => $request->status,
-            'beasiswa'         => $request->beasiswa,
+            'ipk'              => $request->filled('ipk') ? $request->ipk : $student->ipk,
+            'beasiswa'         => $beasiswa,
             'email'            => $request->email,
             'no_telepon'       => $request->phone,
             'notes'            => $request->notes,
@@ -246,9 +279,10 @@ class StudentAmbassadorController extends Controller
             'Content-Disposition' => 'attachment; filename="template_import_student_ambassador.csv"',
         ];
 
-        $csv = implode(',', ['nama', 'nim', 'angkatan', 'program_studi', 'status', 'beasiswa', 'email', 'password']) . "\n";
-        $csv .= implode(',', ['Budi Santoso', '2201234567', '2024', 'Bisnis Digital', 'studentambassador', 'KIP Kuliah', 'budi@example.com', '']) . "\n";
-        $csv .= implode(',', ['Siti Rahma', '2201234568', '2024', 'Ilmu Komputer', 'mahasiswa', 'Beasiswa Prestasi', 'siti@example.com', '']) . "\n";
+        $csv = implode(',', ['nama', 'nim', 'angkatan', 'program_studi', 'status', 'ipk', 'beasiswa', 'email', 'password']) . "\n";
+        $csv .= implode(',', ['Budi Santoso', '2201234567', '2024', 'Bisnis Digital', 'studentambassador', '3.85', '100%', 'budi@example.com', '']) . "\n";
+        $csv .= implode(',', ['Siti Rahma', '2201234568', '2024', 'Ilmu Komputer', 'mahasiswa', '3.70', '50%', 'siti@example.com', '']) . "\n";
+        $csv .= implode(',', ['Ahmad Fauzi', '2201234569', '2024', 'Sistem Informasi', 'mahasiswa', '3.50', '0%', 'ahmad@example.com', '']) . "\n";
 
         // BOM untuk kompatibilitas Excel
         $csv = "\xEF\xBB\xBF" . $csv;
@@ -297,6 +331,7 @@ class StudentAmbassadorController extends Controller
         $iAngkatan = $idx(['angkatan', 'batch', 'periode_masuk']);
         $iProdi = $idx(['program_studi', 'prodi', 'program studi']);
         $iStatus = $idx(['status', 'tipe', 'role_mahasiswa']);
+        $iIpk = $idx(['ipk', 'gpa']);
         $iBeasiswa = $idx(['beasiswa', 'scholarship', 'jenis_beasiswa']);
         $iEmail = $idx(['email']);
         $iPassword = $idx(['password']);
@@ -325,7 +360,19 @@ class StudentAmbassadorController extends Controller
                 $angkatanRaw = trim((string) ($row[$iAngkatan] ?? ''));
                 $prodi = trim((string) ($row[$iProdi] ?? ''));
                 $statusInput = $iStatus !== null ? strtolower(trim((string) ($row[$iStatus] ?? ''))) : 'studentambassador';
-                $beasiswa = $iBeasiswa !== null ? trim((string) ($row[$iBeasiswa] ?? '')) : null;
+                $ipkRaw = $iIpk !== null ? trim((string) ($row[$iIpk] ?? '')) : '';
+                $ipkVal = (is_numeric($ipkRaw) && (float)$ipkRaw >= 0 && (float)$ipkRaw <= 4) ? (float) $ipkRaw : null;
+                $beasiswaRaw = $iBeasiswa !== null ? trim((string) ($row[$iBeasiswa] ?? '')) : '';
+                $beasiswa = null;
+                if ($beasiswaRaw !== '') {
+                    if (is_numeric($beasiswaRaw)) {
+                        $beasiswa = $beasiswaRaw . '%';
+                    } elseif (!str_ends_with($beasiswaRaw, '%') && preg_match('/^\d+(\.\d+)?$/', $beasiswaRaw)) {
+                        $beasiswa = $beasiswaRaw . '%';
+                    } else {
+                        $beasiswa = $beasiswaRaw;
+                    }
+                }
                 $email = $iEmail !== null ? trim((string) ($row[$iEmail] ?? '')) : null;
                 $passwordPlain = $iPassword !== null ? trim((string) ($row[$iPassword] ?? '')) : '';
 
@@ -362,9 +409,14 @@ class StudentAmbassadorController extends Controller
                         'tanggal_masuk' => $tanggalMasuk,
                         'program_studi' => $prodi,
                         'status' => $status,
-                        'beasiswa' => $beasiswa ?: $student->beasiswa,
                         'email' => $email ?: $student->email,
                     ];
+                    if ($beasiswa !== null) {
+                        $updateData['beasiswa'] = $beasiswa;
+                    }
+                    if ($ipkVal !== null) {
+                        $updateData['ipk'] = $ipkVal;
+                    }
                     if ($passwordPlain !== '') {
                         $updateData['password'] = Hash::make($passwordPlain);
                     }
@@ -379,6 +431,7 @@ class StudentAmbassadorController extends Controller
                         'angkatan' => $angkatan,
                         'program_studi' => $prodi,
                         'status' => $status,
+                        'ipk' => $ipkVal,
                         'beasiswa' => $beasiswa ?: null,
                         'status_mahasiswa' => 'Aktif',
                         'email' => $email ?: null,

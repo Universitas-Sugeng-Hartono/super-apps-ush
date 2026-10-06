@@ -213,6 +213,7 @@
                             <th rowspan="2">Semester</th>
                             <th rowspan="2">SKS</th>
                             <th rowspan="2">IP Semester Lalu</th>
+                            <th rowspan="2">IPK Kumulatif</th>
                             <th rowspan="2">Tanggal</th>
                             <th rowspan="2">Komentar</th>
                             <th rowspan="2">Matkul Tidak Lulus</th>
@@ -232,7 +233,8 @@
                                 <td>{{ $i + 1 }}</td>
                                 <td>{{ $row['semester'] }}</td>
                                 <td>{{ $row['sks'] }}</td>
-                                <td>{{ $row['ip'] }}</td>
+                                <td>{{ $row['ip'] ?? '-' }}</td>
+                                <td><strong>{{ $row['ipk'] ?? '-' }}</strong></td>
                                 <td>{{ \Carbon\Carbon::parse($row['tanggal'])->translatedFormat('l, d F Y') }}</td>
                                 <td>{{ $row['komentar'] }}</td>
                                 <td>

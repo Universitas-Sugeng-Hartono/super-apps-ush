@@ -15,6 +15,7 @@ class CardCounseling extends Model
         'semester',
         'sks',
         'ip',
+        'ipk',
         'tanggal',
         'komentar',
         'failed_courses',

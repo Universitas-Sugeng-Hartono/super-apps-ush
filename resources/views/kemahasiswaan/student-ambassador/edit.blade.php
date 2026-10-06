@@ -71,17 +71,16 @@
                     </div>
 
                     <div class="form-group">
-                        <label><i class="bi bi-mortarboard-fill text-success me-1"></i> Status / Jenis Beasiswa</label>
-                        <input type="text" name="beasiswa" list="beasiswaList" class="form-control" value="{{ old('beasiswa', $student->beasiswa) }}" placeholder="Contoh: KIP Kuliah / Beasiswa Prestasi / Non-Beasiswa">
+                        <label><i class="bi bi-mortarboard-fill text-success me-1"></i> Beasiswa (%)</label>
+                        <input type="text" name="beasiswa" list="beasiswaList" class="form-control" value="{{ old('beasiswa', $student->beasiswa) }}" placeholder="Pilih atau ketik persentase, misal: 100%, 75%, 50%, 25%, 0%">
                         <datalist id="beasiswaList">
-                            <option value="Non-Beasiswa">
-                            <option value="KIP Kuliah">
-                            <option value="Beasiswa Prestasi">
-                            <option value="Beasiswa Yayasan">
-                            <option value="Beasiswa Hafidz / Tahfidz">
-                            <option value="Beasiswa Mitra / Industri">
+                            <option value="100%">100% (Beasiswa Penuh - Sangat Baik)</option>
+                            <option value="75%">75% (Baik Sekali)</option>
+                            <option value="50%">50% (Baik)</option>
+                            <option value="25%">25% (Cukup Baik)</option>
+                            <option value="0%">0% (Reguler / Non-Beasiswa)</option>
                         </datalist>
-                        <small class="text-muted">Kosongkan atau pilih jenis beasiswa jika ada.</small>
+                        <small class="text-muted">Pilih atau ketik persentase beasiswa (misal: 100%, 75%, 50%, 25%, atau 0% untuk reguler).</small>
                         @error('beasiswa')<span class="error">{{ $message }}</span>@enderror
                     </div>
                 </div>
@@ -99,9 +98,7 @@
                         </select>
                         @error('id_lecturer')<span class="error">{{ $message }}</span>@enderror
                     </div>
-                </div>
 
-                <div class="form-row">
                     <div class="form-group">
                         <label>Jenis Kelamin</label>
                         <select name="gender" class="form-control">
@@ -110,18 +107,20 @@
                         </select>
                         @error('gender')<span class="error">{{ $message }}</span>@enderror
                     </div>
+                </div>
 
+                <div class="form-row">
                     <div class="form-group">
                         <label>No. Telepon / WhatsApp</label>
                         <input type="text" name="phone" class="form-control" value="{{ old('phone', $student->no_telepon) }}">
                         @error('phone')<span class="error">{{ $message }}</span>@enderror
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control" value="{{ old('email', $student->email) }}">
-                    @error('email')<span class="error">{{ $message }}</span>@enderror
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ old('email', $student->email) }}">
+                        @error('email')<span class="error">{{ $message }}</span>@enderror
+                    </div>
                 </div>
 
                 <div class="form-group">

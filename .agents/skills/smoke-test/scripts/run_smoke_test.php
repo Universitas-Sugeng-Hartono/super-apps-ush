@@ -279,8 +279,8 @@ runTest("AuthController - Redirect Logic Allows Both New Roles", function () {
     $userK = new User(['role' => 'kemahasiswaan']);
     Auth::setUser($userK);
     $responseK = $controller->index();
-    if (!$responseK->isRedirect(route('admin.dashboard'))) {
-        throw new \Exception("AuthController did not redirect 'kemahasiswaan' to admin.dashboard");
+    if (!$responseK->isRedirect(route('kemahasiswaan.dashboard'))) {
+        throw new \Exception("AuthController did not redirect 'kemahasiswaan' to kemahasiswaan.dashboard");
     }
 
     $userKeu = new User(['role' => 'keuangan']);
@@ -315,8 +315,16 @@ runTest("DashboardController - Kemahasiswaan Dedicated Dashboard Renders Success
     $userK = User::where('role', 'kemahasiswaan')->first() ?? new User(['name' => 'Staf Kemahasiswaan', 'role' => 'kemahasiswaan']);
     Auth::setUser($userK);
 
+    // 10a. Akses /admin/dashboard me-redirect ke /kemahasiswaan/dashboard
     $req = Request::create('/admin/dashboard', 'GET');
-    $view = $dashboardController->dashboard($req);
+    $redirect = $dashboardController->dashboard($req);
+    if (!($redirect instanceof \Illuminate\Http\RedirectResponse) || !$redirect->isRedirect(route('kemahasiswaan.dashboard'))) {
+        throw new \Exception("Accessing /admin/dashboard did not redirect kemahasiswaan to kemahasiswaan.dashboard");
+    }
+
+    // 10b. Akses /kemahasiswaan/dashboard me-render view kemahasiswaan.dashboard.index
+    $reqKemahasiswaan = Request::create('/kemahasiswaan/dashboard', 'GET');
+    $view = $dashboardController->kemahasiswaanDashboard($reqKemahasiswaan);
 
     if (!($view instanceof \Illuminate\View\View)) {
         throw new \Exception("Dashboard did not return a View instance for kemahasiswaan");

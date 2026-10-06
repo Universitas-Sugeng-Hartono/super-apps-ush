@@ -84,19 +84,24 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label class="form-label">Semester</label>
                         <input type="text" name="semester" class="form-control"
                             value="{{ old('semester', $row->semester) }}">
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label class="form-label">SKS</label>
                         <input type="number" name="sks" class="form-control" value="{{ old('sks', $row->sks) }}">
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">IP Semester Lalu</label>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">IP Semester Lalu (IPS)</label>
                         <input type="number" step="0.01" name="ip" class="form-control"
                             value="{{ old('ip', $row->ip) }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">IPK Kumulatif</label>
+                        <input type="number" step="0.01" min="0" max="4.00" name="ipk" class="form-control"
+                            value="{{ old('ipk', $row->ipk ?? $student->ipk) }}">
                     </div>
                 </div>
 

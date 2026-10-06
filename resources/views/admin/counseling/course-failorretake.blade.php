@@ -65,7 +65,8 @@
                                                 aria-controls="collapse{{ $student->id }}-{{ $index }}">
                                                 Semester {{ $counseling->semester }}
                                                 | SKS: {{ $counseling->sks }}
-                                                | IP: {{ $counseling->ip ?? '-' }}
+                                                | IPS: {{ $counseling->ip ?? '-' }}
+                                                | IPK: {{ $counseling->ipk ?? '-' }}
                                             </button>
                                         </h2>
                                         <div id="collapse{{ $student->id }}-{{ $index }}"

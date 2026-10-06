@@ -55,6 +55,13 @@ class CardCounselingController extends Controller
                 'max:4.00',
                 'regex:/^\d(\.\d{1,2})?$/'
             ],
+            'ipk'               => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:4.00',
+                'regex:/^\d(\.\d{1,2})?$/'
+            ],
             'tanggal'           => 'required|date|before_or_equal:today',
             'komentar'          => 'nullable|string|max:500',
             'failed_courses'    => 'nullable|array',
@@ -72,10 +79,15 @@ class CardCounselingController extends Controller
             'sks.min'      => 'SKS must be at least :min.',
             'sks.max'      => 'SKS cannot exceed :max per semester.',
 
-            'ip.numeric' => 'GPA (IP) must be a valid number.',
-            'ip.min'     => 'GPA cannot be less than :min.',
-            'ip.max'     => 'GPA cannot be greater than :max.',
-            'ip.regex'   => 'GPA must be in format x.xx (e.g., 3.43, max 1 digit before and 2 digits after the decimal).',
+            'ip.numeric' => 'IP Semester lalu must be a valid number.',
+            'ip.min'     => 'IP Semester lalu cannot be less than :min.',
+            'ip.max'     => 'IP Semester lalu cannot be greater than :max.',
+            'ip.regex'   => 'IP Semester lalu must be in format x.xx (e.g., 3.43).',
+
+            'ipk.numeric' => 'IPK must be a valid number.',
+            'ipk.min'     => 'IPK cannot be less than :min.',
+            'ipk.max'     => 'IPK cannot be greater than :max.',
+            'ipk.regex'   => 'IPK must be in format x.xx (e.g., 3.75).',
 
             'tanggal.required'        => 'Date is required.',
             'tanggal.date'            => 'Date must be a valid date.',
@@ -99,13 +111,24 @@ class CardCounselingController extends Controller
                 'semester'        => $validated['semester'],
                 'sks'             => $validated['sks'],
                 'ip'              => $validated['ip'] ?? null,
+                'ipk'             => $validated['ipk'] ?? null,
                 'tanggal'         => $validated['tanggal'],
                 'komentar'        => $validated['komentar'] ?? null,
                 'failed_courses'  => $validated['failed_courses'] ?? [],
                 'retaken_courses' => $validated['retaken_courses'] ?? [],
             ]);
 
-            $student->update(['is_counseling' => 0]);
+            $studentUpdates = ['is_counseling' => 0];
+            if (!empty($validated['ipk'])) {
+                $studentUpdates['ipk'] = $validated['ipk'];
+            }
+            if (!empty($validated['sks'])) {
+                $studentUpdates['sks'] = $validated['sks'];
+            }
+            if (!empty($validated['semester'])) {
+                $studentUpdates['semester'] = $validated['semester'];
+            }
+            $student->update($studentUpdates);
         });
 
         return redirect()

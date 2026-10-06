@@ -185,7 +185,8 @@
 
                         <p class="mb-1"><strong>Semester:</strong> {{ $row['semester'] }}</p>
                         <p class="mb-1"><strong>SKS yang diambil:</strong> {{ $row['sks'] }}</p>
-                        <p class="mb-1"><strong>IP Semester lalu:</strong> {{ $row['ip'] }}</p>
+                        <p class="mb-1"><strong>IP Semester lalu (IPS):</strong> {{ $row['ip'] ?? '-' }}</p>
+                        <p class="mb-1"><strong>IPK Kumulatif:</strong> {{ $row['ipk'] ?? ($student->ipk ?? '-') }}</p>
 
                         <p class="mb-1"><strong>Komentar PA:</strong><br>
                             <span class="text-muted">{{ $row['komentar'] ?? '-' }}</span>
@@ -229,21 +230,25 @@
                         <form action="{{ route('student.counseling.store', $student->id) }}" method="POST">
                             @csrf
                             <div class="row g-3">
-                                <div class="col-6 col-md-3">
+                                <div class="col-6 col-md-2">
                                     <label class="form-label">Semester</label>
-                                    <input type="number" name="semester" class="form-control" required>
+                                    <input type="number" name="semester" class="form-control" placeholder="1-14" min="1" max="14" required>
                                 </div>
-                                <div class="col-6 col-md-3">
+                                <div class="col-6 col-md-2">
                                     <label class="form-label">SKS Yang diambil</label>
-                                    <input type="number" name="sks" class="form-control" required>
+                                    <input type="number" name="sks" class="form-control" placeholder="Contoh: 20" min="1" max="30" required>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <label class="form-label">IP Semester lalu</label>
-                                    <input type="text" name="ip" class="form-control">
+                                    <label class="form-label">IP Semester lalu (IPS)</label>
+                                    <input type="number" step="0.01" min="0" max="4.00" name="ip" class="form-control" placeholder="Contoh: 3.50">
                                 </div>
                                 <div class="col-6 col-md-3">
+                                    <label class="form-label">IPK Kumulatif</label>
+                                    <input type="number" step="0.01" min="0" max="4.00" name="ipk" class="form-control" value="{{ $student->ipk }}" placeholder="Contoh: 3.75">
+                                </div>
+                                <div class="col-12 col-md-2">
                                     <label class="form-label">Tanggal Bimbingan</label>
-                                    <input type="date" name="tanggal" class="form-control" required>
+                                    <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
                                 </div>
 
                                 <div class="col-12">

@@ -25,6 +25,7 @@ class StudentAchievement extends Model
     protected $fillable = [
         'student_id',
         'category',
+        'semester',
         'activity_type',
         'event',
         'organizer',

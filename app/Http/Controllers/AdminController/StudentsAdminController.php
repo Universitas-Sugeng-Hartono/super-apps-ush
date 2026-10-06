@@ -550,14 +550,15 @@ class StudentsAdminController extends Controller
        $validator = Validator::make(
         $request->all(),
         [
-            'semester'   => 'required|string|max:20',
+            'semester'   => 'required|max:20',
             'sks'        => 'required|integer|min:0',
-            'ip'         => 'required|numeric|between:0,4',
+            'ip'         => 'nullable|numeric|between:0,4',
+            'ipk'        => 'nullable|numeric|between:0,4',
             'tanggal'    => 'required|date',
             'komentar'   => 'nullable|string|max:500',
-            'failed_courses'     => 'array',
+            'failed_courses'     => 'nullable|array',
             'failed_courses.*'   => 'exists:courses,id',
-            'retaken_courses'    => 'array',
+            'retaken_courses'    => 'nullable|array',
             'retaken_courses.*'  => 'exists:courses,id',
         ],
         [
@@ -568,9 +569,11 @@ class StudentsAdminController extends Controller
             'sks.integer'        => 'SKS harus berupa angka bulat.',
             'sks.min'            => 'SKS minimal 0.',
 
-            'ip.required'        => 'IP Semester Lalu wajib diisi.',
             'ip.numeric'         => 'IP harus berupa angka.',
             'ip.between'         => 'IP harus antara 0.00 sampai 4.00.',
+
+            'ipk.numeric'        => 'IPK harus berupa angka.',
+            'ipk.between'        => 'IPK harus antara 0.00 sampai 4.00.',
 
             'tanggal.required'   => 'Tanggal konsultasi wajib diisi.',
             'tanggal.date'       => 'Format tanggal tidak valid.',
@@ -595,6 +598,7 @@ class StudentsAdminController extends Controller
             $row->semester = $request->semester;
             $row->sks      = $request->sks;
             $row->ip       = $request->ip;
+            $row->ipk      = $request->ipk;
             $row->tanggal  = $request->tanggal;
             $row->komentar = $request->komentar;
 
@@ -603,6 +607,23 @@ class StudentsAdminController extends Controller
             $row->retaken_courses = $request->retaken_courses ?? [];
 
             $row->save();
+
+            // Sync IPK, SKS, dan Semester terbaru ke profil mahasiswa
+            if ($row->student) {
+                $studentUpdates = [];
+                if ($request->filled('ipk')) {
+                    $studentUpdates['ipk'] = $request->ipk;
+                }
+                if ($request->filled('sks')) {
+                    $studentUpdates['sks'] = $request->sks;
+                }
+                if ($request->filled('semester')) {
+                    $studentUpdates['semester'] = $request->semester;
+                }
+                if (!empty($studentUpdates)) {
+                    $row->student->update($studentUpdates);
+                }
+            }
         });
 
 

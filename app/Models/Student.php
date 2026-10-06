@@ -54,6 +54,7 @@ class Student extends Authenticatable
         'nama_ibu_kandung',
         'ipk',
         'sks',
+        'semester',
         'is_edited',
         'is_skpi_unlocked',
     ];

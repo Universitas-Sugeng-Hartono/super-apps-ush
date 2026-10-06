@@ -120,6 +120,8 @@
                             <th>NIM</th>
                             <th>Periode Masuk</th>
                             <th>Program Studi</th>
+                            <th style="text-align: center;">IPK</th>
+                            <th style="text-align: center;">Beasiswa (%)</th>
                             <th>Status</th>
                             <th style="text-align: right;">Aksi</th>
                         </tr>
@@ -140,6 +142,27 @@
                                 </td>
                                 <td>
                                     <span class="badge-prodi">{{ $student->program_studi }}</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    @if(filled($student->ipk))
+                                        <span class="badge-ipk {{ (float)$student->ipk >= 3.5 ? 'ipk-cumlaude' : ((float)$student->ipk >= 3.0 ? 'ipk-good' : '') }}">
+                                            {{ number_format((float)$student->ipk, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td style="text-align: center;">
+                                    @php
+                                        $hasBeasiswa = filled($student->beasiswa) && !in_array($student->beasiswa, ['0%', '0', 'Non-Beasiswa'], true);
+                                    @endphp
+                                    @if($hasBeasiswa)
+                                        <span class="badge-beasiswa" title="Beasiswa {{ $student->beasiswa }}">
+                                            <i class="bi bi-mortarboard-fill"></i> {{ $student->beasiswa }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted" style="font-size: 12px;">0%</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($student->status === 'studentambassador')
@@ -637,6 +660,46 @@
         margin-top: 24px;
         display: flex;
         justify-content: flex-end;
+    }
+
+    /* Badge IPK */
+    .badge-ipk {
+        display: inline-block;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #F1F5F9;
+        color: #334155;
+        border: 1px solid #E2E8F0;
+    }
+    .badge-ipk.ipk-good {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border-color: #BFDBFE;
+    }
+    .badge-ipk.ipk-cumlaude {
+        background: #ECFDF5;
+        color: #047857;
+        border-color: #A7F3D0;
+    }
+
+    /* Badge Beasiswa */
+    .badge-beasiswa {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #ECFDF5;
+        color: #059669;
+        border: 1px solid #A7F3D0;
+        max-width: 170px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 </style>
 @endsection

@@ -56,7 +56,7 @@
         <form method="GET" action="{{ route('kemahasiswaan.verifikasi-prestasi.index') }}" class="filter-form" id="filterForm">
             <div class="filter-group search-group">
                 <label for="search">Cari Data</label>
-                <input type="text" id="search" name="search" class="form-control" value="{{ $search }}" placeholder="Nama, NIM, prodi, atau jenis beasiswa..." oninput="debounceFilter()">
+                <input type="text" id="search" name="search" class="form-control" value="{{ $search }}" placeholder="Nama, NIM, prodi, atau beasiswa (%)..." oninput="debounceFilter()">
             </div>
             <div class="filter-group">
                 <label for="status">Status Verifikasi</label>
@@ -76,13 +76,13 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label for="beasiswa">Beasiswa</label>
+                <label for="beasiswa">Beasiswa (%)</label>
                 <select id="beasiswa" name="beasiswa" class="form-control" onchange="document.getElementById('filterForm').submit()">
                     <option value="">Semua Mahasiswa</option>
-                    <option value="has_beasiswa" {{ $beasiswaFilter === 'has_beasiswa' ? 'selected' : '' }}>Penerima Beasiswa (Ada)</option>
-                    <option value="none" {{ $beasiswaFilter === 'none' ? 'selected' : '' }}>Non-Beasiswa</option>
+                    <option value="has_beasiswa" {{ $beasiswaFilter === 'has_beasiswa' ? 'selected' : '' }}>Penerima Beasiswa (&gt; 0%)</option>
+                    <option value="none" {{ $beasiswaFilter === 'none' ? 'selected' : '' }}>Non-Beasiswa (0%)</option>
                     @if(!empty($availableBeasiswa))
-                        <optgroup label="Jenis Beasiswa Spesifik">
+                        <optgroup label="Persentase Beasiswa">
                             @foreach($availableBeasiswa as $b)
                                 <option value="{{ $b }}" {{ $beasiswaFilter === $b ? 'selected' : '' }}>{{ $b }}</option>
                             @endforeach
@@ -141,7 +141,7 @@
                     <th style="text-align: center;">IPK</th>
                     <th style="text-align: center;">Total Point</th>
                     <th style="text-align: center;">Status Mahasiswa</th>
-                    <th>Beasiswa</th>
+                    <th style="text-align: center;">Beasiswa (%)</th>
                     <th style="text-align: center;">Pengajuan</th>
                     <th style="text-align: center; width: 140px;">Aksi</th>
                 </tr>
@@ -184,7 +184,7 @@
                 });
 
                 $isAmbassador = ($student->status === 'studentambassador');
-                $hasBeasiswa = !empty($student->beasiswa) && $student->beasiswa !== 'Non-Beasiswa';
+                $hasBeasiswa = filled($student->beasiswa) && !in_array($student->beasiswa, ['0%', '0', 'Non-Beasiswa'], true);
                 $ipkVal = is_numeric($student->ipk) ? number_format((float)$student->ipk, 2) : null;
                 $approvedPoints = (int) ($student->total_skp_approved ?? 0);
                 @endphp
@@ -222,13 +222,32 @@
                             </span>
                         @endif
                     </td>
-                    <td>
+                    <td style="text-align: center;">
                         @if($hasBeasiswa)
-                            <span class="badge-beasiswa" title="{{ $student->beasiswa }}">
-                                <i class="bi bi-mortarboard-fill"></i> {{ Str::limit($student->beasiswa, 22) }}
+                            <span class="badge-beasiswa" title="Beasiswa {{ $student->beasiswa }}">
+                                <i class="bi bi-mortarboard-fill"></i> {{ $student->beasiswa }}
                             </span>
                         @else
-                            <span class="text-muted" style="font-size: 12px;">-</span>
+                            <span class="text-muted" style="font-size: 12px;">0%</span>
+                        @endif
+
+                        @if(!empty($student->pokema_evaluation))
+                            @php
+                                $eval = $student->pokema_evaluation;
+                            @endphp
+                            @if($eval['action_type'] === 'upgrade')
+                                <div style="margin-top: 4px;">
+                                    <span class="badge-rec badge-rec-upgrade" title="{{ $eval['reason'] }}">
+                                        <i class="bi bi-arrow-up-circle-fill"></i> Rekomendasi {{ $eval['qualified_beasiswa'] }}
+                                    </span>
+                                </div>
+                            @elseif($eval['action_type'] === 'downgrade')
+                                <div style="margin-top: 4px;">
+                                    <span class="badge-rec badge-rec-downgrade" title="{{ $eval['reason'] }}">
+                                        <i class="bi bi-arrow-down-circle-fill"></i> Evaluasi {{ $eval['qualified_beasiswa'] }}
+                                    </span>
+                                </div>
+                            @endif
                         @endif
                     </td>
                     <td style="text-align: center;">
@@ -244,18 +263,36 @@
                         @endif
                     </td>
                     <td style="text-align: center;">
-                        <div class="action-buttons" style="justify-content: center;">
+                        <div class="action-buttons" style="justify-content: center; gap: 6px; flex-wrap: wrap;">
                             <button type="button" class="btn-view"
+                                data-student-id="{{ $student->id }}"
                                 data-nama="{{ $student->nama_lengkap ?? '-' }}"
                                 data-nim="{{ $student->nim ?? '-' }}"
                                 data-ipk="{{ $ipkVal ?? '-' }}"
                                 data-poin="{{ $approvedPoints }}"
                                 data-status-mhs="{{ $isAmbassador ? 'Student Ambassador' : 'Mahasiswa' }}"
-                                data-beasiswa="{{ $student->beasiswa ?: '-' }}"
+                                data-beasiswa="{{ $hasBeasiswa ? $student->beasiswa : '0%' }}"
                                 data-achievements="{{ base64_encode(json_encode($achievementsData->values())) }}"
+                                data-evaluation="{{ base64_encode(json_encode($student->pokema_evaluation ?? [])) }}"
                                 onclick="showStudentAchievementsModal(this)">
-                                <i class="bi bi-list-task"></i> Lihat Prestasi
+                                <i class="bi bi-speedometer2"></i> Evaluasi & Prestasi
                             </button>
+                            @if(isset($student->pokema_evaluation))
+                                @php $evalRow = $student->pokema_evaluation; @endphp
+                                @if($evalRow['action_type'] === 'upgrade')
+                                    <button type="button" class="btn-quick-upgrade"
+                                        title="{{ $evalRow['reason'] }}"
+                                        onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}')">
+                                        <i class="bi bi-arrow-up-circle-fill"></i> Naikkan Beasiswa
+                                    </button>
+                                @elseif($evalRow['action_type'] === 'downgrade')
+                                    <button type="button" class="btn-quick-downgrade"
+                                        title="{{ $evalRow['reason'] }}"
+                                        onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}')">
+                                        <i class="bi bi-arrow-down-circle-fill"></i> Sesuaikan Beasiswa
+                                    </button>
+                                @endif
+                            @endif
                         </div>
                     </td>
                 </tr>
@@ -298,15 +335,84 @@
         <!-- Quick Summary Bar inside modal -->
         <div id="student_achievements_meta_bar" style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 10px 24px; display: flex; gap: 20px; font-size: 13px; color: #475569; flex-wrap: wrap;">
             <div>NIM: <strong id="meta_nim" style="color: #1E293B;">-</strong></div>
+            <div>Semester: <strong id="meta_semester" style="color: #0284C7;">-</strong></div>
             <div>IPK: <strong id="meta_ipk" style="color: #1E293B;">-</strong></div>
             <div>Total SKP Disetujui: <strong id="meta_poin" style="color: #2563EB;">0 Poin</strong></div>
-            <div>Beasiswa: <strong id="meta_beasiswa" style="color: #059669;">-</strong></div>
+            <div>Beasiswa Saat Ini: <strong id="meta_beasiswa" style="color: #059669;">-</strong></div>
+            <div>Periode POKEMA: <strong id="meta_study_year" style="color: #6366F1;">-</strong></div>
+        </div>
+
+        <!-- Modal Tabs Navigation -->
+        <div class="modal-tabs-nav">
+            <button type="button" class="modal-tab-btn active" id="tabBtnEvaluation" onclick="switchModalTab('evaluation')">
+                <i class="bi bi-speedometer2"></i> Evaluasi POKEMA 7 Bidang & Beasiswa
+            </button>
+            <button type="button" class="modal-tab-btn" id="tabBtnAchievements" onclick="switchModalTab('achievements')">
+                <i class="bi bi-file-earmark-check"></i> Daftar Prestasi & Sertifikat (<span id="tab_cert_count">0</span>)
+            </button>
         </div>
 
         <!-- Modal Body -->
         <div class="modal-body-scroll">
-            <div class="table-responsive" id="achievements_table_container">
-                <!-- Diisi via JS -->
+            <!-- TAB 1: EVALUASI POKEMA 7 BIDANG & BEASISWA -->
+            <div id="tabContentEvaluation">
+                <!-- Smart Recommendation Card -->
+                <div id="smart_recommendation_card">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Rincian & Akumulasi POKEMA Per Semester -->
+                <div class="pokema-semester-section" style="margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <h5 style="margin: 0; font-size: 15px; font-weight: 700; color: #1E293B;">
+                                <i class="bi bi-calendar3-range-fill" style="color: #0284C7;"></i> Rincian & Akumulasi POKEMA Per Semester
+                            </h5>
+                            <p style="margin: 3px 0 0; font-size: 12px; color: #64748B;">
+                                Tracking capaian prestasi dan konseling tiap semester menuju target tahunan beasiswa.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="pokema_semester_bars_grid" class="semester-bars-grid">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- 7 Fields POKEMA Section -->
+                <div class="pokema-fields-container">
+                    <div class="pokema-fields-header">
+                        <div>
+                            <h5 style="margin: 0; font-size: 15px; font-weight: 700; color: #1E293B;">
+                                <i class="bi bi-bar-chart-fill" style="color: #2563EB;"></i> Capaian 7 Bidang Kegiatan POKEMA
+                            </h5>
+                            <p style="margin: 3px 0 0; font-size: 12px; color: #64748B;">
+                                Standar minimal berdasarkan SK Rektor No: 2638/SK/01/2026.
+                            </p>
+                        </div>
+                        <div class="year-toggle-wrap">
+                            <span style="font-size: 12px; font-weight: 600; color: #475569;">Target Periode:</span>
+                            <div class="btn-group-year">
+                                <button type="button" class="btn-year active" id="btnYear1" onclick="changeEvaluationYear(1)">Th I (40%)</button>
+                                <button type="button" class="btn-year" id="btnYear2" onclick="changeEvaluationYear(2)">Th II (40%)</button>
+                                <button type="button" class="btn-year" id="btnYear3" onclick="changeEvaluationYear(3)">Th III (20%)</button>
+                                <button type="button" class="btn-year" id="btnYearTotal" onclick="changeEvaluationYear('total')">Total (100%)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7 Progress Bars Grid -->
+                    <div id="pokema_7_bars_grid" class="pokema-bars-grid">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: DAFTAR PRESTASI & SERTIFIKAT -->
+            <div id="tabContentAchievements" style="display: none;">
+                <div class="table-responsive" id="achievements_table_container">
+                    <!-- Diisi via JS -->
+                </div>
             </div>
         </div>
     </div>
@@ -554,6 +660,69 @@
         </form>
     </div>
 </div>
+
+{{-- MODAL 7: Penyesuaian Status Beasiswa Mahasiswa --}}
+<div id="adjustBeasiswaModal" class="modal" style="display: none; z-index: 10002;">
+    <div class="modal-content modal-form" style="max-width: 540px; width: 92%;">
+        <div class="modal-hdr" style="padding-bottom: 12px; border-bottom: 1px solid #E2E8F0; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h4 class="modal-hdr-title" id="adjust_modal_title" style="margin: 0; font-size: 18px; font-weight: 700; color: #1E293B;">
+                    <i class="bi bi-award-fill text-warning"></i> Penyesuaian Beasiswa Mahasiswa
+                </h4>
+                <p class="modal-hdr-sub" id="adjust_modal_subtitle" style="margin: 4px 0 0; font-size: 13px; color: #64748B;">
+                    Perbarui status beasiswa berdasarkan evaluasi capaian POKEMA & IPK.
+                </p>
+            </div>
+            <button type="button" onclick="closeAdjustBeasiswaModal()" class="modal-close-btn">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <form id="adjustBeasiswaForm" method="POST">
+            @csrf
+            <div class="adjust-meta-box" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+                <div style="font-size: 13px; color: #475569; margin-bottom: 6px;">
+                    Mahasiswa: <strong id="adjust_mhs_nama" style="color: #1E293B;">-</strong> (<span id="adjust_mhs_nim" class="font-monospace"></span>)
+                </div>
+                <div style="font-size: 13px; color: #475569; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>Status Saat Ini: <strong id="adjust_old_beasiswa" style="color: #64748B;">0%</strong></span>
+                    <i class="bi bi-arrow-right" style="color: #94A3B8;"></i>
+                    <span>Target Baru: <strong id="adjust_new_beasiswa_badge" style="color: #059669; font-size: 14px;">-</strong></span>
+                </div>
+                <div id="adjust_reason_box" style="margin-top: 8px; font-size: 12px; color: #475569; background: #FFFFFF; padding: 8px 10px; border-radius: 6px; border: 1px solid #E2E8F0; line-height: 1.4;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="adjust_target_beasiswa" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Pilihan Kategori Beasiswa *</label>
+                <select id="adjust_target_beasiswa" name="beasiswa" class="form-control" required style="font-weight: 600;" onchange="onAdjustSelectChange()">
+                    <option value="100%">Beasiswa 100% (Sangat Baik - Min. IPK 3.75, POKEMA > 450)</option>
+                    <option value="75%">Beasiswa 75% (Baik Sekali - Min. IPK 3.50, POKEMA 351–450)</option>
+                    <option value="50%">Beasiswa 50% (Baik - Min. IPK 3.25, POKEMA 301–350)</option>
+                    <option value="25%">Beasiswa 25% (Cukup Baik - Min. IPK 3.00, POKEMA 300)</option>
+                    <option value="0%">0% / Non-Beasiswa (Reguler - Target SKPI 250)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="adjust_sk_number" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Nomor SK / Dasar Keputusan (Opsional)</label>
+                <input type="text" id="adjust_sk_number" name="sk_number" class="form-control" placeholder="Contoh: 2638/SK/01/2026 atau Yudisium Genap 2026" value="2638/SK/01/2026">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label for="adjust_notes" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Catatan Penyesuaian / Pesan ke Mahasiswa (Opsional)</label>
+                <textarea id="adjust_notes" name="notes" class="form-control textarea-control" rows="3" placeholder="Pesan ucapan selamat, instruksi, atau catatan Monev..."></textarea>
+            </div>
+
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-cancel" onclick="closeAdjustBeasiswaModal()">Batal</button>
+                <button type="submit" id="adjust_submit_btn" class="btn-approve confirm" style="background: #059669; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; color: white;">
+                    <i class="bi bi-check-circle"></i> Terapkan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('css')
@@ -659,6 +828,437 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+
+    /* Badge Rekomendasi di Tabel */
+    .badge-rec {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+    .badge-rec-upgrade {
+        background: #D1FAE5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+    .badge-rec-downgrade {
+        background: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+    }
+    .badge-rec-maintain {
+        background: #DBEAFE;
+        color: #1E40AF;
+        border: 1px solid #BFDBFE;
+    }
+    .btn-quick-upgrade {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 11px;
+        border-radius: 7px;
+        background: #059669;
+        color: #FFFFFF;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(5, 150, 105, 0.3);
+        white-space: nowrap;
+    }
+    .btn-quick-upgrade:hover {
+        background: #047857;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(5, 150, 105, 0.4);
+    }
+    .btn-quick-downgrade {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 11px;
+        border-radius: 7px;
+        background: #D97706;
+        color: #FFFFFF;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(217, 119, 6, 0.3);
+        white-space: nowrap;
+    }
+    .btn-quick-downgrade:hover {
+        background: #B45309;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(217, 119, 6, 0.4);
+    }
+
+    /* Modal Tabs Navigation */
+    .modal-tabs-nav {
+        display: flex;
+        gap: 8px;
+        border-bottom: 2px solid #E2E8F0;
+        padding: 0 24px;
+        background: #F8FAFC;
+    }
+    .modal-tab-btn {
+        padding: 12px 18px;
+        font-size: 13px;
+        font-weight: 700;
+        border: none;
+        background: transparent;
+        color: #64748B;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .modal-tab-btn:hover {
+        color: #1E293B;
+    }
+    .modal-tab-btn.active {
+        color: #2563EB;
+        border-bottom-color: #2563EB;
+        background: #FFFFFF;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    /* Smart Recommendation Card */
+    .rec-card {
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .rec-card.rec-upgrade {
+        background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+        border: 1.5px solid #6EE7B7;
+    }
+    .rec-card.rec-maintain {
+        background: linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%);
+        border: 1.5px solid #93C5FD;
+    }
+    .rec-card.rec-downgrade {
+        background: linear-gradient(135deg, #FFFBEB 0%, #FEFCE8 100%);
+        border: 1.5px solid #FCD34D;
+    }
+    .rec-card.rec-revoke {
+        background: linear-gradient(135deg, #FEF2F2 0%, #FFF1F2 100%);
+        border: 1.5px solid #FCA5A5;
+    }
+    .rec-header {
+        font-size: 15px;
+        font-weight: 800;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .rec-reason {
+        font-size: 13px;
+        line-height: 1.45;
+        max-width: 650px;
+        margin: 0;
+    }
+    .rec-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    /* Smart Action Buttons */
+    .btn-smart-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    }
+    .btn-smart-action.btn-upgrade {
+        background: #059669;
+        color: #FFFFFF;
+    }
+    .btn-smart-action.btn-upgrade:hover {
+        background: #047857;
+    }
+    .btn-smart-action.btn-maintain {
+        background: #2563EB;
+        color: #FFFFFF;
+    }
+    .btn-smart-action.btn-maintain:hover {
+        background: #1D4ED8;
+    }
+    .btn-smart-action.btn-downgrade {
+        background: #D97706;
+        color: #FFFFFF;
+    }
+    .btn-smart-action.btn-downgrade:hover {
+        background: #B45309;
+    }
+    .btn-smart-action.btn-revoke {
+        background: #DC2626;
+        color: #FFFFFF;
+    }
+    .btn-smart-action.btn-revoke:hover {
+        background: #B91C1C;
+    }
+    .btn-smart-action.btn-manual {
+        background: #FFFFFF;
+        color: #475569;
+        border: 1.5px solid #CBD5E1;
+    }
+    .btn-smart-action.btn-manual:hover {
+        background: #F1F5F9;
+        color: #1E293B;
+    }
+
+    /* Semester Breakdown Styles */
+    .pokema-semester-section {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .semester-bars-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .sem-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        transition: all 0.2s ease;
+    }
+    .sem-card:hover {
+        border-color: #CBD5E1;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+    .sem-card-active {
+        background: #F0F9FF;
+        border-color: #BAE6FD;
+        box-shadow: 0 0 0 1px #0284C7;
+    }
+    .sem-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .sem-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0F172A;
+    }
+    .sem-year-badge {
+        font-size: 11px;
+        font-weight: 600;
+        background: #E2E8F0;
+        color: #475569;
+        padding: 2px 8px;
+        border-radius: 999px;
+    }
+    .badge-current-sem {
+        font-size: 10px;
+        font-weight: 700;
+        background: #0284C7;
+        color: #FFFFFF;
+        padding: 2px 8px;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .sem-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 6px;
+    }
+    .pill-ipk {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+    }
+    .pill-ip {
+        background: #F1F5F9;
+        color: #334155;
+        border: 1px solid #E2E8F0;
+    }
+    .pill-empty {
+        background: #F8FAFC;
+        color: #94A3B8;
+        border: 1px dashed #CBD5E1;
+        font-size: 11px;
+    }
+    .sem-stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 13px;
+    }
+    .sem-milestone {
+        margin-top: 8px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .milestone-success {
+        background: #ECFDF5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+    .milestone-warning {
+        background: #FFFBEB;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+    }
+
+    /* 7 POKEMA Bars Section */
+    .pokema-fields-container {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 18px 20px;
+    }
+    .pokema-fields-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .year-toggle-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-group-year {
+        display: inline-flex;
+        background: #F1F5F9;
+        padding: 3px;
+        border-radius: 8px;
+        border: 1px solid #E2E8F0;
+    }
+    .btn-year {
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        border: none;
+        background: transparent;
+        color: #64748B;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-year.active {
+        background: #FFFFFF;
+        color: #2563EB;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .pokema-bars-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .pokema-field-row {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        transition: all 0.2s;
+    }
+    .pokema-field-row:hover {
+        border-color: #CBD5E1;
+        background: #F1F5F9;
+    }
+    .field-title-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    .field-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1E293B;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .field-score {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+    }
+    .progress-track {
+        height: 9px;
+        background: #E2E8F0;
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.4s ease;
+    }
+    .progress-fill.fill-green {
+        background: linear-gradient(90deg, #10B981, #059669);
+    }
+    .progress-fill.fill-blue {
+        background: linear-gradient(90deg, #3B82F6, #2563EB);
+    }
+    .badge-field-status {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .badge-field-status.status-ok {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+    .badge-field-status.status-kurang {
+        background: #FEF3C7;
+        color: #92400E;
+    }
 </style>
 @endpush
 
@@ -714,7 +1314,14 @@
         }, 500);
     }
 
+    let currentStudentId = null;
+    let currentStudentNama = '';
+    let currentStudentNim = '';
+    let currentStudentOldBeasiswa = '0%';
+    let currentEvaluation = null;
+
     function showStudentAchievementsModal(btn) {
+        currentStudentId = btn.dataset.studentId;
         const nama = btn.dataset.nama;
         const nim = btn.dataset.nim || '-';
         const ipk = btn.dataset.ipk || '-';
@@ -722,6 +1329,11 @@
         const statusMhs = btn.dataset.statusMhs || 'Mahasiswa';
         const beasiswa = btn.dataset.beasiswa || '-';
         const achievementsBase64 = btn.dataset.achievements;
+        const evaluationBase64 = btn.dataset.evaluation;
+
+        currentStudentNama = nama;
+        currentStudentNim = nim;
+        currentStudentOldBeasiswa = beasiswa;
 
         let achievements = [];
         try {
@@ -732,11 +1344,25 @@
             return;
         }
 
+        let evaluation = null;
+        if (evaluationBase64) {
+            try {
+                const jsonEval = decodeURIComponent(escape(atob(evaluationBase64)));
+                evaluation = JSON.parse(jsonEval);
+            } catch (e) {
+                console.error("Gagal mem-parsing data evaluasi", e);
+            }
+        }
+        currentEvaluation = evaluation;
+
         document.getElementById('student_achievements_nama').textContent = nama;
         document.getElementById('meta_nim').textContent = nim;
-        document.getElementById('meta_ipk').textContent = ipk;
+        document.getElementById('meta_semester').textContent = (evaluation && evaluation.semester) ? ('Sem ' + evaluation.semester) : '-';
+        document.getElementById('meta_ipk').textContent = (evaluation && evaluation.ipk) ? evaluation.ipk : ipk;
         document.getElementById('meta_poin').textContent = poin + ' Poin';
         document.getElementById('meta_beasiswa').textContent = beasiswa;
+        document.getElementById('meta_study_year').textContent = evaluation ? ('Th ' + evaluation.study_year) : '-';
+        document.getElementById('tab_cert_count').textContent = achievements.length;
 
         const badgesContainer = document.getElementById('student_achievements_badges');
         if (badgesContainer) {
@@ -744,11 +1370,17 @@
             if (statusMhs === 'Student Ambassador') {
                 badgeHtml += `<span class="badge-status-mhs badge-ambassador" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-award-fill"></i> Student Ambassador</span>`;
             }
-            if (beasiswa && beasiswa !== '-') {
-                badgeHtml += `<span class="badge-beasiswa" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-mortarboard-fill"></i> ${escapeHtml(beasiswa)}</span>`;
+            if (beasiswa && beasiswa !== '-' && beasiswa !== '0%' && beasiswa !== 'Non-Beasiswa') {
+                badgeHtml += `<span class="badge-beasiswa" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-mortarboard-fill"></i> Beasiswa ${escapeHtml(beasiswa)}</span>`;
+            } else {
+                badgeHtml += `<span class="badge-status-mhs badge-reguler" style="font-size: 11px; padding: 2px 8px;">Non-Beasiswa (0%)</span>`;
             }
             badgesContainer.innerHTML = badgeHtml;
         }
+
+        // Render evaluasi POKEMA 7 Bidang & Rekomendasi Beasiswa
+        renderPokemaEvaluation(evaluation);
+        switchModalTab('evaluation');
 
         const container = document.getElementById('achievements_table_container');
 
@@ -831,6 +1463,297 @@
 
     function closeStudentAchievementsModal() {
         document.getElementById('studentAchievementsModal').style.display = 'none';
+    }
+
+    function switchModalTab(tab) {
+        const tabEval = document.getElementById('tabContentEvaluation');
+        const tabAch = document.getElementById('tabContentAchievements');
+        const btnEval = document.getElementById('tabBtnEvaluation');
+        const btnAch = document.getElementById('tabBtnAchievements');
+
+        if (!tabEval || !tabAch) return;
+
+        if (tab === 'evaluation') {
+            tabEval.style.display = 'block';
+            tabAch.style.display = 'none';
+            btnEval.classList.add('active');
+            btnAch.classList.remove('active');
+        } else {
+            tabEval.style.display = 'none';
+            tabAch.style.display = 'block';
+            btnEval.classList.remove('active');
+            btnAch.classList.add('active');
+        }
+    }
+
+    function renderPokemaEvaluation(evalData) {
+        const recContainer = document.getElementById('smart_recommendation_card');
+        const barsContainer = document.getElementById('pokema_7_bars_grid');
+
+        if (!evalData) {
+            recContainer.innerHTML = '<p class="text-muted" style="padding: 10px;">Data evaluasi belum tersedia.</p>';
+            barsContainer.innerHTML = '';
+            return;
+        }
+
+        // Set active year toggle
+        const currentYear = String(evalData.study_year || '1');
+        ['1', '2', '3', 'total'].forEach(y => {
+            const btn = document.getElementById('btnYear' + (y === 'total' ? 'Total' : y));
+            if (btn) {
+                if (String(y) === currentYear || (y === 'total' && (currentYear === '4' || currentYear === 'total'))) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        });
+
+        // 1. Recommendation Card
+        const recType = evalData.action_type || 'maintain';
+        let iconClass = 'bi-check-circle-fill text-primary';
+        let titlePrefix = 'STATUS PRESTASI:';
+        if (recType === 'upgrade') {
+            iconClass = 'bi-arrow-up-circle-fill text-success';
+            titlePrefix = '🚀 REKOMENDASI PROMOSI:';
+        } else if (recType === 'downgrade') {
+            iconClass = 'bi-arrow-down-circle-fill text-warning';
+            titlePrefix = '⚠️ REKOMENDASI PENYESUAIAN:';
+        } else if (recType === 'revoke') {
+            iconClass = 'bi-x-circle-fill text-danger';
+            titlePrefix = '❌ REKOMENDASI PENCABUTAN:';
+        } else {
+            iconClass = 'bi-shield-check text-primary';
+            titlePrefix = '✅ STATUS PRESTASI:';
+        }
+
+        let smartBtnHtml = '';
+        const safeName = escapeHtml(currentStudentNama);
+        const safeNim = escapeHtml(currentStudentNim);
+        const safeOldBeasiswa = escapeHtml(evalData.current_beasiswa || '0%');
+        const safeNewBeasiswa = escapeHtml(evalData.qualified_beasiswa || '0%');
+        const safeReason = escapeHtml(evalData.reason || '');
+
+        if (recType === 'upgrade') {
+            smartBtnHtml = `
+                <button type="button" class="btn-smart-action btn-upgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}')">
+                    <i class="bi bi-arrow-up-circle-fill"></i> ${escapeHtml(evalData.action_label)}
+                </button>
+            `;
+        } else if (recType === 'downgrade') {
+            smartBtnHtml = `
+                <button type="button" class="btn-smart-action btn-downgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}')">
+                    <i class="bi bi-arrow-down-circle-fill"></i> ${escapeHtml(evalData.action_label)}
+                </button>
+            `;
+        } else if (recType === 'revoke') {
+            smartBtnHtml = `
+                <button type="button" class="btn-smart-action btn-revoke" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '0%', '${safeReason}')">
+                    <i class="bi bi-x-circle-fill"></i> ${escapeHtml(evalData.action_label)}
+                </button>
+            `;
+        } else if (evalData.current_beasiswa && evalData.current_beasiswa !== '0%') {
+            smartBtnHtml = `
+                <button type="button" class="btn-smart-action btn-maintain" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeOldBeasiswa}', '${safeReason}')">
+                    <i class="bi bi-check-circle-fill"></i> ${escapeHtml(evalData.action_label)}
+                </button>
+            `;
+        }
+
+        const manualBtnHtml = `
+            <button type="button" class="btn-smart-action btn-manual" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '', true)">
+                <i class="bi bi-sliders"></i> Sesuaikan Manual
+            </button>
+        `;
+
+        recContainer.className = `rec-card rec-${recType}`;
+        recContainer.innerHTML = `
+            <div>
+                <div class="rec-header">
+                    <i class="bi ${iconClass}"></i>
+                    <span>${titlePrefix} ${escapeHtml(evalData.action_label)}</span>
+                </div>
+                <p class="rec-reason">${escapeHtml(evalData.reason)}</p>
+                <div style="margin-top: 6px; font-size: 12px; color: #475569;">
+                    Periode Evaluasi: <strong>${escapeHtml(evalData.study_year_label)}</strong> &bull; Acuan Target: <strong>Beasiswa ${escapeHtml(evalData.benchmark_tier_key)} (${evalData.total_target_points} Poin)</strong>
+                </div>
+            </div>
+            <div class="rec-actions">
+                ${smartBtnHtml}
+                ${manualBtnHtml}
+            </div>
+        `;
+
+        // 2. Rincian & Akumulasi POKEMA Per Semester Grid
+        const semContainer = document.getElementById('pokema_semester_bars_grid');
+        if (semContainer) {
+            let semHtml = '';
+            const breakdown = evalData.semester_breakdown || [];
+            if (breakdown.length === 0) {
+                semContainer.innerHTML = '<p style="color: #94A3B8; font-size: 13px; margin: 0; padding: 10px 0;">Belum ada riwayat semester.</p>';
+            } else {
+                breakdown.forEach(sem => {
+                    const isCur = sem.is_current;
+                    const currentBadge = isCur ? '<span class="badge-current-sem"><i class="bi bi-geo-alt-fill"></i> Semester Aktif</span>' : '';
+                    const ipkBadge = sem.ipk 
+                        ? `<span class="sem-meta-pill pill-ipk"><i class="bi bi-mortarboard-fill"></i> IPK: <strong>${sem.ipk}</strong></span>` 
+                        : '<span class="sem-meta-pill pill-empty"><i class="bi bi-dash"></i> Belum ada data konseling</span>';
+                    
+                    const ipBadge = sem.ip ? `<span class="sem-meta-pill pill-ip">IP: <strong>${sem.ip}</strong></span>` : '';
+                    
+                    let milestoneHtml = '';
+                    if (sem.is_period_milestone) {
+                        if (sem.is_year_target_met) {
+                            milestoneHtml = `<div class="sem-milestone milestone-success"><i class="bi bi-check-circle-fill"></i> Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Target ${escapeHtml(sem.study_year_label)} Terpenuhi ✅)</div>`;
+                        } else {
+                            const kurang = Math.max(0, sem.year_target - sem.cumulative_points);
+                            milestoneHtml = `<div class="sem-milestone milestone-warning"><i class="bi bi-exclamation-triangle-fill"></i> Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Kurang ${kurang} Poin menuju target beasiswa)</div>`;
+                        }
+                    }
+
+                    semHtml += `
+                        <div class="sem-card ${isCur ? 'sem-card-active' : ''}">
+                            <div class="sem-card-header">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="sem-title">${escapeHtml(sem.semester_label)}</span>
+                                    <span class="sem-year-badge">${escapeHtml(sem.study_year_label)}</span>
+                                    ${currentBadge}
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    ${ipkBadge}
+                                    ${ipBadge}
+                                </div>
+                            </div>
+                            
+                            <div class="sem-card-body">
+                                <div class="sem-stat-row">
+                                    <span style="font-size: 13px; color: #475569;">
+                                        Perolehan Semester: <strong style="color: #0284C7; font-size: 14px;">${sem.semester_points} Poin</strong> (${sem.achievements_count} Prestasi Disetujui)
+                                    </span>
+                                    <span style="font-size: 13px; color: #475569;">
+                                        Akumulasi Berjalan: <strong style="color: #1E293B; font-size: 14px;">${sem.cumulative_points} Poin</strong> / Target ${escapeHtml(sem.study_year_label)}: ${sem.year_target} Poin
+                                    </span>
+                                </div>
+                                
+                                <div class="progress-track" style="height: 10px; margin: 8px 0; background: #E2E8F0; border-radius: 999px;">
+                                    <div class="progress-fill ${sem.is_year_target_met ? 'fill-green' : 'fill-blue'}" style="width: ${Math.min(100, Math.max(0, sem.progress_percent))}%; height: 100%; border-radius: 999px;"></div>
+                                </div>
+
+                                ${milestoneHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+                semContainer.innerHTML = semHtml;
+            }
+        }
+
+        // 3. 7 Progress Bars Grid
+        const fieldIcons = {
+            'wajib': 'bi-check2-circle text-primary',
+            'organisasi': 'bi-people-fill text-warning',
+            'penalaran': 'bi-lightbulb-fill text-info',
+            'minat_bakat': 'bi-trophy-fill text-warning',
+            'kepedulian_sosial': 'bi-heart-fill text-danger',
+            'lainnya': 'bi-briefcase-fill text-secondary',
+            'volunteer': 'bi-award-fill text-purple'
+        };
+
+        let barsHtml = '';
+        const progressList = Object.values(evalData.fields_progress || {});
+
+        progressList.forEach(f => {
+            const icon = fieldIcons[f.key] || 'bi-bookmark-star';
+            const isOk = f.current >= f.target;
+            const fillClass = isOk ? 'fill-green' : 'fill-blue';
+            const badgeHtml = isOk
+                ? `<span class="badge-field-status status-ok"><i class="bi bi-check-circle-fill"></i> Terpenuhi (${f.real_percent}%)</span>`
+                : `<span class="badge-field-status status-kurang"><i class="bi bi-exclamation-circle-fill"></i> Kurang ${f.target - f.current} Poin (${f.real_percent}%)</span>`;
+
+            barsHtml += `
+                <div class="pokema-field-row">
+                    <div class="field-title-wrap">
+                        <span class="field-name">
+                            <i class="bi ${icon}"></i> ${escapeHtml(f.label)}
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="field-score">
+                                <strong>${f.current}</strong> / ${f.target} Poin
+                            </span>
+                            ${badgeHtml}
+                        </div>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill ${fillClass}" style="width: ${Math.min(100, Math.max(0, f.percent))}%;"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        barsContainer.innerHTML = barsHtml;
+    }
+
+    function changeEvaluationYear(year) {
+        if (!currentStudentId) return;
+
+        fetch(`/kemahasiswaan/verifikasi-prestasi/students/${currentStudentId}/evaluation-data?year=${year}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.evaluation) {
+                    currentEvaluation = data.evaluation;
+                    renderPokemaEvaluation(data.evaluation);
+                }
+            })
+            .catch(err => {
+                console.error("Gagal memuat evaluasi tahun:", err);
+            });
+    }
+
+    function openAdjustBeasiswaModal(studentId, nama, nim, oldBeasiswa, targetBeasiswa, reason, isManual = false) {
+        const modal = document.getElementById('adjustBeasiswaModal');
+        const form = document.getElementById('adjustBeasiswaForm');
+        form.action = `/kemahasiswaan/verifikasi-prestasi/students/${studentId}/update-beasiswa`;
+
+        document.getElementById('adjust_mhs_nama').textContent = nama;
+        document.getElementById('adjust_mhs_nim').textContent = nim;
+        document.getElementById('adjust_old_beasiswa').textContent = oldBeasiswa || '0%';
+        document.getElementById('adjust_new_beasiswa_badge').textContent = targetBeasiswa || '0%';
+
+        const select = document.getElementById('adjust_target_beasiswa');
+        if (targetBeasiswa && select.querySelector(`option[value="${targetBeasiswa}"]`)) {
+            select.value = targetBeasiswa;
+        } else {
+            select.value = '75%';
+        }
+
+        const reasonBox = document.getElementById('adjust_reason_box');
+        if (reason && !isManual) {
+            reasonBox.innerHTML = `<strong>Keterangan Sistem:</strong> ${reason}`;
+            reasonBox.style.display = 'block';
+        } else {
+            reasonBox.style.display = 'none';
+        }
+
+        const subtitle = document.getElementById('adjust_modal_subtitle');
+        const title = document.getElementById('adjust_modal_title');
+        if (isManual) {
+            title.innerHTML = '<i class="bi bi-sliders text-primary"></i> Penyesuaian Beasiswa Manual';
+            subtitle.textContent = 'Pilih kategori beasiswa secara manual sesuai kebijakan universitas.';
+        } else {
+            title.innerHTML = '<i class="bi bi-award-fill text-warning"></i> Penyesuaian Beasiswa Mahasiswa';
+            subtitle.textContent = 'Perbarui status beasiswa berdasarkan evaluasi capaian POKEMA & IPK.';
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeAdjustBeasiswaModal() {
+        document.getElementById('adjustBeasiswaModal').style.display = 'none';
+    }
+
+    function onAdjustSelectChange() {
+        const select = document.getElementById('adjust_target_beasiswa');
+        document.getElementById('adjust_new_beasiswa_badge').textContent = select.value;
     }
 
     function showDetailModalFromEncoded(btn) {

@@ -453,6 +453,7 @@ class StudentsController extends Controller
             $data = [
                 'student_id'         => $student->id,
                 'category'           => $request->category,
+                'semester'           => $request->filled('semester') ? (int) $request->semester : ($student->semester ?: $student->getCurrentSemester()),
                 'activity_type'      => $request->activity_type,
                 'event'              => $request->event,
                 'organizer'          => $request->organizer,
