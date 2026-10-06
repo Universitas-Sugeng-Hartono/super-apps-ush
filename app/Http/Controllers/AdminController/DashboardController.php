@@ -33,26 +33,9 @@ class DashboardController extends Controller
         $user = auth()->user();
         $userRole = User::normalizeRole($user->role);
 
-        // Dashboard khusus role Kemahasiswaan
+        // Dashboard khusus role Kemahasiswaan - redirect ke dedicated route
         if ($userRole === 'kemahasiswaan') {
-            $pendingCount = \App\Models\StudentAchievement::where('status', 'pending')->count();
-            $approvedCount = \App\Models\StudentAchievement::where('status', 'approved')->count();
-            $rejectedCount = \App\Models\StudentAchievement::whereIn('status', ['rejected', 'revision'])->count();
-            $totalCount = \App\Models\StudentAchievement::count();
-
-            $recentAchievements = \App\Models\StudentAchievement::with('student')
-                ->latest()
-                ->limit(5)
-                ->get();
-
-            return view('kemahasiswaan.dashboard.index', compact(
-                'user',
-                'pendingCount',
-                'approvedCount',
-                'rejectedCount',
-                'totalCount',
-                'recentAchievements'
-            ));
+            return redirect()->route('kemahasiswaan.dashboard');
         }
 
         // Dashboard khusus role Keuangan
@@ -67,13 +50,24 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
+            // Load menu dinamis dari database untuk role Keuangan
+            $menus = \App\Models\MenuItem::active()
+                ->forRole('keuangan')
+                ->ordered()
+                ->get()
+                ->map(function ($menu) {
+                    $menu->menu_url = $menu->full_url;
+                    return $menu;
+                });
+
             return view('keuangan.dashboard.index', compact(
                 'user',
                 'pendingCount',
                 'approvedCount',
                 'rejectedCount',
                 'totalCount',
-                'recentRegistrations'
+                'recentRegistrations',
+                'menus'
             ));
         }
 
@@ -222,4 +216,42 @@ class DashboardController extends Controller
             'announcements'
         ));
     }
+
+    /**
+     * Dashboard khusus role Kemahasiswaan (/kemahasiswaan/dashboard)
+     */
+    public function kemahasiswaanDashboard(Request $request)
+    {
+        $user = auth()->user();
+        $pendingCount = \App\Models\StudentAchievement::where('status', 'pending')->count();
+        $approvedCount = \App\Models\StudentAchievement::where('status', 'approved')->count();
+        $rejectedCount = \App\Models\StudentAchievement::whereIn('status', ['rejected', 'revision'])->count();
+        $totalCount = \App\Models\StudentAchievement::count();
+
+        $recentAchievements = \App\Models\StudentAchievement::with('student')
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        // Load menu dinamis dari database untuk role Kemahasiswaan
+        $menus = \App\Models\MenuItem::active()
+            ->forRole('kemahasiswaan')
+            ->ordered()
+            ->get()
+            ->map(function ($menu) {
+                $menu->menu_url = $menu->full_url;
+                return $menu;
+            });
+
+        return view('kemahasiswaan.dashboard.index', compact(
+            'user',
+            'pendingCount',
+            'approvedCount',
+            'rejectedCount',
+            'totalCount',
+            'recentAchievements',
+            'menus'
+        ));
+    }
 }
+

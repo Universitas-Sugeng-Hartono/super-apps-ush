@@ -57,44 +57,27 @@
         </div>
     </div>
 
-    {{-- Quick Actions --}}
+    {{-- Layanan & Modul Utama (Menu Dinamis dari Management Menu) --}}
     <div class="section-block">
         <div class="section-header">
             <h4><i class="bi bi-grid-fill me-2 text-warning"></i> Layanan & Modul Utama</h4>
         </div>
         <div class="actions-grid">
-            <a href="{{ route('admin.skpi.verifikasi-data.index') }}" class="action-card highlight">
-                <div class="card-icon"><i class="bi bi-patch-check-fill"></i></div>
-                <div class="card-text">
-                    <h5>Verifikasi Data Prestasi</h5>
-                    <p>Approval sertifikat lomba, organisasi, dan rekognisi mahasiswa.</p>
+            @forelse($menus ?? [] as $menu)
+                <a href="{{ $menu->menu_url }}" class="action-card" target="{{ $menu->target ?? '_self' }}">
+                    <div class="card-icon"><i class="{{ $menu->icon ?: 'bi bi-grid-fill' }}"></i></div>
+                    <div class="card-text">
+                        <h5>{{ $menu->name }}</h5>
+                        <p>{{ $menu->description ?? 'Layanan operasional kemahasiswaan' }}</p>
+                    </div>
+                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
+                </a>
+            @empty
+                <div class="col-12 py-4 text-center text-muted" style="grid-column: span 2;">
+                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                    Belum ada menu yang ditambahkan untuk Kemahasiswaan. Menu baru dapat ditambahkan dari Management Menu Superuser.
                 </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
-            <a href="{{ route('admin.skpi.index') }}" class="action-card">
-                <div class="card-icon"><i class="bi bi-award"></i></div>
-                <div class="card-text">
-                    <h5>Alur Kelulusan & SKPI</h5>
-                    <p>Pantau tahapan kelulusan dan sinkronisasi berkas SKPI.</p>
-                </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
-            <a href="{{ route('admin.announcements.index') }}" class="action-card">
-                <div class="card-icon"><i class="bi bi-megaphone-fill"></i></div>
-                <div class="card-text">
-                    <h5>Pengumuman Kampus</h5>
-                    <p>Kelola informasi, agenda kegiatan, dan pengumuman lomba.</p>
-                </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
-            <a href="{{ route('calendar.index') }}" class="action-card">
-                <div class="card-icon"><i class="bi bi-calendar-event"></i></div>
-                <div class="card-text">
-                    <h5>Kalender Akademik</h5>
-                    <p>Jadwal penting kegiatan kemahasiswaan & agenda kampus.</p>
-                </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
+            @endforelse
         </div>
     </div>
 
@@ -102,7 +85,7 @@
     <div class="section-block">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h4><i class="bi bi-clock-history me-2 text-warning"></i> Pengajuan Prestasi Terbaru</h4>
-            <a href="{{ route('admin.skpi.verifikasi-data.index') }}" class="btn-link-action">Lihat Semua Data <i class="bi bi-arrow-right"></i></a>
+            <a href="{{ route('kemahasiswaan.verifikasi-prestasi.index') }}" class="btn-link-action">Lihat Semua Data <i class="bi bi-arrow-right"></i></a>
         </div>
         <div class="table-container">
             <table class="custom-table">
@@ -139,7 +122,7 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('admin.skpi.verifikasi-data.index', ['search' => $item->student->nim ?? '']) }}" class="btn-detail">
+                                <a href="{{ route('kemahasiswaan.verifikasi-prestasi.index', ['search' => $item->student->nim ?? '']) }}" class="btn-detail">
                                     <i class="bi bi-search"></i> Periksa
                                 </a>
                             </td>

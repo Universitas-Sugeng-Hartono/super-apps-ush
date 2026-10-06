@@ -63,38 +63,51 @@
             <h4><i class="bi bi-grid-fill me-2 text-success"></i> Layanan & Menu Cepat</h4>
         </div>
         <div class="actions-grid">
-            <a href="{{ route('admin.skpi.verifikasi-pembayaran.index') }}" class="action-card highlight">
-                <div class="card-icon"><i class="bi bi-credit-card-2-front-fill"></i></div>
-                <div class="card-text">
-                    <h5>Verifikasi Pembayaran Wisuda</h5>
-                    <p>Validasi transfer bank, slip pembayaran, dan naskah publikasi.</p>
-                </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
-            <a href="{{ route('admin.skpi.index') }}" class="action-card">
-                <div class="card-icon"><i class="bi bi-award"></i></div>
-                <div class="card-text">
-                    <h5>Alur Kelulusan SKPI</h5>
-                    <p>Pantau keterkaitan status pembayaran dengan penerbitan berkas.</p>
-                </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
-            <a href="{{ route('admin.announcements.index') }}" class="action-card">
-                <div class="card-icon"><i class="bi bi-megaphone-fill"></i></div>
-                <div class="card-text">
-                    <h5>Pengumuman Keuangan</h5>
-                    <p>Informasi jadwal dan ketentuan pembayaran wisuda mahasiswa.</p>
-                </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
-            <a href="{{ route('calendar.index') }}" class="action-card">
-                <div class="card-icon"><i class="bi bi-calendar-check"></i></div>
-                <div class="card-text">
-                    <h5>Kalender Akademik</h5>
-                    <p>Jadwal batas akhir pembayaran dan periode wisuda.</p>
-                </div>
-                <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-            </a>
+            @if(isset($menus) && $menus->count() > 0)
+                @foreach($menus as $menu)
+                    <a href="{{ $menu->menu_url }}" class="action-card" target="{{ $menu->target ?? '_self' }}">
+                        <div class="card-icon"><i class="{{ $menu->icon ?: 'bi bi-grid-fill' }}"></i></div>
+                        <div class="card-text">
+                            <h5>{{ $menu->name }}</h5>
+                            <p>{{ $menu->description ?? 'Layanan operasional keuangan' }}</p>
+                        </div>
+                        <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
+                    </a>
+                @endforeach
+            @else
+                <a href="{{ route('admin.skpi.verifikasi-pembayaran.index') }}" class="action-card highlight">
+                    <div class="card-icon"><i class="bi bi-credit-card-2-front-fill"></i></div>
+                    <div class="card-text">
+                        <h5>Verifikasi Pembayaran Wisuda</h5>
+                        <p>Validasi transfer bank, slip pembayaran, dan naskah publikasi.</p>
+                    </div>
+                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
+                </a>
+                <a href="{{ route('admin.skpi.index') }}" class="action-card">
+                    <div class="card-icon"><i class="bi bi-award"></i></div>
+                    <div class="card-text">
+                        <h5>Alur Kelulusan SKPI</h5>
+                        <p>Pantau keterkaitan status pembayaran dengan penerbitan berkas.</p>
+                    </div>
+                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
+                </a>
+                <a href="{{ route('admin.announcements.index') }}" class="action-card">
+                    <div class="card-icon"><i class="bi bi-megaphone-fill"></i></div>
+                    <div class="card-text">
+                        <h5>Pengumuman Keuangan</h5>
+                        <p>Informasi jadwal dan ketentuan pembayaran wisuda mahasiswa.</p>
+                    </div>
+                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
+                </a>
+                <a href="{{ route('calendar.index') }}" class="action-card">
+                    <div class="card-icon"><i class="bi bi-calendar-check"></i></div>
+                    <div class="card-text">
+                        <h5>Kalender Akademik</h5>
+                        <p>Jadwal batas akhir pembayaran dan periode wisuda.</p>
+                    </div>
+                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
+                </a>
+            @endif
         </div>
     </div>
 

@@ -745,7 +745,7 @@
             </button>
 
             <!-- Logo Section (Desktop Only) link to dashboard -->
-            <a href="{{ route('admin.dashboard') }}" class="logo-section desktop-only" style="transform: translateX(50px);text-decoration: none;">
+            <a href="{{ auth()->check() && \App\Models\User::normalizeRole(auth()->user()->role) === 'kemahasiswaan' ? route('kemahasiswaan.dashboard') : route('admin.dashboard') }}" class="logo-section desktop-only" style="transform: translateX(50px);text-decoration: none;">
                 <img src="{{ asset('ush.png') }}" alt="USH Logo" class="header-logo">
                 <h4 class="app-title">Universitas Sugeng Hartono</h4>
             </a>
@@ -766,6 +766,8 @@
                                 $subTitle = $roleLabel . ($prodi ? ' • ' . $prodi : '');
                             }
                             $photo = $user && $user->photo ? $user->photo : (session('user_photo') !== '0' && session('user_photo') !== 0 ? session('user_photo') : null);
+                            $dashRoute = $userRole === 'kemahasiswaan' ? route('kemahasiswaan.dashboard') : route('admin.dashboard');
+                            $dashActive = request()->routeIs('admin.dashboard') || request()->routeIs('kemahasiswaan.dashboard');
                         @endphp
                         <h5>Halo, {{ explode(' ', $name ?? '')[0] }}!</h5>
                         <p>{{ $subTitle }}</p>
@@ -780,7 +782,7 @@
 
                     <!-- Dropdown Menu -->
                     <div class="user-dropdown" id="userDropdown">
-                        <a href="{{ route('admin.dashboard') }}" class="dropdown-item">
+                        <a href="{{ $dashRoute }}" class="dropdown-item">
                             <i class="bi bi-house-door"></i>
                             <span>Dashboard</span>
                         </a>
@@ -814,7 +816,7 @@
             <h4>SuperApps</h4>
         </div>
         <div class="sidebar-content">
-            <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            <a href="{{ $dashRoute }}" class="nav-item {{ $dashActive ? 'active' : '' }}">
                 <div class="nav-icon">
                     <i class="bi bi-house-door-fill"></i>
                 </div>
@@ -860,7 +862,7 @@
 
     <!-- Bottom Navigation (Mobile) -->
     <nav class="bottom-nav">
-        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+        <a href="{{ $dashRoute }}" class="nav-item {{ $dashActive ? 'active' : '' }}">
             <div class="nav-icon">
                 <i class="bi bi-house-door-fill"></i>
             </div>

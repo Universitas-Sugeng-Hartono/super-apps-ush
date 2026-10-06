@@ -60,6 +60,26 @@ class MenuItemSeeder extends Seeder
                 'badge_text' => 'Aktif',
                 'badge_color' => 'active',
             ],
+            [
+                'name' => 'Management Student Ambassador',
+                'icon' => 'bi bi-award-fill',
+                'route_name' => 'kemahasiswaan.student-ambassador.index',
+                'roles' => 'kemahasiswaan',
+                'order' => 10,
+                'description' => 'Kelola direktori mahasiswa dan status Student Ambassador',
+                'badge_text' => 'Baru',
+                'badge_color' => 'active',
+            ],
+            [
+                'name' => 'Verifikasi Data Prestasi',
+                'icon' => 'bi bi-patch-check-fill',
+                'route_name' => 'kemahasiswaan.verifikasi-prestasi.index',
+                'roles' => 'kemahasiswaan',
+                'order' => 20,
+                'description' => 'Verifikasi prestasi, pantau IPK, poin SKP, status, dan beasiswa',
+                'badge_text' => 'Baru',
+                'badge_color' => 'active',
+            ],
         ];
 
         foreach ($items as $item) {

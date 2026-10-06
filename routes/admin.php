@@ -136,7 +136,6 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
     });
 });
 
-
 // Admin, Superadmin, Masteradmin, Kemahasiswaan, Keuangan
 Route::middleware(['auth', 'role:admin,superadmin,masteradmin,kemahasiswaan,keuangan'])->group(function () {
 

@@ -90,6 +90,10 @@ class StudentAchievement extends Model
 
     public function getActivityTypeLabelAttribute(): ?string
     {
+        if (empty($this->activity_type)) {
+            return null;
+        }
+
         $dict = \App\Services\SkpPointCalculator::getDictionary();
         foreach ($dict as $catData) {
             if (isset($catData['types'][$this->activity_type])) {

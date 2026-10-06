@@ -41,6 +41,8 @@ class Student extends Authenticatable
         'alamat_lng',
         'no_telepon',
         'status_mahasiswa',
+        'status',
+        'beasiswa',
         'tanggal_masuk',
         'tanggal_lulus',
         'is_counseling',
@@ -204,5 +206,33 @@ class Student extends Authenticatable
         }
 
         return true;
+    }
+
+    /**
+     * Scope untuk mahasiswa ambassador
+     */
+    public function scopeAmbassador($query)
+    {
+        return $query->where('status', 'studentambassador');
+    }
+
+    /**
+     * Scope untuk mahasiswa reguler
+     */
+    public function scopeRegularStudent($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('status', 'mahasiswa')
+              ->orWhereNull('status')
+              ->orWhere('status', '');
+        });
+    }
+
+    /**
+     * Label status (Mahasiswa vs Student Ambassador)
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return $this->status === 'studentambassador' ? 'Student Ambassador' : 'Mahasiswa';
     }
 }
