@@ -43,7 +43,7 @@ class UserManageController extends Controller
         $programStudi = $request->input('program_studi');
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
 
-        $lecturers = User::whereIn('role', ['admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'])
+        $lecturers = User::whereIn('role', ['admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan', 'akademik'])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -288,8 +288,8 @@ class UserManageController extends Controller
         $user = new User($request->only(['name', 'email', 'username', 'NIDNorNUPTK', 'role']));
         $user->role = $request->role ?? 'admin';
 
-        // Role institusi (kemahasiswaan, keuangan, masteradmin) tidak terikat pada satu program studi
-        if (in_array($user->role, ['kemahasiswaan', 'keuangan', 'masteradmin'], true)) {
+        // Role institusi (kemahasiswaan, keuangan, masteradmin, akademik) tidak terikat pada satu program studi
+        if (in_array($user->role, ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'], true)) {
             $user->program_studi = $request->filled('program_studi') ? $request->program_studi : null;
         } else {
             $defaultProdi = StudyProgram::where('is_active', true)->orderBy('order')->first();
@@ -321,7 +321,7 @@ class UserManageController extends Controller
 
         $user->fill($request->only('name', 'email', 'username', 'NIDNorNUPTK', 'role'));
 
-        if (in_array($request->role, ['kemahasiswaan', 'keuangan', 'masteradmin'], true)) {
+        if (in_array($request->role, ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'], true)) {
             $user->program_studi = $request->filled('program_studi') ? $request->program_studi : null;
         } else {
             $user->program_studi = $request->program_studi;
@@ -358,7 +358,7 @@ class UserManageController extends Controller
             'email'         => 'required|email|unique:users,email,' . ($id ?? 'NULL') . ',id',
             'username'      => 'nullable|string|unique:users,username,' . ($id ?? 'NULL') . ',id',
             'program_studi' => ($isProdiRequired ? 'required|string|in:' : 'nullable|string|in:') . implode(',', $validPrograms),
-            'role'          => 'required|string|in:admin,superadmin,masteradmin,kemahasiswaan,keuangan',
+            'role'          => 'required|string|in:admin,superadmin,masteradmin,kemahasiswaan,keuangan,akademik',
             'password'      => 'nullable|string|min:8',
             'photo'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'ttd'           => 'nullable|image|mimes:jpeg,png,jpg|max:2048',

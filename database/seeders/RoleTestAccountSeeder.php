@@ -38,5 +38,18 @@ class RoleTestAccountSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        // 3. Akun Test Akademik
+        User::updateOrCreate(
+            ['email' => 'akademik@ush.ac.id'],
+            [
+                'name' => 'Staf Akademik',
+                'username' => 'akademik',
+                'role' => 'akademik',
+                'program_studi' => null,
+                'password' => Hash::make('12345678'),
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }

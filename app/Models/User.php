@@ -19,6 +19,7 @@ class User extends Authenticatable
         'student' => 'Mahasiswa',
         'kemahasiswaan' => 'Kemahasiswaan',
         'keuangan' => 'Keuangan',
+        'akademik' => 'Akademik',
     ];
 
     public const ROLE_ALIASES = [
@@ -27,6 +28,7 @@ class User extends Authenticatable
         'kaprodi' => 'superadmin',
         'superuser' => 'masteradmin',
         'mahasiswa' => 'student',
+        'baak' => 'akademik',
     ];
 
     public static function normalizeRole(?string $role): ?string

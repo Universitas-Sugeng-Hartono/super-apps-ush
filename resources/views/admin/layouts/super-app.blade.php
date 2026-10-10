@@ -759,7 +759,7 @@
                             $name = $user ? $user->name : session('user_name');
                             $userRole = $user ? \App\Models\User::normalizeRole($user->role) : null;
                             $roleLabel = $user ? $user->role_label : 'User';
-                            if (in_array($userRole, ['kemahasiswaan', 'keuangan', 'masteradmin'], true)) {
+                            if (in_array($userRole, ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'], true)) {
                                 $subTitle = $roleLabel;
                             } else {
                                 $prodi = $user ? $user->program_studi : session('user_prodi');

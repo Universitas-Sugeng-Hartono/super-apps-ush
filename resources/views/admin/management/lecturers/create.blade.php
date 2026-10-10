@@ -52,6 +52,7 @@
                             <option value="masteradmin" {{ old('role') == 'masteradmin' ? 'selected' : '' }}>Superuser</option>
                             <option value="kemahasiswaan" {{ old('role') == 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
                             <option value="keuangan" {{ old('role') == 'keuangan' ? 'selected' : '' }}>Keuangan</option>
+                            <option value="akademik" {{ old('role') == 'akademik' ? 'selected' : '' }}>Akademik</option>
                         </select>
                         @error('role')<span class="error">{{ $message }}</span>@enderror
                     </div>
@@ -222,7 +223,7 @@
         const prodiSelect = document.getElementById('prodiSelect');
         const prodiLabel = document.getElementById('prodiLabel');
         const prodiHint = document.getElementById('prodiHint');
-        const institutionalRoles = ['kemahasiswaan', 'keuangan', 'masteradmin'];
+        const institutionalRoles = ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'];
 
         function updateProdiRequirement() {
             if (!roleSelect || !prodiSelect) return;

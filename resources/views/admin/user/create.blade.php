@@ -91,6 +91,7 @@
                                     <option value="masteradmin" {{ $roleNow == 'masteradmin' ? 'selected' : '' }}>Superuser</option>
                                     <option value="kemahasiswaan" {{ $roleNow == 'kemahasiswaan' ? 'selected' : '' }}>Kemahasiswaan</option>
                                     <option value="keuangan" {{ $roleNow == 'keuangan' ? 'selected' : '' }}>Keuangan</option>
+                                    <option value="akademik" {{ $roleNow == 'akademik' ? 'selected' : '' }}>Akademik</option>
                                 </select>
                                 @error('role')
                                     <div class="text-danger small mt-1">{{ $message }}</div>

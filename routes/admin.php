@@ -136,8 +136,8 @@ Route::middleware(['auth', 'role:masteradmin'])->group(function () {
     });
 });
 
-// Admin, Superadmin, Masteradmin, Kemahasiswaan, Keuangan
-Route::middleware(['auth', 'role:admin,superadmin,masteradmin,kemahasiswaan,keuangan'])->group(function () {
+// Admin, Superadmin, Masteradmin, Kemahasiswaan, Keuangan, Akademik
+Route::middleware(['auth', 'role:admin,superadmin,masteradmin,kemahasiswaan,keuangan,akademik'])->group(function () {
 
     // Dashboard SuperApp
     Route::get('/admin/dashboard', [DashboardController::class, 'dashboard'])->name('admin.dashboard');
