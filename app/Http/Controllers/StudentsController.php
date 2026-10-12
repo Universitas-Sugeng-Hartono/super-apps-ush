@@ -423,9 +423,11 @@ class StudentsController extends Controller
         $categoryKeys      = implode(',', array_keys(StudentAchievement::manualCategoryOptions()));
         $activityTypeRules = 'nullable|string|max:100';
 
+        $maxAllowedSemester = max(1, (int) ($student->semester ?: $student->getCurrentSemester()));
+
         $request->validate([
             'category'           => "required|string|in:{$categoryKeys}",
-            'semester'           => 'required|integer|min:1|max:14',
+            'semester'           => "required|integer|min:1|max:{$maxAllowedSemester}",
             'activity_type'      => 'required|string|max:100',
             'event'              => 'required|string|max:255',
             'organizer'          => 'required|string|max:255',
@@ -438,7 +440,7 @@ class StudentsController extends Controller
             'semester.required'      => 'Semester saat kegiatan wajib dipilih.',
             'semester.integer'       => 'Semester harus berupa angka.',
             'semester.min'           => 'Semester minimal 1.',
-            'semester.max'           => 'Semester maksimal 14.',
+            'semester.max'           => "Semester kegiatan tidak boleh melebihi semester aktif Anda (Maksimal Semester {$maxAllowedSemester}).",
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
             'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
             'organizer.required'     => 'Penyelenggara acara wajib diisi.',
@@ -514,15 +516,22 @@ class StudentsController extends Controller
      */
     public function updateAchievement(Request $request, $id)
     {
+        $student = Student::findOrFail(decrypt(session('student_id')));
+
         $achievement = StudentAchievement::where('id', $id)
-            ->where('student_id', decrypt(session('student_id')))
+            ->where('student_id', $student->id)
             ->firstOrFail();
 
         $categoryKeys = implode(',', array_keys(StudentAchievement::manualCategoryOptions()));
 
+        $maxAllowedSemester = max(1, (int) ($student->semester ?: $student->getCurrentSemester()));
+        if ($achievement->semester && (int) $achievement->semester > $maxAllowedSemester) {
+            $maxAllowedSemester = (int) $achievement->semester;
+        }
+
         $request->validate([
             'category'           => "required|string|in:{$categoryKeys}",
-            'semester'           => 'required|integer|min:1|max:14',
+            'semester'           => "required|integer|min:1|max:{$maxAllowedSemester}",
             'activity_type'      => 'required|string|max:100',
             'event'              => 'required|string|max:255',
             'organizer'          => 'required|string|max:255',
@@ -535,7 +544,7 @@ class StudentsController extends Controller
             'semester.required'      => 'Semester saat kegiatan wajib dipilih.',
             'semester.integer'       => 'Semester harus berupa angka.',
             'semester.min'           => 'Semester minimal 1.',
-            'semester.max'           => 'Semester maksimal 14.',
+            'semester.max'           => "Semester kegiatan tidak boleh melebihi semester aktif Anda (Maksimal Semester {$maxAllowedSemester}).",
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
             'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
             'organizer.required'     => 'Penyelenggara acara wajib diisi.',

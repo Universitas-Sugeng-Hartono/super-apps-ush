@@ -200,9 +200,12 @@ break;
                             <label class="custom-label">Semester Saat Kegiatan <span class="text-danger">*</span></label>
                             <select id="semester" name="semester" class="custom-select" required>
                                 <option value="">— Pilih Semester —</option>
-                                @for ($i = 1; $i <= max(8, (int)($currentSemester ?? 8)); $i++)
+                                @php
+                                    $maxAllowedSem = max(1, (int)($currentSemester ?? 1));
+                                @endphp
+                                @for ($i = 1; $i <= $maxAllowedSem; $i++)
                                     <option value="{{ $i }}" {{ (old('semester', $currentSemester ?? 1) == $i) ? 'selected' : '' }}>
-                                        Semester {{ $i }} {{ (isset($currentSemester) && $i == $currentSemester) ? '(Saat Ini)' : '' }}
+                                        Semester {{ $i }} {{ (isset($currentSemester) && $i == $currentSemester) ? '(Semester Aktif)' : '' }}
                                     </option>
                                 @endfor
                             </select>
@@ -446,9 +449,15 @@ break;
                             <div class="col-md-3">
                                 <label class="form-label fw-bold">Semester Kegiatan <span class="text-danger">*</span></label>
                                 <select name="semester" class="form-select" required>
-                                    @for ($i = 1; $i <= max(8, (int)($currentSemester ?? 8)); $i++)
+                                    @php
+                                        $maxEditSem = max(1, (int)($currentSemester ?? 1));
+                                        if (isset($achievement->semester) && (int)$achievement->semester > $maxEditSem) {
+                                            $maxEditSem = (int)$achievement->semester;
+                                        }
+                                    @endphp
+                                    @for ($i = 1; $i <= $maxEditSem; $i++)
                                         <option value="{{ $i }}" {{ (old('semester', $achievement->semester ?? ($currentSemester ?? 1)) == $i) ? 'selected' : '' }}>
-                                            Semester {{ $i }}
+                                            Semester {{ $i }} {{ (isset($currentSemester) && $i == $currentSemester) ? '(Semester Aktif)' : '' }}
                                         </option>
                                     @endfor
                                 </select>
