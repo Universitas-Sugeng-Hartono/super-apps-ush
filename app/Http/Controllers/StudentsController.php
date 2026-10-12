@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\StudentAchievement;
 use App\Models\CardCounseling;
 use App\Models\Announcement;
+use App\Models\AppSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -233,6 +234,12 @@ class StudentsController extends Controller
             $currentSemester = 1;
         }
 
+        $isAmbassador = ($student->status === 'studentambassador');
+        $hasBeasiswa = filled($student->beasiswa) && !in_array($student->beasiswa, ['0%', '0', 'Non-Beasiswa'], true);
+        $isBeasiswaTarget = ($isAmbassador || $hasBeasiswa);
+        $isPortalOpen = AppSetting::isBeasiswaUploadOpen();
+        $isUploadLocked = ($isBeasiswaTarget && !$isPortalOpen);
+
         return view('students.personal.achievements', compact(
             'student',
             'categoryOptions',
@@ -242,7 +249,10 @@ class StudentsController extends Controller
             'typeCategoryMap',
             'pointsTable',
             'buktiTable',
-            'currentSemester'
+            'currentSemester',
+            'isPortalOpen',
+            'isBeasiswaTarget',
+            'isUploadLocked'
         ));
     }
 
@@ -420,6 +430,14 @@ class StudentsController extends Controller
     {
         $student = Student::findOrFail(decrypt(session('student_id')));
 
+        $isAmbassador = ($student->status === 'studentambassador');
+        $hasBeasiswa = filled($student->beasiswa) && !in_array($student->beasiswa, ['0%', '0', 'Non-Beasiswa'], true);
+        $isBeasiswaTarget = ($isAmbassador || $hasBeasiswa);
+
+        if ($isBeasiswaTarget && !AppSetting::isBeasiswaUploadOpen()) {
+            return back()->with('error', 'Pengajuan prestasi saat ini sedang ditutup oleh Bagian Kemahasiswaan untuk proses evaluasi dan peninjauan beasiswa semester.');
+        }
+
         $categoryKeys      = implode(',', array_keys(StudentAchievement::manualCategoryOptions()));
         $activityTypeRules = 'nullable|string|max:100';
 
@@ -517,6 +535,14 @@ class StudentsController extends Controller
     public function updateAchievement(Request $request, $id)
     {
         $student = Student::findOrFail(decrypt(session('student_id')));
+
+        $isAmbassador = ($student->status === 'studentambassador');
+        $hasBeasiswa = filled($student->beasiswa) && !in_array($student->beasiswa, ['0%', '0', 'Non-Beasiswa'], true);
+        $isBeasiswaTarget = ($isAmbassador || $hasBeasiswa);
+
+        if ($isBeasiswaTarget && !AppSetting::isBeasiswaUploadOpen()) {
+            return back()->with('error', 'Pembaruan data prestasi saat ini ditutup oleh Bagian Kemahasiswaan untuk proses evaluasi dan peninjauan beasiswa semester.');
+        }
 
         $achievement = StudentAchievement::where('id', $id)
             ->where('student_id', $student->id)
@@ -623,9 +649,19 @@ class StudentsController extends Controller
      */
     public function deleteAchievement($id)
     {
+        $student = Student::findOrFail(decrypt(session('student_id')));
+
+        $isAmbassador = ($student->status === 'studentambassador');
+        $hasBeasiswa = filled($student->beasiswa) && !in_array($student->beasiswa, ['0%', '0', 'Non-Beasiswa'], true);
+        $isBeasiswaTarget = ($isAmbassador || $hasBeasiswa);
+
+        if ($isBeasiswaTarget && !AppSetting::isBeasiswaUploadOpen()) {
+            return back()->with('error', 'Penghapusan data prestasi saat ini ditutup oleh Bagian Kemahasiswaan untuk proses evaluasi dan peninjauan beasiswa semester.');
+        }
+
         try {
             $achievement = StudentAchievement::where('id', $id)
-                ->where('student_id', decrypt(session('student_id')))
+                ->where('student_id', $student->id)
                 ->firstOrFail();
 
             // Delete certificate file if exists

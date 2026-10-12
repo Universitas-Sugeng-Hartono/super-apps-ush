@@ -82,4 +82,12 @@ class AppSetting extends Model
         }
         return in_array($role, static::getWaVisibleRoles());
     }
+
+    /**
+     * Cek apakah portal pengajuan prestasi untuk penerima beasiswa & ambassador sedang dibuka.
+     */
+    public static function isBeasiswaUploadOpen(): bool
+    {
+        return (string) static::get('portal_upload_beasiswa_open', '1') === '1';
+    }
 }

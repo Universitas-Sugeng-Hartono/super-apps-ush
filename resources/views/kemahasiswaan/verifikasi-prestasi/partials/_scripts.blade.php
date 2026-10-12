@@ -1168,4 +1168,81 @@
             document.getElementById('studentAchievementsModal').style.display = 'flex';
         }
     }
+
+    // ── TOGGLE PORTAL UPLOAD AMBASSADOR & BEASISWA ──
+    function togglePortalUpload(isOpen) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+            || '{{ csrf_token() }}';
+        const badge = document.getElementById('portalStatusBadge');
+        const desc = document.getElementById('portalLockDesc');
+        const checkbox = document.getElementById('portalUploadSwitch');
+        const inlineWrap = document.getElementById('portalLockInline');
+
+        // Optimistic UI update
+        if (badge) {
+            badge.className = 'portal-status-badge ' + (isOpen ? 'badge-open' : 'badge-closed');
+            badge.textContent = isOpen ? 'Dibuka (Aktif)' : 'Ditutup (Review)';
+        }
+        if (desc) {
+            desc.textContent = isOpen 
+                ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.'
+                : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.';
+        }
+        if (inlineWrap) {
+            inlineWrap.title = isOpen
+                ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.'
+                : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.';
+        }
+
+        fetch('{{ route("kemahasiswaan.verifikasi-prestasi.toggle-upload-portal") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ is_open: isOpen })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: isOpen ? 'success' : 'info',
+                        title: isOpen ? 'Portal Dibuka' : 'Portal Ditutup Sementara',
+                        text: data.message,
+                        timer: 3500,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end',
+                        customClass: {
+                            container: 'swal2-toast-navbar-offset'
+                        }
+                    });
+                }
+            } else {
+                throw new Error(data.message || 'Gagal mengubah status portal');
+            }
+        })
+        .catch(err => {
+            console.error('Error toggling portal:', err);
+            // Revert state on error
+            if (checkbox) checkbox.checked = !isOpen;
+            if (badge) {
+                badge.className = 'portal-status-badge ' + (!isOpen ? 'badge-open' : 'badge-closed');
+                badge.textContent = !isOpen ? 'Dibuka (Aktif)' : 'Ditutup (Review)';
+            }
+            if (desc) {
+                desc.textContent = !isOpen 
+                    ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.'
+                    : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.';
+            }
+            if (inlineWrap) {
+                inlineWrap.title = !isOpen
+                    ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.'
+                    : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.';
+            }
+            alert('Gagal mengubah status portal upload: ' + err.message);
+        });
+    }
 </script>

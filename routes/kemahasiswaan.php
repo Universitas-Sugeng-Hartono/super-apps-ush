@@ -43,6 +43,7 @@ Route::middleware(['auth', 'role:masteradmin,superadmin,kemahasiswaan'])->prefix
         Route::post('/approve-all', 'approveAll')->name('approve-all');
         Route::post('/students/{id}/update-beasiswa', 'updateStudentBeasiswa')->name('update-beasiswa');
         Route::get('/students/{id}/evaluation-data', 'getStudentEvaluationData')->name('student-evaluation-data');
+        Route::post('/toggle-upload-portal', 'toggleUploadPortal')->name('toggle-upload-portal');
     });
 
     // Akses Verifikasi Data Prestasi SKPI (Tetap dipertahankan untuk kompatibilitas)

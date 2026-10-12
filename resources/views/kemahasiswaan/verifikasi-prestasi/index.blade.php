@@ -117,23 +117,38 @@
         </form>
     </div>
 
-    {{-- Segmented Toggle Pemisah Mahasiswa Beasiswa vs Non-Beasiswa --}}
-    <div class="student-category-toggle-wrap">
-        <a href="{{ request()->fullUrlWithQuery(['tab' => 'all', 'page' => 1]) }}" 
-           class="category-toggle-btn {{ $tab === 'all' ? 'active' : '' }}">
-            <i class="bi bi-grid-fill"></i> Semua Mahasiswa 
-            <span class="toggle-count-badge">{{ $tabCounts['all'] }}</span>
-        </a>
-        <a href="{{ request()->fullUrlWithQuery(['tab' => 'beasiswa', 'page' => 1]) }}" 
-           class="category-toggle-btn btn-beasiswa-tab {{ $tab === 'beasiswa' ? 'active' : '' }}">
-            <i class="bi bi-award-fill"></i> Penerima Beasiswa & Ambassador 
-            <span class="toggle-count-badge">{{ $tabCounts['beasiswa'] }}</span>
-        </a>
-        <a href="{{ request()->fullUrlWithQuery(['tab' => 'non_beasiswa', 'page' => 1]) }}" 
-           class="category-toggle-btn btn-reguler-tab {{ $tab === 'non_beasiswa' ? 'active' : '' }}">
-            <i class="bi bi-person-fill"></i> Mahasiswa Reguler (Non-Beasiswa) 
-            <span class="toggle-count-badge">{{ $tabCounts['non_beasiswa'] }}</span>
-        </a>
+    {{-- Toolbar Baris: Segmented Tabs & Toggle Portal Upload Sejajar --}}
+    <div class="category-toolbar-row">
+        {{-- Segmented Toggle Pemisah Mahasiswa Beasiswa vs Non-Beasiswa --}}
+        <div class="student-category-toggle-wrap">
+            <a href="{{ request()->fullUrlWithQuery(['tab' => 'all', 'page' => 1]) }}" 
+               class="category-toggle-btn {{ $tab === 'all' ? 'active' : '' }}">
+                <i class="bi bi-grid-fill"></i> Semua Mahasiswa 
+                <span class="toggle-count-badge">{{ $tabCounts['all'] }}</span>
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['tab' => 'beasiswa', 'page' => 1]) }}" 
+               class="category-toggle-btn btn-beasiswa-tab {{ $tab === 'beasiswa' ? 'active' : '' }}">
+                <i class="bi bi-award-fill"></i> Penerima Beasiswa & Ambassador 
+                <span class="toggle-count-badge">{{ $tabCounts['beasiswa'] }}</span>
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['tab' => 'non_beasiswa', 'page' => 1]) }}" 
+               class="category-toggle-btn btn-reguler-tab {{ $tab === 'non_beasiswa' ? 'active' : '' }}">
+                <i class="bi bi-person-fill"></i> Mahasiswa Reguler (Non-Beasiswa) 
+                <span class="toggle-count-badge">{{ $tabCounts['non_beasiswa'] }}</span>
+            </a>
+        </div>
+
+        {{-- Control: Status Portal Pengajuan Prestasi (Ambassador & Beasiswa) Disejajarkan di Sebelah Kanan --}}
+        <div class="portal-lock-inline" id="portalLockInline" title="{{ !empty($isPortalOpen) ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.' : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.' }}">
+            <span class="portal-inline-label">Portal Upload:</span>
+            <label class="switch-toggle" title="Klik untuk membuka atau menutup portal upload">
+                <input type="checkbox" id="portalUploadSwitch" {{ !empty($isPortalOpen) ? 'checked' : '' }} onchange="togglePortalUpload(this.checked)">
+                <span class="switch-slider"></span>
+            </label>
+            <span id="portalStatusBadge" class="portal-status-badge {{ !empty($isPortalOpen) ? 'badge-open' : 'badge-closed' }}">
+                {{ !empty($isPortalOpen) ? 'Dibuka (Aktif)' : 'Ditutup (Review)' }}
+            </span>
+        </div>
     </div>
 
     @if($stats['pending'] > 0)

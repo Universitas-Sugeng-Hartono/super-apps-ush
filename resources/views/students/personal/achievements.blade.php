@@ -109,6 +109,25 @@ break;
     {{-- MAIN CONTENT AREA --}}
     <div class="main-content-layout">
 
+        @if(!empty($isUploadLocked))
+        {{-- LOCKED NOTICE SECTION --}}
+        <div class="exclusive-card input-section" style="background: #FFFBEB; border: 1px solid #FDE68A;">
+            <div style="padding: 24px; display: flex; gap: 16px; align-items: flex-start;">
+                <div style="background: #FEF3C7; color: #D97706; width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 6px; font-size: 16px; font-weight: 700; color: #92400E;">Portal Pengajuan Prestasi Ditutup Sementara</h4>
+                    <p style="margin: 0; font-size: 13px; color: #78350F; line-height: 1.6;">
+                        Pengajuan dan pembaruan data prestasi untuk <strong>Mahasiswa Ambassador & Penerima Beasiswa</strong> saat ini sedang <strong>ditutup sementara</strong> oleh Bagian Kemahasiswaan dalam rangka <strong>evaluasi kelayakan dan peninjauan beasiswa semester</strong>.
+                    </p>
+                    <p style="margin: 8px 0 0; font-size: 12px; color: #B45309; font-weight: 600;">
+                        Seluruh data prestasi yang sudah Anda ajukan sebelumnya tetap aman dan sedang direview oleh admin. Form pengajuan akan dibuka kembali setelah penetapan periode evaluasi selesai.
+                    </p>
+                </div>
+            </div>
+        </div>
+        @else
         {{-- EXCLUSIVE INPUT SECTION --}}
         <div class="exclusive-card input-section" id="skpiFormSection">
             <div class="exclusive-card-header">
@@ -268,7 +287,7 @@ break;
                 </div>
             </form>
         </div>
-        
+        @endif
 
         {{-- HISTORY TABLE SECTION --}}
         <div class="exclusive-card table-section">
@@ -358,6 +377,7 @@ break;
                                 @endif
                             </td>
                             <td>
+                                @if(empty($isUploadLocked))
                                 <div style="display: flex; gap: 8px;">
                                     <button type="button" class="btn-table-action" style="color: #D97706; background: #FEF3C7; border: 1px solid #FCD34D;" data-bs-toggle="modal" data-bs-target="#editAchievementModal-{{ $achievement->id }}" title="Edit Data Prestasi">
                                         <i class="bi bi-pencil-square"></i>
@@ -369,6 +389,9 @@ break;
                                         <button type="submit" class="btn-table-action delete"><i class="bi bi-trash"></i></button>
                                     </form>
                                 </div>
+                                @else
+                                <span class="badge" style="background: #F1F5F9; color: #64748B; font-size: 11px; padding: 5px 9px; font-weight: 600; border-radius: 6px;">Terkunci</span>
+                                @endif
                             </td>
                         </tr>
                         @empty
@@ -388,6 +411,7 @@ break;
 </div>
 
 {{-- MODAL UNTUK EDIT ACHIEVEMENTS --}}
+@if(empty($isUploadLocked))
 @foreach($student->achievements as $achievement)
     <div class="modal fade" id="editAchievementModal-{{ $achievement->id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -517,6 +541,7 @@ break;
         </div>
     </div>
 @endforeach
+@endif
 
 @endsection
 

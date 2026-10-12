@@ -222,6 +222,92 @@
         color: #94A3B8;
         white-space: nowrap;
     }
+    /* Toolbar Row: Tab Navigasi & Toggle Portal Sejajar */
+    .category-toolbar-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .portal-lock-inline {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 5px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        height: 48px;
+        box-sizing: border-box;
+    }
+    .portal-inline-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        white-space: nowrap;
+    }
+    .switch-toggle {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        margin: 0;
+        cursor: pointer;
+    }
+    .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .switch-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #CBD5E1;
+        transition: .3s;
+        border-radius: 24px;
+    }
+    .switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+    .switch-toggle input:checked + .switch-slider {
+        background-color: #10B981;
+    }
+    .switch-toggle input:checked + .switch-slider:before {
+        transform: translateX(20px);
+    }
+    .portal-status-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 9px;
+        border-radius: 6px;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .portal-status-badge.badge-open {
+        background: #ECFDF5;
+        color: #047857;
+        border: 1px solid #A7F3D0;
+    }
+    .portal-status-badge.badge-closed {
+        background: #FFF1F2;
+        color: #BE123C;
+        border: 1px solid #FECDD3;
+    }
     .btn-quick-upgrade {
         display: inline-flex;
         align-items: center;
@@ -797,7 +883,7 @@
         background: #F1F5F9;
         padding: 6px;
         border-radius: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 0;
         border: 1px solid #E2E8F0;
         width: fit-content;
         max-width: 100%;
@@ -940,5 +1026,16 @@
         overflow: hidden !important;
         background: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
+    }
+
+    /* SweetAlert2 Toast Positioning & Stacking */
+    .swal2-container {
+        z-index: 99999 !important;
+    }
+    .swal2-container.swal2-top-end,
+    .swal2-container.swal2-top-right,
+    .swal2-toast-navbar-offset {
+        padding-top: 92px !important;
+        padding-right: 24px !important;
     }
 </style>

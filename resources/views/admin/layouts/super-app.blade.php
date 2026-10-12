@@ -733,6 +733,17 @@
                 opacity: 1 !important;
             }
         }
+
+        /* SweetAlert2 Toast Positioning & Stacking */
+        .swal2-container {
+            z-index: 99999 !important;
+        }
+        .swal2-container.swal2-top-end,
+        .swal2-container.swal2-top-right,
+        .swal2-toast-navbar-offset {
+            padding-top: 92px !important;
+            padding-right: 24px !important;
+        }
     </style>
 </head>
 <body>

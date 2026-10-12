@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdminController;
 
 use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\Student;
 use App\Models\StudentAchievement;
 use App\Models\StudyProgram;
@@ -183,6 +184,7 @@ class AchievementVerificationController extends Controller
             ->pluck('beasiswa')
             ->toArray();
         $availableBeasiswa = array_values(array_unique(array_merge(['100%', '75%', '50%', '25%'], $dbBeasiswa)));
+        $isPortalOpen = AppSetting::isBeasiswaUploadOpen();
 
         return view('kemahasiswaan.verifikasi-prestasi.index', compact(
             'students',
@@ -198,7 +200,8 @@ class AchievementVerificationController extends Controller
             'studyPrograms',
             'skpDictionary',
             'tab',
-            'tabCounts'
+            'tabCounts',
+            'isPortalOpen'
         ));
     }
 
@@ -483,6 +486,31 @@ class AchievementVerificationController extends Controller
         return response()->json([
             'success' => true,
             'evaluation' => $eval,
+        ]);
+    }
+
+    /**
+     * Buka / Tutup portal pengajuan prestasi untuk mahasiswa Ambassador & Penerima Beasiswa.
+     */
+    public function toggleUploadPortal(Request $request)
+    {
+        $request->validate([
+            'is_open' => 'required|boolean',
+        ]);
+
+        $isOpen = $request->boolean('is_open') ? '1' : '0';
+        AppSetting::set('portal_upload_beasiswa_open', $isOpen);
+
+        $statusText = $isOpen === '1' ? 'DIBUKA' : 'DITUTUP';
+        $message = $isOpen === '1'
+            ? 'Portal pengajuan prestasi untuk Ambassador & Beasiswa berhasil DIBUKA. Mahasiswa dapat mengunggah prestasi kembali.'
+            : 'Portal pengajuan prestasi untuk Ambassador & Beasiswa berhasil DITUTUP. Mahasiswa tidak dapat mengunggah atau mengubah data prestasi selama masa review beasiswa.';
+
+        return response()->json([
+            'success' => true,
+            'is_open' => $isOpen === '1',
+            'status_text' => $statusText,
+            'message' => $message,
         ]);
     }
 }
