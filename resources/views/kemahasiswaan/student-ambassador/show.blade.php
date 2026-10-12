@@ -44,6 +44,11 @@
 
             <div class="form-row">
                 <div class="form-group">
+                    <label>Semester</label>
+                    <input type="text" class="form-control" value="{{ $student->semester ? 'Semester ' . $student->semester : 'Belum diisi / -' }}" disabled>
+                </div>
+
+                <div class="form-group">
                     <label>Beasiswa (%)</label>
                     <input type="text" class="form-control" value="{{ $student->beasiswa ?: '0%' }}" disabled>
                 </div>

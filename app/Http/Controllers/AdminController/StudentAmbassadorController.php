@@ -95,6 +95,7 @@ class StudentAmbassadorController extends Controller
             'periode_masuk' => 'required|date_format:Y-m',
             'program_studi' => 'required|string|in:' . implode(',', $validPrograms),
             'status'        => 'required|string|in:mahasiswa,studentambassador',
+            'semester'      => 'nullable|integer|min:1|max:14',
             'ipk'           => 'nullable|numeric|min:0|max:4',
             'beasiswa'      => 'nullable|string|max:100',
             'gender'        => 'nullable|in:L,P',
@@ -111,6 +112,9 @@ class StudentAmbassadorController extends Controller
             'periode_masuk.date_format' => 'Format Periode Masuk tidak valid.',
             'program_studi.required'    => 'Program Studi harus dipilih.',
             'status.required'           => 'Status harus dipilih (Mahasiswa atau Student Ambassador).',
+            'semester.integer'          => 'Semester harus berupa angka bulat.',
+            'semester.min'              => 'Semester minimal 1.',
+            'semester.max'              => 'Semester maksimal 14.',
             'ipk.numeric'               => 'IPK harus berupa angka.',
             'ipk.min'                   => 'IPK minimal 0.00.',
             'ipk.max'                   => 'IPK maksimal 4.00.',
@@ -141,6 +145,7 @@ class StudentAmbassadorController extends Controller
             'angkatan'         => (int) substr($request->periode_masuk, 0, 4),
             'program_studi'    => $request->program_studi,
             'status'           => $request->status,
+            'semester'         => $request->filled('semester') ? (int) $request->semester : null,
             'ipk'              => $request->filled('ipk') ? $request->ipk : null,
             'beasiswa'         => $beasiswa,
             'status_mahasiswa' => 'Aktif',
@@ -194,6 +199,7 @@ class StudentAmbassadorController extends Controller
             'periode_masuk' => 'required|date_format:Y-m',
             'program_studi' => 'required|string|in:' . implode(',', $validPrograms),
             'status'        => 'required|string|in:mahasiswa,studentambassador',
+            'semester'      => 'nullable|integer|min:1|max:14',
             'ipk'           => 'nullable|numeric|min:0|max:4',
             'beasiswa'      => 'nullable|string|max:100',
             'gender'        => 'nullable|in:L,P',
@@ -203,9 +209,12 @@ class StudentAmbassadorController extends Controller
             'phone'         => 'nullable|string|max:15',
             'id_lecturer'   => 'nullable|exists:users,id',
         ], [
-            'ipk.numeric'   => 'IPK harus berupa angka.',
-            'ipk.min'       => 'IPK minimal 0.00.',
-            'ipk.max'       => 'IPK maksimal 4.00.',
+            'semester.integer' => 'Semester harus berupa angka bulat.',
+            'semester.min'     => 'Semester minimal 1.',
+            'semester.max'     => 'Semester maksimal 14.',
+            'ipk.numeric'      => 'IPK harus berupa angka.',
+            'ipk.min'          => 'IPK minimal 0.00.',
+            'ipk.max'          => 'IPK maksimal 4.00.',
         ]);
 
         if ($validator->fails()) {
@@ -230,6 +239,7 @@ class StudentAmbassadorController extends Controller
             'angkatan'         => (int) substr($request->periode_masuk, 0, 4),
             'program_studi'    => $request->program_studi,
             'status'           => $request->status,
+            'semester'         => $request->filled('semester') ? (int) $request->semester : $student->semester,
             'ipk'              => $request->filled('ipk') ? $request->ipk : $student->ipk,
             'beasiswa'         => $beasiswa,
             'email'            => $request->email,
@@ -279,10 +289,10 @@ class StudentAmbassadorController extends Controller
             'Content-Disposition' => 'attachment; filename="template_import_student_ambassador.csv"',
         ];
 
-        $csv = implode(',', ['nama', 'nim', 'angkatan', 'program_studi', 'status', 'ipk', 'beasiswa', 'email', 'password']) . "\n";
-        $csv .= implode(',', ['Budi Santoso', '2201234567', '2024', 'Bisnis Digital', 'studentambassador', '3.85', '100%', 'budi@example.com', '']) . "\n";
-        $csv .= implode(',', ['Siti Rahma', '2201234568', '2024', 'Ilmu Komputer', 'mahasiswa', '3.70', '50%', 'siti@example.com', '']) . "\n";
-        $csv .= implode(',', ['Ahmad Fauzi', '2201234569', '2024', 'Sistem Informasi', 'mahasiswa', '3.50', '0%', 'ahmad@example.com', '']) . "\n";
+        $csv = implode(',', ['nama', 'nim', 'angkatan', 'program_studi', 'status', 'semester', 'ipk', 'beasiswa', 'email', 'password']) . "\n";
+        $csv .= implode(',', ['Budi Santoso', '2201234567', '2024', 'Bisnis Digital', 'studentambassador', '5', '3.85', '100%', 'budi@example.com', '']) . "\n";
+        $csv .= implode(',', ['Siti Rahma', '2201234568', '2024', 'Ilmu Komputer', 'mahasiswa', '3', '3.70', '50%', 'siti@example.com', '']) . "\n";
+        $csv .= implode(',', ['Ahmad Fauzi', '2201234569', '2024', 'Sistem Informasi', 'mahasiswa', '1', '3.50', '0%', 'ahmad@example.com', '']) . "\n";
 
         // BOM untuk kompatibilitas Excel
         $csv = "\xEF\xBB\xBF" . $csv;
@@ -331,6 +341,7 @@ class StudentAmbassadorController extends Controller
         $iAngkatan = $idx(['angkatan', 'batch', 'periode_masuk']);
         $iProdi = $idx(['program_studi', 'prodi', 'program studi']);
         $iStatus = $idx(['status', 'tipe', 'role_mahasiswa']);
+        $iSemester = $idx(['semester', 'sem']);
         $iIpk = $idx(['ipk', 'gpa']);
         $iBeasiswa = $idx(['beasiswa', 'scholarship', 'jenis_beasiswa']);
         $iEmail = $idx(['email']);
@@ -360,6 +371,8 @@ class StudentAmbassadorController extends Controller
                 $angkatanRaw = trim((string) ($row[$iAngkatan] ?? ''));
                 $prodi = trim((string) ($row[$iProdi] ?? ''));
                 $statusInput = $iStatus !== null ? strtolower(trim((string) ($row[$iStatus] ?? ''))) : 'studentambassador';
+                $semRaw = $iSemester !== null ? trim((string) ($row[$iSemester] ?? '')) : '';
+                $semVal = (is_numeric($semRaw) && (int)$semRaw >= 1 && (int)$semRaw <= 14) ? (int) $semRaw : null;
                 $ipkRaw = $iIpk !== null ? trim((string) ($row[$iIpk] ?? '')) : '';
                 $ipkVal = (is_numeric($ipkRaw) && (float)$ipkRaw >= 0 && (float)$ipkRaw <= 4) ? (float) $ipkRaw : null;
                 $beasiswaRaw = $iBeasiswa !== null ? trim((string) ($row[$iBeasiswa] ?? '')) : '';
@@ -414,6 +427,9 @@ class StudentAmbassadorController extends Controller
                     if ($beasiswa !== null) {
                         $updateData['beasiswa'] = $beasiswa;
                     }
+                    if ($semVal !== null) {
+                        $updateData['semester'] = $semVal;
+                    }
                     if ($ipkVal !== null) {
                         $updateData['ipk'] = $ipkVal;
                     }
@@ -431,6 +447,7 @@ class StudentAmbassadorController extends Controller
                         'angkatan' => $angkatan,
                         'program_studi' => $prodi,
                         'status' => $status,
+                        'semester' => $semVal,
                         'ipk' => $ipkVal,
                         'beasiswa' => $beasiswa ?: null,
                         'status_mahasiswa' => 'Aktif',

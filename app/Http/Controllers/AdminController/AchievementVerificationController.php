@@ -40,6 +40,54 @@ class AchievementVerificationController extends Controller
             }
         };
 
+        $tab = $request->input('tab', 'all');
+        if (!in_array($tab, ['all', 'beasiswa', 'non_beasiswa'], true)) {
+            $tab = 'all';
+        }
+
+        $beasiswaCondition = function ($q) {
+            $q->where(function ($sub) {
+                $sub->whereNotNull('beasiswa')
+                    ->where('beasiswa', '!=', '')
+                    ->where('beasiswa', '!=', '0%')
+                    ->where('beasiswa', '!=', '0')
+                    ->where('beasiswa', '!=', 'Non-Beasiswa');
+            })->orWhere('status', 'studentambassador');
+        };
+
+        $nonBeasiswaCondition = function ($q) {
+            $q->where(function ($sub) {
+                $sub->whereNull('beasiswa')
+                    ->orWhere('beasiswa', '')
+                    ->orWhere('beasiswa', '0%')
+                    ->orWhere('beasiswa', '0')
+                    ->orWhere('beasiswa', 'Non-Beasiswa');
+            })->where(function ($sub) {
+                $sub->where('status', '!=', 'studentambassador')
+                    ->orWhereNull('status');
+            });
+        };
+
+        $countsQuery = Student::query()
+            ->whereHas('achievements', $achievementsFilter)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('nim', 'like', "%{$search}%")
+                        ->orWhere('program_studi', 'like', "%{$search}%")
+                        ->orWhere('beasiswa', 'like', "%{$search}%");
+                });
+            })
+            ->when(filled($programStudi), function ($query) use ($programStudi) {
+                $query->where('program_studi', $programStudi);
+            });
+
+        $tabCounts = [
+            'all'          => (clone $countsQuery)->count(),
+            'beasiswa'     => (clone $countsQuery)->where($beasiswaCondition)->count(),
+            'non_beasiswa' => (clone $countsQuery)->where($nonBeasiswaCondition)->count(),
+        ];
+
         $students = Student::query()
             ->whereHas('achievements', $achievementsFilter)
             ->with(['achievements' => function ($query) use ($achievementsFilter) {
@@ -50,6 +98,12 @@ class AchievementVerificationController extends Controller
                 $q->where('status', 'approved');
             }], 'skp_points')
             ->withSum('achievements as total_skp_all', 'skp_points')
+            ->when($tab === 'beasiswa', function ($query) use ($beasiswaCondition) {
+                $query->where($beasiswaCondition);
+            })
+            ->when($tab === 'non_beasiswa', function ($query) use ($nonBeasiswaCondition) {
+                $query->where($nonBeasiswaCondition);
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nama_lengkap', 'like', "%{$search}%")
@@ -142,7 +196,9 @@ class AchievementVerificationController extends Controller
             'beasiswaFilter',
             'availableBeasiswa',
             'studyPrograms',
-            'skpDictionary'
+            'skpDictionary',
+            'tab',
+            'tabCounts'
         ));
     }
 
@@ -235,6 +291,7 @@ class AchievementVerificationController extends Controller
 
         $request->validate([
             'category'           => "required|string|in:{$categoryKeys}",
+            'semester'           => 'nullable|integer|min:1|max:14',
             'activity_type'      => 'required|string|max:100',
             'event'              => 'required|string|max:255',
             'organizer'          => 'required|string|max:255',
@@ -265,6 +322,10 @@ class AchievementVerificationController extends Controller
             'status'             => $request->status,
             'approval_notes'     => $request->approval_notes,
         ];
+
+        if ($request->filled('semester')) {
+            $updateData['semester'] = (int) $request->semester;
+        }
 
         if ($request->status === 'approved') {
             $updateData['approved_by'] = auth()->id();

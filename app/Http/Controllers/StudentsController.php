@@ -228,6 +228,11 @@ class StudentsController extends Controller
             }
         }
 
+        $currentSemester = (int) ($student->semester ?: $student->getCurrentSemester());
+        if ($currentSemester < 1) {
+            $currentSemester = 1;
+        }
+
         return view('students.personal.achievements', compact(
             'student',
             'categoryOptions',
@@ -236,7 +241,8 @@ class StudentsController extends Controller
             'roleOptions',
             'typeCategoryMap',
             'pointsTable',
-            'buktiTable'
+            'buktiTable',
+            'currentSemester'
         ));
     }
 
@@ -419,6 +425,7 @@ class StudentsController extends Controller
 
         $request->validate([
             'category'           => "required|string|in:{$categoryKeys}",
+            'semester'           => 'required|integer|min:1|max:14',
             'activity_type'      => 'required|string|max:100',
             'event'              => 'required|string|max:255',
             'organizer'          => 'required|string|max:255',
@@ -428,6 +435,10 @@ class StudentsController extends Controller
             'certificate'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ], [
             'category.required'      => 'Kategori SKPI harus dipilih.',
+            'semester.required'      => 'Semester saat kegiatan wajib dipilih.',
+            'semester.integer'       => 'Semester harus berupa angka.',
+            'semester.min'           => 'Semester minimal 1.',
+            'semester.max'           => 'Semester maksimal 14.',
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
             'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
             'organizer.required'     => 'Penyelenggara acara wajib diisi.',
@@ -453,7 +464,7 @@ class StudentsController extends Controller
             $data = [
                 'student_id'         => $student->id,
                 'category'           => $request->category,
-                'semester'           => $request->filled('semester') ? (int) $request->semester : ($student->semester ?: $student->getCurrentSemester()),
+                'semester'           => (int) $request->semester,
                 'activity_type'      => $request->activity_type,
                 'event'              => $request->event,
                 'organizer'          => $request->organizer,
@@ -511,6 +522,7 @@ class StudentsController extends Controller
 
         $request->validate([
             'category'           => "required|string|in:{$categoryKeys}",
+            'semester'           => 'required|integer|min:1|max:14',
             'activity_type'      => 'required|string|max:100',
             'event'              => 'required|string|max:255',
             'organizer'          => 'required|string|max:255',
@@ -520,6 +532,10 @@ class StudentsController extends Controller
             'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ], [
             'category.required'      => 'Kategori SKPI harus dipilih.',
+            'semester.required'      => 'Semester saat kegiatan wajib dipilih.',
+            'semester.integer'       => 'Semester harus berupa angka.',
+            'semester.min'           => 'Semester minimal 1.',
+            'semester.max'           => 'Semester maksimal 14.',
             'activity_type.required' => 'Jenis kegiatan harus dipilih.',
             'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
             'organizer.required'     => 'Penyelenggara acara wajib diisi.',
@@ -542,6 +558,7 @@ class StudentsController extends Controller
 
             $achievement->fill([
                 'category'           => $request->category,
+                'semester'           => (int) $request->semester,
                 'activity_type'      => $request->activity_type,
                 'event'              => $request->event,
                 'organizer'          => $request->organizer,

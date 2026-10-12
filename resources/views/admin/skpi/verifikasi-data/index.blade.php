@@ -132,6 +132,8 @@
                 'event' => ($ach->event && $ach->event !== '-') ? $ach->event : null,
                 'organizer' => $ach->organizer ?: '-',
                 'event_year' => $ach->event_year ?: '-',
+                'semester' => $ach->semester ? (int)$ach->semester : null,
+                'semester_label' => $ach->semester ? 'Semester ' . $ach->semester : '-',
                 'tingkat' => $ach->level,
                 'peran' => $ach->participation_role ?? '-',
                 'skp' => $ach->skp_points ?? 0,
@@ -232,6 +234,10 @@
                 <div class="detail-info-item">
                     <span class="detail-info-label">Tahun Kegiatan</span>
                     <strong id="detail_event_year" class="detail-info-value"></strong>
+                </div>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Semester Kegiatan</span>
+                    <strong id="detail_semester" class="detail-info-value" style="color: #0284C7;"></strong>
                 </div>
                 <div class="detail-info-item">
                     <span class="detail-info-label">Tingkat</span>
@@ -399,7 +405,7 @@
                 <input type="text" id="edit_event" name="event" class="form-control" required placeholder="Contoh: Seminar Nasional Teknologi 2026">
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; margin-top: 14px;">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="edit_organizer" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Penyelenggara *</label>
                     <input type="text" id="edit_organizer" name="organizer" class="form-control" required placeholder="Contoh: BEM USH / Kemendikbud">
@@ -408,6 +414,16 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="edit_event_year" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Tahun Kegiatan *</label>
                     <input type="text" id="edit_event_year" name="event_year" class="form-control" required placeholder="Contoh: 2025">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_semester" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Semester</label>
+                    <select id="edit_semester" name="semester" class="form-control">
+                        <option value="">-</option>
+                        @for($s = 1; $s <= 14; $s++)
+                        <option value="{{ $s }}">Sem {{ $s }}</option>
+                        @endfor
+                    </select>
                 </div>
             </div>
 
@@ -561,7 +577,7 @@
                 const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(ach))));
 
                 const titleText = ach.event ? ach.event : ach.kegiatan;
-                const subText = ach.event ? `${ach.kegiatan} ${ach.organizer && ach.organizer !== '-' ? '• ' + ach.organizer : ''} ${ach.event_year && ach.event_year !== '-' ? '(' + ach.event_year + ')' : ''}` : ach.kategori;
+                const subText = ach.event ? `${ach.kegiatan} ${ach.organizer && ach.organizer !== '-' ? '• ' + ach.organizer : ''} ${ach.event_year && ach.event_year !== '-' ? '(' + ach.event_year + ')' : ''} ${ach.semester ? '• Sem ' + ach.semester : ''}` : `${ach.kategori} ${ach.semester ? '• Sem ' + ach.semester : ''}`;
 
                 tableHtml += `
                 <tr>
@@ -635,6 +651,7 @@
         if (document.getElementById('detail_event')) document.getElementById('detail_event').textContent = data.event || '-';
         if (document.getElementById('detail_organizer')) document.getElementById('detail_organizer').textContent = data.organizer || '-';
         if (document.getElementById('detail_event_year')) document.getElementById('detail_event_year').textContent = data.event_year || '-';
+        if (document.getElementById('detail_semester')) document.getElementById('detail_semester').textContent = data.semester_label || (data.semester ? 'Semester ' + data.semester : '-');
         document.getElementById('detail_tingkat').textContent = data.tingkat;
         document.getElementById('detail_peran').textContent = data.peran;
         document.getElementById('detail_skp').textContent = data.skp;
@@ -807,6 +824,7 @@
         document.getElementById('edit_event').value = (data.event && data.event !== '-') ? data.event : '';
         document.getElementById('edit_organizer').value = (data.organizer && data.organizer !== '-') ? data.organizer : '';
         document.getElementById('edit_event_year').value = (data.event_year && data.event_year !== '-') ? data.event_year : '';
+        if (document.getElementById('edit_semester')) document.getElementById('edit_semester').value = data.semester || '';
         document.getElementById('edit_status').value = data.status || 'approved';
         document.getElementById('edit_approval_notes').value = (data.catatan && data.catatan !== 'Belum ada catatan review.') ? data.catatan : '';
 

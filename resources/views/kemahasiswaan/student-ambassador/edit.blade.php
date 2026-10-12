@@ -87,6 +87,13 @@
 
                 <div class="form-row">
                     <div class="form-group">
+                        <label><i class="bi bi-calendar-event text-primary me-1"></i> Semester</label>
+                        <input type="number" name="semester" class="form-control" value="{{ old('semester', $student->semester) }}" placeholder="Contoh: 1 - 14" min="1" max="14">
+                        <small class="text-muted">Semester aktif mahasiswa saat ini (1 sampai 14).</small>
+                        @error('semester')<span class="error">{{ $message }}</span>@enderror
+                    </div>
+
+                    <div class="form-group">
                         <label>Dosen PA</label>
                         <select name="id_lecturer" class="form-control">
                             <option value="">Pilih Dosen PA (Opsional)</option>
@@ -97,6 +104,15 @@
                             @endforeach
                         </select>
                         @error('id_lecturer')<span class="error">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nilai IPK</label>
+                        <input type="number" step="0.01" min="0" max="4.00" name="ipk" class="form-control" value="{{ old('ipk', $student->ipk) }}" placeholder="Contoh: 3.75">
+                        <small class="text-muted">IPK kumulatif terakhir (0.00 - 4.00, opsional).</small>
+                        @error('ipk')<span class="error">{{ $message }}</span>@enderror
                     </div>
 
                     <div class="form-group">

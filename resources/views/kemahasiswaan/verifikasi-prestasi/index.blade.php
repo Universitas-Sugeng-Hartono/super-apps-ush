@@ -113,7 +113,27 @@
             <div class="filter-actions">
                 <a href="{{ route('kemahasiswaan.verifikasi-prestasi.index') }}" class="btn-reset" style="margin-top: 22px;">Reset</a>
             </div>
+            <input type="hidden" name="tab" value="{{ $tab }}">
         </form>
+    </div>
+
+    {{-- Segmented Toggle Pemisah Mahasiswa Beasiswa vs Non-Beasiswa --}}
+    <div class="student-category-toggle-wrap">
+        <a href="{{ request()->fullUrlWithQuery(['tab' => 'all', 'page' => 1]) }}" 
+           class="category-toggle-btn {{ $tab === 'all' ? 'active' : '' }}">
+            <i class="bi bi-grid-fill"></i> Semua Mahasiswa 
+            <span class="toggle-count-badge">{{ $tabCounts['all'] }}</span>
+        </a>
+        <a href="{{ request()->fullUrlWithQuery(['tab' => 'beasiswa', 'page' => 1]) }}" 
+           class="category-toggle-btn btn-beasiswa-tab {{ $tab === 'beasiswa' ? 'active' : '' }}">
+            <i class="bi bi-award-fill"></i> Penerima Beasiswa & Ambassador 
+            <span class="toggle-count-badge">{{ $tabCounts['beasiswa'] }}</span>
+        </a>
+        <a href="{{ request()->fullUrlWithQuery(['tab' => 'non_beasiswa', 'page' => 1]) }}" 
+           class="category-toggle-btn btn-reguler-tab {{ $tab === 'non_beasiswa' ? 'active' : '' }}">
+            <i class="bi bi-person-fill"></i> Mahasiswa Reguler (Non-Beasiswa) 
+            <span class="toggle-count-badge">{{ $tabCounts['non_beasiswa'] }}</span>
+        </a>
     </div>
 
     @if($stats['pending'] > 0)
@@ -140,8 +160,10 @@
                     <th>Program Studi</th>
                     <th style="text-align: center;">IPK</th>
                     <th style="text-align: center;">Total Point</th>
+                    @if($tab !== 'non_beasiswa')
                     <th style="text-align: center;">Status Mahasiswa</th>
                     <th style="text-align: center;">Beasiswa (%)</th>
+                    @endif
                     <th style="text-align: center;">Pengajuan</th>
                     <th style="text-align: center; width: 140px;">Aksi</th>
                 </tr>
@@ -170,6 +192,8 @@
                         'event' => ($ach->event && $ach->event !== '-') ? $ach->event : null,
                         'organizer' => $ach->organizer ?: '-',
                         'event_year' => $ach->event_year ?: '-',
+                        'semester' => $ach->semester ? (int)$ach->semester : null,
+                        'semester_label' => $ach->semester ? 'Semester ' . $ach->semester : '-',
                         'tingkat' => $ach->level,
                         'peran' => $ach->participation_role ?? '-',
                         'skp' => $ach->skp_points ?? 0,
@@ -185,6 +209,7 @@
 
                 $isAmbassador = ($student->status === 'studentambassador');
                 $hasBeasiswa = filled($student->beasiswa) && !in_array($student->beasiswa, ['0%', '0', 'Non-Beasiswa'], true);
+                $isBeasiswaTarget = ($isAmbassador || $hasBeasiswa);
                 $ipkVal = is_numeric($student->ipk) ? number_format((float)$student->ipk, 2) : null;
                 $approvedPoints = (int) ($student->total_skp_approved ?? 0);
                 @endphp
@@ -211,45 +236,59 @@
                             <i class="bi bi-star-fill"></i> {{ $approvedPoints }} Poin
                         </span>
                     </td>
+                    @if($tab !== 'non_beasiswa')
                     <td style="text-align: center;">
                         @if($isAmbassador)
                             <span class="badge-status-mhs badge-ambassador">
                                 <i class="bi bi-award-fill"></i> Student Ambassador
                             </span>
+                        @elseif($hasBeasiswa)
+                            <span class="badge-status-mhs badge-beasiswa-mhs" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">
+                                <i class="bi bi-mortarboard-fill"></i> Mahasiswa Beasiswa
+                            </span>
                         @else
                             <span class="badge-status-mhs badge-reguler">
-                                <i class="bi bi-person"></i> Mahasiswa
+                                <i class="bi bi-person"></i> Mahasiswa Reguler
                             </span>
                         @endif
                     </td>
                     <td style="text-align: center;">
-                        @if($hasBeasiswa)
-                            <span class="badge-beasiswa" title="Beasiswa {{ $student->beasiswa }}">
-                                <i class="bi bi-mortarboard-fill"></i> {{ $student->beasiswa }}
+                        @if($isBeasiswaTarget)
+                            <span class="badge-beasiswa" title="Beasiswa {{ $student->beasiswa ?: 'Ambassador' }}">
+                                <i class="bi bi-mortarboard-fill"></i> {{ $student->beasiswa ?: 'Ambassador' }}
                             </span>
-                        @else
-                            <span class="text-muted" style="font-size: 12px;">0%</span>
-                        @endif
 
-                        @if(!empty($student->pokema_evaluation))
-                            @php
-                                $eval = $student->pokema_evaluation;
-                            @endphp
-                            @if($eval['action_type'] === 'upgrade')
-                                <div style="margin-top: 4px;">
-                                    <span class="badge-rec badge-rec-upgrade" title="{{ $eval['reason'] }}">
-                                        <i class="bi bi-arrow-up-circle-fill"></i> Rekomendasi {{ $eval['qualified_beasiswa'] }}
-                                    </span>
-                                </div>
-                            @elseif($eval['action_type'] === 'downgrade')
-                                <div style="margin-top: 4px;">
-                                    <span class="badge-rec badge-rec-downgrade" title="{{ $eval['reason'] }}">
-                                        <i class="bi bi-arrow-down-circle-fill"></i> Evaluasi {{ $eval['qualified_beasiswa'] }}
-                                    </span>
-                                </div>
+                            @if(!empty($student->pokema_evaluation))
+                                @php
+                                    $eval = $student->pokema_evaluation;
+                                @endphp
+                                @if($eval['action_type'] === 'upgrade')
+                                    <div style="margin-top: 4px;">
+                                        <span class="badge-rec badge-rec-upgrade" title="{{ $eval['reason'] }}">
+                                            <i class="bi bi-arrow-up-circle-fill"></i> Rekomendasi {{ $eval['qualified_beasiswa'] }}
+                                        </span>
+                                    </div>
+                                @elseif($eval['action_type'] === 'downgrade')
+                                    <div style="margin-top: 4px;">
+                                        <span class="badge-rec badge-rec-downgrade" title="{{ $eval['reason'] }}">
+                                            <i class="bi bi-arrow-down-circle-fill"></i> Evaluasi {{ $eval['qualified_beasiswa'] }}
+                                        </span>
+                                    </div>
+                                @elseif($eval['action_type'] === 'maintain')
+                                    <div style="margin-top: 4px;">
+                                        <span class="badge-rec badge-rec-maintain" title="{{ $eval['reason'] }}">
+                                            <i class="bi bi-shield-check"></i> Memenuhi Syarat
+                                        </span>
+                                    </div>
+                                @endif
                             @endif
+                        @else
+                            <span class="badge-non-beasiswa" style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 11px; background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0;">
+                                <i class="bi bi-dash-circle"></i> Non-Beasiswa
+                            </span>
                         @endif
                     </td>
+                    @endif
                     <td style="text-align: center;">
                         <span class="badge-count">{{ $student->achievements->count() }} Data</span>
                         @php
@@ -264,34 +303,46 @@
                     </td>
                     <td style="text-align: center;">
                         <div class="action-buttons" style="justify-content: center; gap: 6px; flex-wrap: wrap;">
-                            <button type="button" class="btn-view"
-                                data-student-id="{{ $student->id }}"
-                                data-nama="{{ $student->nama_lengkap ?? '-' }}"
-                                data-nim="{{ $student->nim ?? '-' }}"
-                                data-ipk="{{ $ipkVal ?? '-' }}"
-                                data-poin="{{ $approvedPoints }}"
-                                data-status-mhs="{{ $isAmbassador ? 'Student Ambassador' : 'Mahasiswa' }}"
-                                data-beasiswa="{{ $hasBeasiswa ? $student->beasiswa : '0%' }}"
-                                data-achievements="{{ base64_encode(json_encode($achievementsData->values())) }}"
-                                data-evaluation="{{ base64_encode(json_encode($student->pokema_evaluation ?? [])) }}"
-                                onclick="showStudentAchievementsModal(this)">
-                                <i class="bi bi-speedometer2"></i> Evaluasi & Prestasi
-                            </button>
-                            @if(isset($student->pokema_evaluation))
-                                @php $evalRow = $student->pokema_evaluation; @endphp
-                                @if($evalRow['action_type'] === 'upgrade')
-                                    <button type="button" class="btn-quick-upgrade"
-                                        title="{{ $evalRow['reason'] }}"
-                                        onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}')">
-                                        <i class="bi bi-arrow-up-circle-fill"></i> Naikkan Beasiswa
-                                    </button>
-                                @elseif($evalRow['action_type'] === 'downgrade')
-                                    <button type="button" class="btn-quick-downgrade"
-                                        title="{{ $evalRow['reason'] }}"
-                                        onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}')">
-                                        <i class="bi bi-arrow-down-circle-fill"></i> Sesuaikan Beasiswa
-                                    </button>
+                            @if($isBeasiswaTarget)
+                                <button type="button" class="btn-view"
+                                    data-student-id="{{ $student->id }}"
+                                    data-nama="{{ $student->nama_lengkap ?? '-' }}"
+                                    data-nim="{{ $student->nim ?? '-' }}"
+                                    data-ipk="{{ $ipkVal ?? '-' }}"
+                                    data-poin="{{ $approvedPoints }}"
+                                    data-status-mhs="{{ $isAmbassador ? 'Student Ambassador' : 'Penerima Beasiswa' }}"
+                                    data-beasiswa="{{ $hasBeasiswa ? $student->beasiswa : 'Ambassador' }}"
+                                    data-is-beasiswa="1"
+                                    data-achievements="{{ base64_encode(json_encode($achievementsData->values())) }}"
+                                    data-evaluation="{{ base64_encode(json_encode($student->pokema_evaluation ?? [])) }}"
+                                    onclick="showStudentAchievementsModal(this, 'evaluation')">
+                                    <i class="bi bi-speedometer2"></i> Evaluasi & Prestasi
+                                </button>
+                                @if(isset($student->pokema_evaluation))
+                                    @php $evalRow = $student->pokema_evaluation; @endphp
+                                    @if($evalRow['action_type'] === 'upgrade')
+                                        <button type="button" class="btn-quick-upgrade"
+                                            title="{{ $evalRow['reason'] }}"
+                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}')">
+                                            <i class="bi bi-arrow-up-circle-fill"></i> Naikkan Beasiswa
+                                        </button>
+                                    @elseif($evalRow['action_type'] === 'downgrade')
+                                        <button type="button" class="btn-quick-downgrade"
+                                            title="{{ $evalRow['reason'] }}"
+                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}')">
+                                            <i class="bi bi-arrow-down-circle-fill"></i> Sesuaikan Beasiswa
+                                        </button>
+                                    @endif
                                 @endif
+                            @else
+                                <button type="button" class="btn-view"
+                                    data-student-id="{{ $student->id }}"
+                                    data-nama="{{ $student->nama_lengkap ?? '-' }}"
+                                    data-nim="{{ $student->nim ?? '-' }}"
+                                    data-achievements="{{ base64_encode(json_encode($achievementsData->values())) }}"
+                                    onclick="showRegularStudentAchievementsModal(this)">
+                                    <i class="bi bi-list-task"></i> Lihat Prestasi
+                                </button>
                             @endif
                         </div>
                     </td>
@@ -315,7 +366,33 @@
     @endif
 </div>
 
-{{-- MODAL 1: Daftar Prestasi Mahasiswa --}}
+{{-- MODAL PREVIEW UTAMA: Khusus Mahasiswa Biasa (Non-Beasiswa) --}}
+<div id="regularStudentAchievementsModal" class="modal" style="display: none; z-index: 9998;">
+    <div class="modal-content modal-achievements">
+        <!-- Modal Header -->
+        <div class="modal-hdr">
+            <div>
+                <h4 class="modal-hdr-title">Daftar Prestasi Mahasiswa</h4>
+                <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+                    <p class="modal-hdr-sub" id="regular_achievements_nama" style="margin: 0; font-weight: 600;"></p>
+                    <span class="badge-status-mhs badge-reguler" style="font-size: 11px; padding: 2px 8px;">Mahasiswa Reguler</span>
+                </div>
+            </div>
+            <button type="button" onclick="closeRegularStudentAchievementsModal()" class="modal-close-btn">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body (Pure Table - Template Utama) -->
+        <div class="modal-body-scroll">
+            <div class="table-responsive" id="regular_achievements_table_container">
+                <!-- Diisi via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL PREVIEW BARU: Khusus Mahasiswa Penerima Beasiswa & Ambassador --}}
 <div id="studentAchievementsModal" class="modal" style="display: none; z-index: 9998;">
     <div class="modal-content modal-achievements">
         <!-- Modal Header -->
@@ -452,6 +529,10 @@
                 <div class="detail-info-item">
                     <span class="detail-info-label">Tahun Kegiatan</span>
                     <strong id="detail_event_year" class="detail-info-value"></strong>
+                </div>
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Semester Kegiatan</span>
+                    <strong id="detail_semester" class="detail-info-value" style="color: #0284C7;"></strong>
                 </div>
                 <div class="detail-info-item">
                     <span class="detail-info-label">Tingkat</span>
@@ -598,7 +679,7 @@
                 <input type="text" id="edit_event" name="event" class="form-control" required placeholder="Contoh: Seminar Nasional Teknologi 2026">
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; margin-top: 14px;">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="edit_organizer" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Penyelenggara *</label>
                     <input type="text" id="edit_organizer" name="organizer" class="form-control" required placeholder="Contoh: BEM USH / Kemendikbud">
@@ -607,6 +688,16 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="edit_event_year" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Tahun Kegiatan *</label>
                     <input type="text" id="edit_event_year" name="event_year" class="form-control" required placeholder="Contoh: 2025">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit_semester" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Semester</label>
+                    <select id="edit_semester" name="semester" class="form-control">
+                        <option value="">-</option>
+                        @for($s = 1; $s <= 14; $s++)
+                        <option value="{{ $s }}">Sem {{ $s }}</option>
+                        @endfor
+                    </select>
                 </div>
             </div>
 
@@ -1259,6 +1350,91 @@
         background: #FEF3C7;
         color: #92400E;
     }
+
+    /* Segmented Toggle Bar Mahasiswa */
+    .student-category-toggle-wrap {
+        display: flex;
+        gap: 8px;
+        background: #F1F5F9;
+        padding: 6px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #E2E8F0;
+        width: fit-content;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    .category-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748B;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .category-toggle-btn:hover {
+        color: #1E293B;
+        background: rgba(255, 255, 255, 0.7);
+    }
+    .category-toggle-btn.active {
+        background: #FFFFFF;
+        color: #0F172A;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    .category-toggle-btn.btn-beasiswa-tab.active {
+        color: #047857;
+    }
+    .category-toggle-btn.btn-reguler-tab.active {
+        color: #0369A1;
+    }
+    .toggle-count-badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #E2E8F0;
+        color: #475569;
+        line-height: 1.2;
+    }
+    .category-toggle-btn.active .toggle-count-badge {
+        background: #0F172A;
+        color: #FFFFFF;
+    }
+    .category-toggle-btn.btn-beasiswa-tab.active .toggle-count-badge {
+        background: #047857;
+        color: #FFFFFF;
+    }
+    .category-toggle-btn.btn-reguler-tab.active .toggle-count-badge {
+        background: #0284C7;
+        color: #FFFFFF;
+    }
+
+    /* Button Verifikasi Prestasi Reguler */
+    .btn-view-reguler {
+        background: #0284C7 !important;
+        border-color: #0284C7 !important;
+        color: #FFFFFF !important;
+    }
+    .btn-view-reguler:hover {
+        background: #0369A1 !important;
+        border-color: #0369A1 !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(2, 132, 199, 0.3);
+    }
+
+    /* Recommendation Card Reguler */
+    .rec-card.rec-reguler {
+        background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+        border: 1.5px solid #CBD5E1;
+    }
 </style>
 @endpush
 
@@ -1319,8 +1495,117 @@
     let currentStudentNim = '';
     let currentStudentOldBeasiswa = '0%';
     let currentEvaluation = null;
+    let activeAchievementsModal = null; // 'regular' or 'scholarship'
 
-    function showStudentAchievementsModal(btn) {
+    function showRegularStudentAchievementsModal(btn) {
+        activeAchievementsModal = 'regular';
+        currentStudentId = btn.dataset.studentId;
+        const nama = btn.dataset.nama;
+        const nim = btn.dataset.nim || '-';
+        const achievementsBase64 = btn.dataset.achievements;
+
+        currentStudentNama = nama;
+        currentStudentNim = nim;
+
+        let achievements = [];
+        try {
+            const jsonStr = decodeURIComponent(escape(atob(achievementsBase64)));
+            achievements = JSON.parse(jsonStr);
+        } catch (e) {
+            console.error("Gagal mem-parsing data achievements", e);
+            return;
+        }
+
+        document.getElementById('regular_achievements_nama').textContent = `${nama} (${nim})`;
+
+        const container = document.getElementById('regular_achievements_table_container');
+
+        if (achievements.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#666; margin: 20px 0;">Tidak ada prestasi yang sesuai dengan filter saat ini.</p>';
+        } else {
+            let tableHtml = `
+            <table class="data-table" style="margin-top: 0;">
+                <thead>
+                    <tr>
+                        <th style="width: 45px;">No</th>
+                        <th>Kategori & Kegiatan</th>
+                        <th style="width: 120px;">Tingkat</th>
+                        <th style="width: 100px; text-align: center;">Poin SKP</th>
+                        <th style="width: 110px;">Status</th>
+                        <th style="min-width: 220px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            achievements.forEach((ach, index) => {
+                const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(ach))));
+                const titleText = ach.event ? ach.event : ach.kegiatan;
+                const subText = ach.event ? `${ach.kegiatan} ${ach.organizer && ach.organizer !== '-' ? '• ' + ach.organizer : ''} ${ach.event_year && ach.event_year !== '-' ? '(' + ach.event_year + ')' : ''} ${ach.semester ? '• Sem ' + ach.semester : ''}` : `${ach.kategori} ${ach.semester ? '• Sem ' + ach.semester : ''}`;
+
+                tableHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <strong style="font-size: 13px; color: #1E293B;">${escapeHtml(titleText)}</strong>
+                            ${ach.semester ? `<span style="background-color: #E0F2FE; color: #0284C7; font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 6px; border: 1px solid #BAE6FD;">Sem ${ach.semester}</span>` : ''}
+                        </div>
+                        <span style="font-size: 12px; color: #64748B;">${escapeHtml(subText)}</span>
+                    </td>
+                    <td>
+                        <span class="badge-year">${escapeHtml(ach.tingkat)}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="badge-point point-active" style="font-size: 11px;">
+                            ${ach.skp} Poin
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${ach.statusClass}">${escapeHtml(ach.statusLabel)}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn-view" data-ach="${encodedData}" data-nama="${escapeHtml(nama)}" onclick="showDetailModalFromEncoded(this)" style="padding: 4px 8px; font-size: 11px;">
+                                <i class="bi bi-eye"></i> Detail
+                            </button>
+                            <button type="button" class="btn-edit" data-ach="${encodedData}" data-nama="${escapeHtml(nama)}" onclick="showEditModalFromEncoded(this)" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background-color: #D97706; color: white; border: none; cursor: pointer;" title="Sunting Data Sertifikat">
+                                <i class="bi bi-pencil-square"></i> Sunting
+                            </button>
+                            ${ach.status === 'approved' ? `
+                                <form action="/kemahasiswaan/verifikasi-prestasi/${ach.id}/unapprove" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin membatalkan approval data ini? Status akan kembali menjadi pending.');">
+                                    @csrf
+                                    <button type="submit" class="btn-reject" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; background-color: #64748B; color: white; border: none;" title="Batal Approve">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Batal
+                                    </button>
+                                </form>
+                            ` : `
+                                <button type="button" class="btn-approve" onclick="showApproveModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;" title="Approve">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                <button type="button" class="btn-reject" onclick="showRejectModal(${ach.id})" style="padding: 4px 8px; font-size: 11px; border-radius: 6px;" title="Reject">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            `}
+                        </div>
+                    </td>
+                </tr>
+                `;
+            });
+
+            tableHtml += `</tbody></table>`;
+            container.innerHTML = tableHtml;
+        }
+
+        document.getElementById('regularStudentAchievementsModal').style.display = 'flex';
+    }
+
+    function closeRegularStudentAchievementsModal() {
+        document.getElementById('regularStudentAchievementsModal').style.display = 'none';
+    }
+
+    function showStudentAchievementsModal(btn, initialTab) {
+        activeAchievementsModal = 'scholarship';
         currentStudentId = btn.dataset.studentId;
         const nama = btn.dataset.nama;
         const nim = btn.dataset.nim || '-';
@@ -1328,6 +1613,7 @@
         const poin = btn.dataset.poin || '0';
         const statusMhs = btn.dataset.statusMhs || 'Mahasiswa';
         const beasiswa = btn.dataset.beasiswa || '-';
+        const isBeasiswa = btn.dataset.isBeasiswa === '1';
         const achievementsBase64 = btn.dataset.achievements;
         const evaluationBase64 = btn.dataset.evaluation;
 
@@ -1361,7 +1647,7 @@
         document.getElementById('meta_ipk').textContent = (evaluation && evaluation.ipk) ? evaluation.ipk : ipk;
         document.getElementById('meta_poin').textContent = poin + ' Poin';
         document.getElementById('meta_beasiswa').textContent = beasiswa;
-        document.getElementById('meta_study_year').textContent = evaluation ? ('Th ' + evaluation.study_year) : '-';
+        document.getElementById('meta_study_year').textContent = (evaluation && evaluation.study_year) ? ('Th ' + evaluation.study_year) : '-';
         document.getElementById('tab_cert_count').textContent = achievements.length;
 
         const badgesContainer = document.getElementById('student_achievements_badges');
@@ -1369,18 +1655,18 @@
             let badgeHtml = '';
             if (statusMhs === 'Student Ambassador') {
                 badgeHtml += `<span class="badge-status-mhs badge-ambassador" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-award-fill"></i> Student Ambassador</span>`;
-            }
-            if (beasiswa && beasiswa !== '-' && beasiswa !== '0%' && beasiswa !== 'Non-Beasiswa') {
+            } else if (isBeasiswa) {
                 badgeHtml += `<span class="badge-beasiswa" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-mortarboard-fill"></i> Beasiswa ${escapeHtml(beasiswa)}</span>`;
             } else {
-                badgeHtml += `<span class="badge-status-mhs badge-reguler" style="font-size: 11px; padding: 2px 8px;">Non-Beasiswa (0%)</span>`;
+                badgeHtml += `<span class="badge-status-mhs badge-reguler" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-person"></i> Mahasiswa Reguler (Non-Beasiswa)</span>`;
             }
             badgesContainer.innerHTML = badgeHtml;
         }
 
         // Render evaluasi POKEMA 7 Bidang & Rekomendasi Beasiswa
         renderPokemaEvaluation(evaluation);
-        switchModalTab('evaluation');
+        const targetTab = initialTab || (isBeasiswa ? 'evaluation' : 'achievements');
+        switchModalTab(targetTab);
 
         const container = document.getElementById('achievements_table_container');
 
@@ -1407,13 +1693,16 @@
                 const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(ach))));
 
                 const titleText = ach.event ? ach.event : ach.kegiatan;
-                const subText = ach.event ? `${ach.kegiatan} ${ach.organizer && ach.organizer !== '-' ? '• ' + ach.organizer : ''} ${ach.event_year && ach.event_year !== '-' ? '(' + ach.event_year + ')' : ''}` : ach.kategori;
+                const subText = ach.event ? `${ach.kegiatan} ${ach.organizer && ach.organizer !== '-' ? '• ' + ach.organizer : ''} ${ach.event_year && ach.event_year !== '-' ? '(' + ach.event_year + ')' : ''} ${ach.semester ? '• Sem ' + ach.semester : ''}` : `${ach.kategori} ${ach.semester ? '• Sem ' + ach.semester : ''}`;
 
                 tableHtml += `
                 <tr>
                     <td>${index + 1}</td>
                     <td>
-                        <strong style="font-size: 13px; color: #1E293B;">${escapeHtml(titleText)}</strong><br>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <strong style="font-size: 13px; color: #1E293B;">${escapeHtml(titleText)}</strong>
+                            ${ach.semester ? `<span style="background-color: #E0F2FE; color: #0284C7; font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 6px; border: 1px solid #BAE6FD;">Sem ${ach.semester}</span>` : ''}
+                        </div>
                         <span style="font-size: 12px; color: #64748B;">${escapeHtml(subText)}</span>
                     </td>
                     <td>
@@ -1522,6 +1811,9 @@
         } else if (recType === 'revoke') {
             iconClass = 'bi-x-circle-fill text-danger';
             titlePrefix = '❌ REKOMENDASI PENCABUTAN:';
+        } else if (recType === 'reguler') {
+            iconClass = 'bi-mortarboard-fill text-secondary';
+            titlePrefix = '🎓 KETENTUAN SKPI REGULER:';
         } else {
             iconClass = 'bi-shield-check text-primary';
             titlePrefix = '✅ STATUS PRESTASI:';
@@ -1552,6 +1844,12 @@
                     <i class="bi bi-x-circle-fill"></i> ${escapeHtml(evalData.action_label)}
                 </button>
             `;
+        } else if (recType === 'reguler') {
+            smartBtnHtml = `
+                <button type="button" class="btn-smart-action" style="background: #0284C7; color: #FFFFFF;" onclick="switchModalTab('achievements')">
+                    <i class="bi bi-patch-check-fill"></i> Periksa & Verifikasi Prestasi
+                </button>
+            `;
         } else if (evalData.current_beasiswa && evalData.current_beasiswa !== '0%') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-maintain" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeOldBeasiswa}', '${safeReason}')">
@@ -1560,11 +1858,11 @@
             `;
         }
 
-        const manualBtnHtml = `
+        const manualBtnHtml = (recType !== 'reguler') ? `
             <button type="button" class="btn-smart-action btn-manual" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '', true)">
                 <i class="bi bi-sliders"></i> Sesuaikan Manual
             </button>
-        `;
+        ` : '';
 
         recContainer.className = `rec-card rec-${recType}`;
         recContainer.innerHTML = `
@@ -1628,15 +1926,15 @@
                             <div class="sem-card-body">
                                 <div class="sem-stat-row">
                                     <span style="font-size: 13px; color: #475569;">
-                                        Perolehan Semester: <strong style="color: #0284C7; font-size: 14px;">${sem.semester_points} Poin</strong> (${sem.achievements_count} Prestasi Disetujui)
+                                        Perolehan ${escapeHtml(sem.semester_label)}: <strong style="color: #0284C7; font-size: 14px;">${sem.semester_points} Poin</strong> (${sem.achievements_count} Prestasi Disetujui) ${sem.semester_target ? `/ Target: ${sem.semester_target} Poin` : ''}
                                     </span>
                                     <span style="font-size: 13px; color: #475569;">
-                                        Akumulasi Berjalan: <strong style="color: #1E293B; font-size: 14px;">${sem.cumulative_points} Poin</strong> / Target ${escapeHtml(sem.study_year_label)}: ${sem.year_target} Poin
+                                        Akumulasi Berjalan ${escapeHtml(sem.study_year_label)}: <strong style="color: #1E293B; font-size: 14px;">${sem.cumulative_points} Poin</strong> / ${sem.year_target} Poin
                                     </span>
                                 </div>
                                 
                                 <div class="progress-track" style="height: 10px; margin: 8px 0; background: #E2E8F0; border-radius: 999px;">
-                                    <div class="progress-fill ${sem.is_year_target_met ? 'fill-green' : 'fill-blue'}" style="width: ${Math.min(100, Math.max(0, sem.progress_percent))}%; height: 100%; border-radius: 999px;"></div>
+                                    <div class="progress-fill ${sem.is_semester_target_met ? 'fill-green' : 'fill-blue'}" style="width: ${Math.min(100, Math.max(0, sem.semester_progress_percent !== undefined ? sem.semester_progress_percent : sem.progress_percent))}%; height: 100%; border-radius: 999px;"></div>
                                 </div>
 
                                 ${milestoneHtml}
@@ -1775,6 +2073,7 @@
         if (document.getElementById('detail_event')) document.getElementById('detail_event').textContent = data.event || '-';
         if (document.getElementById('detail_organizer')) document.getElementById('detail_organizer').textContent = data.organizer || '-';
         if (document.getElementById('detail_event_year')) document.getElementById('detail_event_year').textContent = data.event_year || '-';
+        if (document.getElementById('detail_semester')) document.getElementById('detail_semester').textContent = data.semester_label || (data.semester ? 'Semester ' + data.semester : '-');
         document.getElementById('detail_tingkat').textContent = data.tingkat;
         document.getElementById('detail_peran').textContent = data.peran;
         document.getElementById('detail_skp').textContent = data.skp;
@@ -1822,14 +2121,19 @@
             actionContainer.style.gap = '10px';
         }
 
-        document.getElementById('studentAchievementsModal').style.display = 'none';
+        if (activeAchievementsModal === 'regular') {
+            document.getElementById('regularStudentAchievementsModal').style.display = 'none';
+        } else {
+            document.getElementById('studentAchievementsModal').style.display = 'none';
+        }
         document.getElementById('detailModal').style.display = 'flex';
     }
 
     function closeDetailModal() {
         document.getElementById('detailModal').style.display = 'none';
-        const studentName = document.getElementById('student_achievements_nama').textContent;
-        if (studentName) {
+        if (activeAchievementsModal === 'regular') {
+            document.getElementById('regularStudentAchievementsModal').style.display = 'flex';
+        } else if (activeAchievementsModal === 'scholarship') {
             document.getElementById('studentAchievementsModal').style.display = 'flex';
         }
     }
@@ -1947,6 +2251,7 @@
         document.getElementById('edit_event').value = (data.event && data.event !== '-') ? data.event : '';
         document.getElementById('edit_organizer').value = (data.organizer && data.organizer !== '-') ? data.organizer : '';
         document.getElementById('edit_event_year').value = (data.event_year && data.event_year !== '-') ? data.event_year : '';
+        if (document.getElementById('edit_semester')) document.getElementById('edit_semester').value = data.semester || '';
         document.getElementById('edit_status').value = data.status || 'approved';
         document.getElementById('edit_approval_notes').value = (data.catatan && data.catatan !== 'Belum ada catatan review.') ? data.catatan : '';
 
@@ -1957,15 +2262,20 @@
             previewDiv.innerHTML = `<span style="color: #94A3B8;">Belum ada file diunggah.</span>`;
         }
 
-        document.getElementById('studentAchievementsModal').style.display = 'none';
+        if (activeAchievementsModal === 'regular') {
+            document.getElementById('regularStudentAchievementsModal').style.display = 'none';
+        } else {
+            document.getElementById('studentAchievementsModal').style.display = 'none';
+        }
         document.getElementById('detailModal').style.display = 'none';
         document.getElementById('editAchievementModal').style.display = 'flex';
     }
 
     function closeEditAchievementModal() {
         document.getElementById('editAchievementModal').style.display = 'none';
-        const studentName = document.getElementById('student_achievements_nama').textContent;
-        if (studentName) {
+        if (activeAchievementsModal === 'regular') {
+            document.getElementById('regularStudentAchievementsModal').style.display = 'flex';
+        } else if (activeAchievementsModal === 'scholarship') {
             document.getElementById('studentAchievementsModal').style.display = 'flex';
         }
     }

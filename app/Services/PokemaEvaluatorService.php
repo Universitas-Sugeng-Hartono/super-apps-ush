@@ -489,7 +489,7 @@ class PokemaEvaluatorService
         $qualifiedLevel = $qualifiedTier['level'];
 
         // Tentukan jenis aksi rekomendasi
-        if ($qualifiedLevel > $currentLevel) {
+        if ($qualifiedLevel > $currentLevel && $currentLevel > 0) {
             $actionType = 'upgrade';
             $actionLabel = "Naikkan ke Beasiswa {$qualifiedTierKey}";
             $actionClass = 'btn-upgrade';
@@ -520,18 +520,18 @@ class PokemaEvaluatorService
             }
         } else {
             // Reguler tetap reguler
-            $actionType = 'maintain';
+            $actionType = 'reguler';
             $actionLabel = "Mahasiswa Reguler (0%)";
             $actionClass = 'btn-maintain';
             $badgeClass = 'badge-reguler';
             $targetReguler = self::TIERS['0%']['targets']['total']['total'] ?? 250;
-            $reason = "Mahasiswa Reguler. Perolehan saat ini {$totalApprovedPoints}/{$targetReguler} Poin menuju syarat SKPI.";
+            $reason = "Mahasiswa Reguler. Perolehan saat ini {$totalApprovedPoints}/{$targetReguler} Poin menuju syarat kelulusan SKPI.";
         }
 
         // Tentukan target per bidang yang diacu (gunakan target dari tier yang relevan atau target saat ini)
-        $benchmarkTierKey = ($qualifiedLevel > $currentLevel) ? $qualifiedTierKey : ($currentLevel > 0 ? $currentTierKey : '25%');
+        $benchmarkTierKey = ($currentLevel > 0) ? (($qualifiedLevel > $currentLevel) ? $qualifiedTierKey : $currentTierKey) : '0%';
         $targetFields = self::TIERS[$benchmarkTierKey]['targets'][$studyYear]['fields'] ?? [];
-        $totalTargetPoin = self::TIERS[$benchmarkTierKey]['targets'][$studyYear]['total'] ?? 0;
+        $totalTargetPoin = self::TIERS[$benchmarkTierKey]['targets'][$studyYear]['total'] ?? 250;
 
         $fieldsProgress = [];
         foreach (self::FIELD_LABELS as $key => $label) {
@@ -581,7 +581,16 @@ class PokemaEvaluatorService
             $semPts = (int) $semAchs->sum('skp_points');
             $runningCumulativePoints += $semPts;
 
+            $semCountInYear = match($semYear) {
+                1 => 2, // Sem 1 - 2
+                2 => 3, // Sem 3 - 5
+                default => 3, // Sem 6 - 8
+            };
             $yearTarget = self::TIERS[$benchmarkTierKey]['targets'][$semYear]['total'] ?? 0;
+            $semTarget = $yearTarget > 0 ? (int) round($yearTarget / $semCountInYear) : 0;
+            $semProgressPercent = $semTarget > 0 ? min(100, round(($semPts / $semTarget) * 100)) : ($semPts > 0 ? 100 : 0);
+            $semTargetMet = $semTarget > 0 ? ($semPts >= $semTarget) : ($semPts > 0);
+
             $yearTargetMet = $runningCumulativePoints >= $yearTarget;
             $progressPercent = $yearTarget > 0 ? min(100, round(($runningCumulativePoints / $yearTarget) * 100)) : ($runningCumulativePoints > 0 ? 100 : 0);
 
@@ -596,6 +605,9 @@ class PokemaEvaluatorService
                 'has_counseling' => $counseling !== null,
                 'achievements_count' => $semAchs->count(),
                 'semester_points' => $semPts,
+                'semester_target' => $semTarget,
+                'semester_progress_percent' => $semProgressPercent,
+                'is_semester_target_met' => $semTargetMet,
                 'cumulative_points' => $runningCumulativePoints,
                 'year_target' => $yearTarget,
                 'progress_percent' => $progressPercent,

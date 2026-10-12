@@ -120,6 +120,7 @@
                             <th>NIM</th>
                             <th>Periode Masuk</th>
                             <th>Program Studi</th>
+                            <th style="text-align: center;">Semester</th>
                             <th style="text-align: center;">IPK</th>
                             <th style="text-align: center;">Beasiswa (%)</th>
                             <th>Status</th>
@@ -142,6 +143,16 @@
                                 </td>
                                 <td>
                                     <span class="badge-prodi">{{ $student->program_studi }}</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    @php
+                                        $displaySem = $student->semester ?: ($student->angkatan ? $student->getCurrentSemester() : null);
+                                    @endphp
+                                    @if(filled($displaySem))
+                                        <span class="badge-semester">Sem {{ $displaySem }}</span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
                                 </td>
                                 <td style="text-align: center;">
                                     @if(filled($student->ipk))
@@ -699,6 +710,18 @@
         max-width: 170px;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    /* Badge Semester */
+    .badge-semester {
+        display: inline-block;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        background: #F0F9FF;
+        color: #0284C7;
+        border: 1px solid #BAE6FD;
         white-space: nowrap;
     }
 </style>

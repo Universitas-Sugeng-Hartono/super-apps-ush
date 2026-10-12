@@ -181,17 +181,31 @@ break;
                         </div>
                     </div>
 
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <div class="form-floating-custom">
                             <label class="custom-label">Diselenggarakan Oleh <span class="text-danger">*</span></label>
                             <input type="text" name="organizer" id="organizer" class="custom-input" value="{{ old('organizer') }}" placeholder="Contoh: Universitas Sugeng Hartono, Kemenristek, Google" required>
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-floating-custom">
                             <label class="custom-label">Tahun Kegiatan <span class="text-danger">*</span></label>
                             <input type="number" name="event_year" id="event_year" class="custom-input" value="{{ old('event_year', date('Y')) }}" min="2000" max="2100" placeholder="2024" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-floating-custom">
+                            <label class="custom-label">Semester Saat Kegiatan <span class="text-danger">*</span></label>
+                            <select id="semester" name="semester" class="custom-select" required>
+                                <option value="">— Pilih Semester —</option>
+                                @for ($i = 1; $i <= max(8, (int)($currentSemester ?? 8)); $i++)
+                                    <option value="{{ $i }}" {{ (old('semester', $currentSemester ?? 1) == $i) ? 'selected' : '' }}>
+                                        Semester {{ $i }} {{ (isset($currentSemester) && $i == $currentSemester) ? '(Saat Ini)' : '' }}
+                                    </option>
+                                @endfor
+                            </select>
                         </div>
                     </div>
 
@@ -289,6 +303,7 @@ break;
                                         {{ $achievement->participation_role ?? '-' }}
                                         @if($achievement->organizer) • {{ $achievement->organizer }} @endif
                                         @if($achievement->event_year) ({{ $achievement->event_year }}) @endif
+                                        @if($achievement->semester) • <span style="background-color: #E0F2FE; color: #0284C7; font-weight: 600; font-size: 11px; padding: 2px 7px; border-radius: 6px;">Sem {{ $achievement->semester }}</span> @endif
                                     </span>
                                     <small class="text-muted" style="font-size: 11px;">Kategori: {{ $achievement->activity_type_label ?? 'Lainnya' }}</small>
                                     @else
@@ -418,14 +433,25 @@ break;
                                 <input type="text" name="event" class="form-control" value="{{ old('event', $achievement->event !== '-' ? $achievement->event : '') }}" placeholder="Contoh: Seminar Nasional AI, Dies Natalis USH, Lomba Coding" required>
                             </div>
 
-                            <div class="col-md-8">
+                            <div class="col-md-6">
                                 <label class="form-label fw-bold">Diselenggarakan Oleh <span class="text-danger">*</span></label>
                                 <input type="text" name="organizer" class="form-control" value="{{ old('organizer', $achievement->organizer) }}" placeholder="Contoh: Universitas Sugeng Hartono, Kemenristek" required>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label fw-bold">Tahun Kegiatan <span class="text-danger">*</span></label>
                                 <input type="number" name="event_year" class="form-control" value="{{ old('event_year', $achievement->event_year ?? ($achievement->created_at ? $achievement->created_at->format('Y') : date('Y'))) }}" min="2000" max="2100" required>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Semester Kegiatan <span class="text-danger">*</span></label>
+                                <select name="semester" class="form-select" required>
+                                    @for ($i = 1; $i <= max(8, (int)($currentSemester ?? 8)); $i++)
+                                        <option value="{{ $i }}" {{ (old('semester', $achievement->semester ?? ($currentSemester ?? 1)) == $i) ? 'selected' : '' }}>
+                                            Semester {{ $i }}
+                                        </option>
+                                    @endfor
+                                </select>
                             </div>
 
                             @php
