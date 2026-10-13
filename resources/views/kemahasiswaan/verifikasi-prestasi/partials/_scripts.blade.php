@@ -1211,7 +1211,7 @@
                         icon: isOpen ? 'success' : 'info',
                         title: isOpen ? 'Portal Dibuka' : 'Portal Ditutup Sementara',
                         text: data.message,
-                        timer: 3500,
+                        timer: 2000,
                         showConfirmButton: false,
                         toast: true,
                         position: 'top-end',
@@ -1220,6 +1220,9 @@
                         }
                     });
                 }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
                 throw new Error(data.message || 'Gagal mengubah status portal');
             }

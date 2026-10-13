@@ -46,28 +46,8 @@ class AchievementVerificationController extends Controller
             $tab = 'all';
         }
 
-        $beasiswaCondition = function ($q) {
-            $q->where(function ($sub) {
-                $sub->whereNotNull('beasiswa')
-                    ->where('beasiswa', '!=', '')
-                    ->where('beasiswa', '!=', '0%')
-                    ->where('beasiswa', '!=', '0')
-                    ->where('beasiswa', '!=', 'Non-Beasiswa');
-            })->orWhere('status', 'studentambassador');
-        };
-
-        $nonBeasiswaCondition = function ($q) {
-            $q->where(function ($sub) {
-                $sub->whereNull('beasiswa')
-                    ->orWhere('beasiswa', '')
-                    ->orWhere('beasiswa', '0%')
-                    ->orWhere('beasiswa', '0')
-                    ->orWhere('beasiswa', 'Non-Beasiswa');
-            })->where(function ($sub) {
-                $sub->where('status', '!=', 'studentambassador')
-                    ->orWhereNull('status');
-            });
-        };
+        $beasiswaCondition = fn ($q) => $this->applyBeasiswaCondition($q);
+        $nonBeasiswaCondition = fn ($q) => $this->applyNonBeasiswaCondition($q);
 
         $countsQuery = Student::query()
             ->whereHas('achievements', $achievementsFilter)
@@ -88,6 +68,14 @@ class AchievementVerificationController extends Controller
             'beasiswa'     => (clone $countsQuery)->where($beasiswaCondition)->count(),
             'non_beasiswa' => (clone $countsQuery)->where($nonBeasiswaCondition)->count(),
         ];
+
+        // Hitung jumlah prestasi pending khusus per kategori tab (Beasiswa vs Reguler vs Semua)
+        $pendingCounts = [
+            'all'          => StudentAchievement::where('status', 'pending')->count(),
+            'beasiswa'     => StudentAchievement::where('status', 'pending')->whereHas('student', $beasiswaCondition)->count(),
+            'non_beasiswa' => StudentAchievement::where('status', 'pending')->whereHas('student', $nonBeasiswaCondition)->count(),
+        ];
+        $activeTabPendingCount = $pendingCounts[$tab] ?? $pendingCounts['all'];
 
         $students = Student::query()
             ->whereHas('achievements', $achievementsFilter)
@@ -201,6 +189,8 @@ class AchievementVerificationController extends Controller
             'skpDictionary',
             'tab',
             'tabCounts',
+            'pendingCounts',
+            'activeTabPendingCount',
             'isPortalOpen'
         ));
     }
@@ -365,17 +355,34 @@ class AchievementVerificationController extends Controller
     }
 
     /**
-     * Setujui semua prestasi yang masih pending sekaligus
+     * Setujui semua prestasi yang masih pending sekaligus berdasarkan kategori tab (Beasiswa, Reguler, atau Semua).
      */
     public function approveAll(Request $request)
     {
         $request->validate([
             'approval_notes' => 'nullable|string',
+            'tab'            => 'nullable|string|in:all,beasiswa,non_beasiswa',
         ]);
 
-        $achievements = StudentAchievement::with('student')
-            ->where('status', 'pending')
-            ->get();
+        $tab = $request->input('tab', 'all');
+
+        $query = StudentAchievement::with('student')->where('status', 'pending');
+
+        if ($tab === 'beasiswa') {
+            $query->whereHas('student', fn ($q) => $this->applyBeasiswaCondition($q));
+            $tabLabel = 'Penerima Beasiswa & Ambassador';
+        } elseif ($tab === 'non_beasiswa') {
+            $query->whereHas('student', fn ($q) => $this->applyNonBeasiswaCondition($q));
+            $tabLabel = 'Mahasiswa Reguler';
+        } else {
+            $tabLabel = 'Seluruh Mahasiswa';
+        }
+
+        $achievements = $query->get();
+
+        if ($achievements->isEmpty()) {
+            return redirect()->back()->with('error', "Tidak ada data prestasi pending yang ditemukan untuk kategori {$tabLabel}.");
+        }
 
         foreach ($achievements as $achievement) {
             $achievement->update([
@@ -399,7 +406,7 @@ class AchievementVerificationController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Semua data pending (' . $achievements->count() . ' item) berhasil disetujui.');
+        return redirect()->back()->with('success', "Semua data prestasi pending ({$achievements->count()} item) untuk kategori {$tabLabel} berhasil disetujui.");
     }
 
     /**
@@ -513,4 +520,40 @@ class AchievementVerificationController extends Controller
             'message' => $message,
         ]);
     }
+
+    /**
+     * Scope query pembantu untuk mahasiswa penerima beasiswa & student ambassador
+     */
+    public function applyBeasiswaCondition($query)
+    {
+        return $query->where(function ($q) {
+            $q->where(function ($sub) {
+                $sub->whereNotNull('beasiswa')
+                    ->where('beasiswa', '!=', '')
+                    ->where('beasiswa', '!=', '0%')
+                    ->where('beasiswa', '!=', '0')
+                    ->where('beasiswa', '!=', 'Non-Beasiswa');
+            })->orWhere('status', 'studentambassador');
+        });
+    }
+
+    /**
+     * Scope query pembantu untuk mahasiswa reguler (non-beasiswa)
+     */
+    public function applyNonBeasiswaCondition($query)
+    {
+        return $query->where(function ($q) {
+            $q->where(function ($sub) {
+                $sub->whereNull('beasiswa')
+                    ->orWhere('beasiswa', '')
+                    ->orWhere('beasiswa', '0%')
+                    ->orWhere('beasiswa', '0')
+                    ->orWhere('beasiswa', 'Non-Beasiswa');
+            })->where(function ($sub) {
+                $sub->where('status', '!=', 'studentambassador')
+                    ->orWhereNull('status');
+            });
+        });
+    }
 }
+

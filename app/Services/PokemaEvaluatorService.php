@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Student;
 use App\Models\StudentAchievement;
+use App\Models\AppSetting;
 
 class PokemaEvaluatorService
 {
@@ -547,8 +548,8 @@ class PokemaEvaluatorService
             $actionClass = 'btn-maintain';
             $badgeClass = 'badge-maintain';
             $reason = "Perolehan {$totalApprovedPoints} Poin dan IPK {$ipk} stabil memenuhi standar Beasiswa {$currentTierKey} (Target {$targetCurrent} Poin & Min. IPK {$minIpkCurrent}).";
-        } elseif ($isCurrentYear) {
-            // 4. Periode Tahun Berjalan (On-Going / Nilai terus di-update)
+        } elseif ($isCurrentYear && AppSetting::isBeasiswaUploadOpen()) {
+            // 4. Periode Tahun Berjalan (On-Going / Nilai terus di-update) - Hanya jika portal DIBUKA
             if ($ipk >= $minIpkCurrent && $totalApprovedPoints >= ($targetCurrent * 0.35)) {
                 // On Track: IPK aman & perolehan poin berjalan positif
                 $actionType = 'on_track';
@@ -578,28 +579,34 @@ class PokemaEvaluatorService
             $actionClass = 'btn-on-track';
             $badgeClass = 'badge-on-track';
             $reason = "Mahasiswa saat ini berada di Tahun {$activeStudyYear} (Semester {$semester}). Target akumulasi Tahun {$studyYear} untuk Beasiswa {$currentTierKey} adalah {$targetCurrent} Poin (Saat ini terkumpul {$totalApprovedPoints} Poin).";
-        } elseif ($studyYear === 'total' && (int) $activeStudyYear < 3) {
-            // 6. Akumulasi Total Saat Masa Studi Berjalan
+        } elseif ($studyYear === 'total' && (int) $activeStudyYear < 3 && AppSetting::isBeasiswaUploadOpen()) {
+            // 6. Akumulasi Total Saat Masa Studi Berjalan (Hanya jika portal DIBUKA)
             $actionType = 'on_track';
             $actionLabel = "Akumulasi Keseluruhan: Target {$targetCurrent} Poin";
             $actionClass = 'btn-on-track';
             $badgeClass = 'badge-on-track';
             $reason = "Akumulasi seluruh periode beasiswa hingga kelulusan. Capaian saat ini {$totalApprovedPoints} dari {$targetCurrent} Poin ({$progressPct}%) dengan IPK {$ipk}.";
         } elseif ($qualifiedLevel > 0) {
-            // 7. Periode Telah Berakhir & belum memenuhi target: Downgrade
+            // 7. Periode Telah Berakhir atau Portal Ditutup & belum memenuhi target: Downgrade
+            $isPortalOpen = AppSetting::isBeasiswaUploadOpen();
             $actionType = 'downgrade';
             $actionLabel = "Evaluasi Akhir: Sesuaikan ke Beasiswa {$qualifiedTierKey}";
             $actionClass = 'btn-downgrade';
             $badgeClass = 'badge-downgrade';
-            $reason = "Periode Tahun {$studyYear} telah berakhir. Capaian akhir ({$totalApprovedPoints}/{$targetCurrent} Poin) atau IPK ({$ipk}/{$minIpkCurrent}) belum memenuhi target Beasiswa {$currentTierKey}, namun memenuhi kualifikasi Beasiswa {$qualifiedTierKey}.";
+            $reason = (!$isPortalOpen)
+                ? "Portal pengajuan prestasi ditutup untuk evaluasi semester. Capaian akhir ({$totalApprovedPoints}/{$targetCurrent} Poin) atau IPK ({$ipk}/{$minIpkCurrent}) belum memenuhi target Beasiswa {$currentTierKey}, namun memenuhi kualifikasi Beasiswa {$qualifiedTierKey}."
+                : "Periode Tahun {$studyYear} telah berakhir. Capaian akhir ({$totalApprovedPoints}/{$targetCurrent} Poin) atau IPK ({$ipk}/{$minIpkCurrent}) belum memenuhi target Beasiswa {$currentTierKey}, namun memenuhi kualifikasi Beasiswa {$qualifiedTierKey}.";
         } else {
-            // 8. Periode Telah Berakhir & di bawah 25%: Revoke
+            // 8. Periode Telah Berakhir atau Portal Ditutup & di bawah 25%: Revoke
+            $isPortalOpen = AppSetting::isBeasiswaUploadOpen();
             $actionType = 'revoke';
-            $actionLabel = "Evaluasi Akhir: Belum Memenuhi Syarat Minimal";
+            $actionLabel = "Evaluasi Akhir: Belum Memenuhi Syarat Minimal (Turun ke 0%)";
             $actionClass = 'btn-revoke';
             $badgeClass = 'badge-revoke';
             $target25Poin = self::TIERS['25%']['targets'][$studyYear]['total'] ?? 120;
-            $reason = "Periode Tahun {$studyYear} telah berakhir. Capaian akhir IPK ({$ipk}) atau POKEMA ({$totalApprovedPoints} Poin) belum mencapai ambang batas minimal Beasiswa 25% (Min. IPK 3.00 & {$target25Poin} Poin).";
+            $reason = (!$isPortalOpen)
+                ? "Portal pengajuan prestasi ditutup untuk evaluasi semester. Capaian akhir IPK ({$ipk}) atau POKEMA ({$totalApprovedPoints} Poin) belum mencapai ambang batas minimal Beasiswa 25% (Min. IPK 3.00 & {$target25Poin} Poin). Direkomendasikan turun ke Reguler (0%)."
+                : "Periode Tahun {$studyYear} telah berakhir. Capaian akhir IPK ({$ipk}) atau POKEMA ({$totalApprovedPoints} Poin) belum mencapai ambang batas minimal Beasiswa 25% (Min. IPK 3.00 & {$target25Poin} Poin).";
         }
 
         // Rekomendasi beasiswa sistem dihitung secara REALTIME berdasarkan perolehan aktual IPK & Total POKEMA.

@@ -61,12 +61,15 @@ runTest("Database Connection", function () {
 });
 
 // 2. User Model - ROLE_LABELS & Normalization
-runTest("User Model - ROLE_LABELS Contains 'kemahasiswaan' & 'keuangan'", function () {
+runTest("User Model - ROLE_LABELS Contains 'kemahasiswaan', 'keuangan', and 'akademik'", function () {
     if (!isset(User::ROLE_LABELS['kemahasiswaan']) || User::ROLE_LABELS['kemahasiswaan'] !== 'Kemahasiswaan') {
         throw new \Exception("ROLE_LABELS['kemahasiswaan'] is missing or invalid");
     }
     if (!isset(User::ROLE_LABELS['keuangan']) || User::ROLE_LABELS['keuangan'] !== 'Keuangan') {
         throw new \Exception("ROLE_LABELS['keuangan'] is missing or invalid");
+    }
+    if (!isset(User::ROLE_LABELS['akademik']) || User::ROLE_LABELS['akademik'] !== 'Akademik') {
+        throw new \Exception("ROLE_LABELS['akademik'] is missing or invalid");
     }
     return true;
 });
@@ -78,11 +81,20 @@ runTest("User Model - Role Normalization & Labels", function () {
     if (User::normalizeRole('keuangan') !== 'keuangan') {
         throw new \Exception("normalizeRole('keuangan') failed");
     }
+    if (User::normalizeRole('akademik') !== 'akademik') {
+        throw new \Exception("normalizeRole('akademik') failed");
+    }
+    if (User::normalizeRole('baak') !== 'akademik') {
+        throw new \Exception("normalizeRole('baak') failed");
+    }
     if (User::roleLabel('kemahasiswaan') !== 'Kemahasiswaan') {
         throw new \Exception("roleLabel('kemahasiswaan') failed");
     }
     if (User::roleLabel('keuangan') !== 'Keuangan') {
         throw new \Exception("roleLabel('keuangan') failed");
+    }
+    if (User::roleLabel('akademik') !== 'Akademik') {
+        throw new \Exception("roleLabel('akademik') failed");
     }
     return true;
 });
@@ -95,13 +107,16 @@ runTest("AppSettingController - AVAILABLE_ROLES Contains New Roles", function ()
     if (!isset(AppSettingController::AVAILABLE_ROLES['keuangan'])) {
         throw new \Exception("AVAILABLE_ROLES['keuangan'] missing in AppSettingController");
     }
+    if (!isset(AppSettingController::AVAILABLE_ROLES['akademik'])) {
+        throw new \Exception("AVAILABLE_ROLES['akademik'] missing in AppSettingController");
+    }
     return true;
 });
 
 // 4. UserManageController Validation
-runTest("UserManageController - Role Validation Accepts 'kemahasiswaan' and 'keuangan'", function () {
+runTest("UserManageController - Role Validation Accepts 'kemahasiswaan', 'keuangan', and 'akademik'", function () {
     $rules = [
-        'role' => 'required|string|in:admin,superadmin,masteradmin,kemahasiswaan,keuangan',
+        'role' => 'required|string|in:admin,superadmin,masteradmin,kemahasiswaan,keuangan,akademik',
     ];
     $v1 = Validator::make(['role' => 'kemahasiswaan'], $rules);
     if ($v1->fails()) {
@@ -111,12 +126,16 @@ runTest("UserManageController - Role Validation Accepts 'kemahasiswaan' and 'keu
     if ($v2->fails()) {
         throw new \Exception("Validation rejected role 'keuangan'");
     }
-    $v3 = Validator::make(['role' => 'invalid_role'], $rules);
-    if (!$v3->fails()) {
+    $v3 = Validator::make(['role' => 'akademik'], $rules);
+    if ($v3->fails()) {
+        throw new \Exception("Validation rejected role 'akademik'");
+    }
+    $v4 = Validator::make(['role' => 'invalid_role'], $rules);
+    if (!$v4->fails()) {
         throw new \Exception("Validation should have rejected 'invalid_role'");
     }
 
-    // Program Studi optional for kemahasiswaan/keuangan, required for dosen/kaprodi
+    // Program Studi optional for kemahasiswaan/keuangan/akademik, required for dosen/kaprodi
     $ref = new \ReflectionClass(UserManageController::class);
     $method = $ref->getMethod('rules');
     $method->setAccessible(true);
@@ -127,6 +146,13 @@ runTest("UserManageController - Role Validation Accepts 'kemahasiswaan' and 'keu
     $rulesKemahasiswaan = $method->invoke($controller);
     if (str_contains($rulesKemahasiswaan['program_studi'], 'required')) {
         throw new \Exception("Program studi should be optional/nullable for role kemahasiswaan");
+    }
+
+    // Simulasi request role akademik
+    request()->merge(['role' => 'akademik']);
+    $rulesAkademik = $method->invoke($controller);
+    if (str_contains($rulesAkademik['program_studi'], 'required')) {
+        throw new \Exception("Program studi should be optional/nullable for role akademik");
     }
 
     // Simulasi request role admin (dosen)
@@ -144,8 +170,8 @@ runTest("MenuManagementController - Allowed Roles in Store & Update", function (
     $ref = new \ReflectionClass(MenuManagementController::class);
     $storeMethod = $ref->getMethod('store');
     // Read source code or test validation
-    $allowedRoles = ['student', 'admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan'];
-    $validator = Validator::make(['roles' => ['kemahasiswaan', 'keuangan']], [
+    $allowedRoles = ['student', 'admin', 'superadmin', 'masteradmin', 'kemahasiswaan', 'keuangan', 'akademik'];
+    $validator = Validator::make(['roles' => ['kemahasiswaan', 'keuangan', 'akademik']], [
         'roles' => 'array',
         'roles.*' => [\Illuminate\Validation\Rule::in($allowedRoles)],
     ]);
@@ -156,7 +182,7 @@ runTest("MenuManagementController - Allowed Roles in Store & Update", function (
 });
 
 // 6. CheckRole Middleware Behavior
-runTest("CheckRole Middleware - Kemahasiswaan & Keuangan Authorization", function () {
+runTest("CheckRole Middleware - Kemahasiswaan, Keuangan & Akademik Authorization", function () {
     $middleware = new CheckRole();
 
     // Mock Kemahasiswaan user
@@ -188,12 +214,26 @@ runTest("CheckRole Middleware - Kemahasiswaan & Keuangan Authorization", functio
         throw new \Exception("CheckRole rejected 'keuangan' for allowed role ['masteradmin', 'keuangan']");
     }
 
+    // Mock Akademik user
+    $userAkademik = new User(['role' => 'akademik']);
+    Auth::setUser($userAkademik);
+
+    $passedAkademik = false;
+    $responseAk = $middleware->handle($req, function () use (&$passedAkademik) {
+        $passedAkademik = true;
+        return 'OK';
+    }, 'superadmin', 'akademik');
+
+    if (!$passedAkademik) {
+        throw new \Exception("CheckRole rejected 'akademik' for allowed role ['superadmin', 'akademik']");
+    }
+
     // Check rejection when role is not allowed
     $blocked = false;
     $response3 = $middleware->handle($req, function () use (&$blocked) {
         $blocked = false;
         return 'OK';
-    }, 'masteradmin', 'kemahasiswaan'); // User is keuangan, role requires masteradmin or kemahasiswaan
+    }, 'masteradmin', 'kemahasiswaan'); // User is akademik, role requires masteradmin or kemahasiswaan
 
     if ($response3 instanceof \Illuminate\Http\RedirectResponse) {
         // Successfully blocked and redirected
@@ -201,7 +241,7 @@ runTest("CheckRole Middleware - Kemahasiswaan & Keuangan Authorization", functio
     }
 
     if (!$blocked) {
-        throw new \Exception("CheckRole should have blocked role 'keuangan' from accessing kemahasiswaan-only route");
+        throw new \Exception("CheckRole should have blocked role 'akademik' from accessing kemahasiswaan-only route");
     }
 
     return true;
@@ -252,7 +292,7 @@ runTest("Routes - Verifikasi Pembayaran Route Protected by 'role:masteradmin,keu
     return true;
 });
 
-runTest("Routes - Dashboard Route Allows Both New Roles", function () {
+runTest("Routes - Dashboard Route Allows All New Roles", function () {
     $route = Route::getRoutes()->getByName('admin.dashboard');
     if (!$route) {
         throw new \Exception("Route 'admin.dashboard' not found");
@@ -260,21 +300,23 @@ runTest("Routes - Dashboard Route Allows Both New Roles", function () {
     $middlewares = $route->middleware();
     $hasKemahasiswaan = false;
     $hasKeuangan = false;
+    $hasAkademik = false;
     foreach ($middlewares as $mw) {
         if (str_starts_with($mw, 'role:')) {
             $roles = explode(',', substr($mw, 5));
             if (in_array('kemahasiswaan', $roles, true)) $hasKemahasiswaan = true;
             if (in_array('keuangan', $roles, true)) $hasKeuangan = true;
+            if (in_array('akademik', $roles, true)) $hasAkademik = true;
         }
     }
-    if (!$hasKemahasiswaan || !$hasKeuangan) {
+    if (!$hasKemahasiswaan || !$hasKeuangan || !$hasAkademik) {
         throw new \Exception("Route 'admin.dashboard' does not include new roles. Middleware: " . implode(', ', $middlewares));
     }
     return true;
 });
 
 // 8. AuthController Redirect Logic
-runTest("AuthController - Redirect Logic Allows Both New Roles", function () {
+runTest("AuthController - Redirect Logic Allows All New Roles", function () {
     $controller = new \App\Http\Controllers\AuthController();
     $userK = new User(['role' => 'kemahasiswaan']);
     Auth::setUser($userK);
@@ -288,6 +330,13 @@ runTest("AuthController - Redirect Logic Allows Both New Roles", function () {
     $responseKeu = $controller->index();
     if (!$responseKeu->isRedirect(route('admin.dashboard'))) {
         throw new \Exception("AuthController did not redirect 'keuangan' to admin.dashboard");
+    }
+
+    $userAk = new User(['role' => 'akademik']);
+    Auth::setUser($userAk);
+    $responseAk = $controller->index();
+    if (!$responseAk->isRedirect(route('admin.dashboard'))) {
+        throw new \Exception("AuthController did not redirect 'akademik' to admin.dashboard");
     }
 
     return true;

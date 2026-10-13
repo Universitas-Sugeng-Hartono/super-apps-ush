@@ -249,7 +249,7 @@
                     </td>
                     <td style="text-align: center;">
                         <span class="badge-point {{ $approvedPoints > 0 ? 'point-active' : '' }}">
-                            <i class="bi bi-star-fill"></i> {{ $approvedPoints }} Poin
+                            {{ $approvedPoints }} Poin
                         </span>
                     </td>
                     @if($tab !== 'non_beasiswa')
@@ -281,55 +281,57 @@
                     </td>
                     <td style="text-align: center;">
                         @if($isBeasiswaTarget && !empty($student->pokema_evaluation))
-                            @php $eval = $student->pokema_evaluation; @endphp
+                            @php 
+                                $eval = $student->pokema_evaluation; 
+                                $recPercent = $eval['recommended_beasiswa'] ?? ($eval['qualified_beasiswa'] ?? '0%');
+                                $currPercent = ($eval['current_beasiswa'] && $eval['current_beasiswa'] !== '0%') ? $eval['current_beasiswa'] : ($isAmbassador ? 'Ambassador' : 'Beasiswa');
+                            @endphp
                             <div class="col-recommendation-cell">
                                 @if($eval['action_type'] === 'upgrade')
                                     <span class="badge-rec badge-rec-upgrade" title="{{ $eval['reason'] }}">
-                                        Promosi {{ $eval['qualified_beasiswa'] }}
+                                        Rekomendasi {{ $recPercent }}
                                     </span>
                                     <span class="action-needed-badge">
                                         Perlu Tindakan
                                     </span>
                                 @elseif($eval['action_type'] === 'downgrade')
                                     <span class="badge-rec badge-rec-downgrade" title="{{ $eval['reason'] }}">
-                                        Sesuaikan {{ $eval['qualified_beasiswa'] }}
+                                        Rekomendasi {{ $recPercent }}
                                     </span>
                                     <span class="action-needed-badge">
                                         Perlu Tindakan
                                     </span>
                                 @elseif($eval['action_type'] === 'revoke')
                                     <span class="badge-rec badge-rec-revoke" title="{{ $eval['reason'] }}">
-                                        Turun ke Reguler
+                                        Rekomendasi 0%
                                     </span>
                                     <span class="action-needed-badge">
                                         Perlu Tindakan
                                     </span>
                                 @elseif($eval['action_type'] === 'maintain')
                                     <span class="badge-rec badge-rec-maintain" title="{{ $eval['reason'] }}">
-                                        Pertahankan {{ $eval['current_beasiswa'] }}
+                                        Rekomendasi {{ $currPercent }}
                                     </span>
                                     <span class="action-ongoing-badge">
                                         Target Terpenuhi
                                     </span>
                                 @elseif($eval['action_type'] === 'on_track')
-                                    @php $targetBeasiswa = ($eval['current_beasiswa'] && $eval['current_beasiswa'] !== '0%') ? $eval['current_beasiswa'] : ($isAmbassador ? 'Ambassador' : 'Beasiswa'); @endphp
                                     <span class="badge-rec badge-rec-on_track" title="{{ $eval['reason'] }}">
-                                        On Track {{ $targetBeasiswa }}
+                                        On Track {{ $currPercent }}
                                     </span>
                                     <span class="action-ontrack-badge">
                                         Periode Berjalan ({{ $eval['progress_pct'] ?? 0 }}%)
                                     </span>
                                 @elseif($eval['action_type'] === 'warning')
-                                    @php $targetBeasiswa = ($eval['current_beasiswa'] && $eval['current_beasiswa'] !== '0%') ? $eval['current_beasiswa'] : ($isAmbassador ? 'Ambassador' : 'Beasiswa'); @endphp
                                     <span class="badge-rec badge-rec-warning" title="{{ $eval['reason'] }}">
-                                        Target {{ $targetBeasiswa }}
+                                        Target {{ $currPercent }}
                                     </span>
                                     <span class="action-warning-badge">
                                         Sisa {{ $eval['points_remaining'] }} Poin
                                     </span>
                                 @else
                                     <span class="badge-rec badge-rec-maintain">
-                                        {{ $eval['action_label'] ?? 'Status Aman' }}
+                                        Rekomendasi {{ $recPercent }}
                                     </span>
                                 @endif
                             </div>
