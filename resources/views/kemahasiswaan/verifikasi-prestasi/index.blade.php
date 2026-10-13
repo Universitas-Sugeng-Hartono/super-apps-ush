@@ -125,16 +125,25 @@
                class="category-toggle-btn {{ $tab === 'all' ? 'active' : '' }}">
                 <i class="bi bi-grid-fill"></i> Semua Mahasiswa 
                 <span class="toggle-count-badge">{{ $tabCounts['all'] }}</span>
+                @if(($pendingCounts['all'] ?? 0) > 0)
+                <span class="toggle-pending-badge" title="{{ $pendingCounts['all'] }} prestasi pending">{{ $pendingCounts['all'] }} pending</span>
+                @endif
             </a>
             <a href="{{ request()->fullUrlWithQuery(['tab' => 'beasiswa', 'page' => 1]) }}" 
                class="category-toggle-btn btn-beasiswa-tab {{ $tab === 'beasiswa' ? 'active' : '' }}">
                 <i class="bi bi-award-fill"></i> Penerima Beasiswa & Ambassador 
                 <span class="toggle-count-badge">{{ $tabCounts['beasiswa'] }}</span>
+                @if(($pendingCounts['beasiswa'] ?? 0) > 0)
+                <span class="toggle-pending-badge badge-pending-gold" title="{{ $pendingCounts['beasiswa'] }} prestasi pending beasiswa">{{ $pendingCounts['beasiswa'] }} pending</span>
+                @endif
             </a>
             <a href="{{ request()->fullUrlWithQuery(['tab' => 'non_beasiswa', 'page' => 1]) }}" 
                class="category-toggle-btn btn-reguler-tab {{ $tab === 'non_beasiswa' ? 'active' : '' }}">
-                <i class="bi bi-person-fill"></i> Mahasiswa Reguler (Non-Beasiswa) 
+                <i class="bi bi-person-fill"></i> Mahasiswa Reguler
                 <span class="toggle-count-badge">{{ $tabCounts['non_beasiswa'] }}</span>
+                @if(($pendingCounts['non_beasiswa'] ?? 0) > 0)
+                <span class="toggle-pending-badge badge-pending-blue" title="{{ $pendingCounts['non_beasiswa'] }} prestasi pending reguler">{{ $pendingCounts['non_beasiswa'] }} pending</span>
+                @endif
             </a>
         </div>
 
@@ -151,18 +160,51 @@
         </div>
     </div>
 
-    @if($stats['pending'] > 0)
-    <div class="content-card" style="background: #FFFBF0; border: 1px solid #F4E5CD;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 12px;">
-            <div>
-                <strong style="color:#C46A00;"><i class="bi bi-lightning-charge"></i> {{ $stats['pending'] }} data menunggu verifikasi</strong>
-                <p style="margin:4px 0 0; color:#6B7280; font-size:14px;">Klik tombol di samping untuk menyetujui seluruh data pending secara massal.</p>
+    {{-- Banner & Tombol Approve Massal Spesifik Kategori (Beasiswa vs Reguler vs Semua) --}}
+    @if(($activeTabPendingCount ?? 0) > 0)
+        @if($tab === 'beasiswa')
+        <div class="content-card banner-approve-beasiswa" style="background: #FEFCE8; border: 1px solid #FEF08A; border-left: 4px solid #D97706; margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <strong style="color:#B45309; font-size: 15px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-award-fill" style="color: #D97706;"></i> {{ $activeTabPendingCount }} data prestasi Mahasiswa Beasiswa & Ambassador menunggu verifikasi
+                    </strong>
+                    <p style="margin:4px 0 0; color:#78350F; font-size:13px;">Klik tombol di samping untuk menyetujui seluruh data pending khusus mahasiswa penerima beasiswa & ambassador secara massal.</p>
+                </div>
+                <button type="button" class="btn-approve btn-approve-beasiswa-all" onclick="showApproveAllModal('beasiswa', {{ $activeTabPendingCount }})">
+                    <i class="bi bi-check-all"></i> Approve Semua Pending (Beasiswa)
+                </button>
             </div>
-            <button type="button" class="btn-approve" onclick="showApproveAllModal()">
-                <i class="bi bi-check-all"></i> Approve Semua Pending
-            </button>
         </div>
-    </div>
+        @elseif($tab === 'non_beasiswa')
+        <div class="content-card banner-approve-reguler" style="background: #F0F9FF; border: 1px solid #BAE6FD; border-left: 4px solid #0284C7; margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <strong style="color:#0369A1; font-size: 15px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-person-check-fill" style="color: #0284C7;"></i> {{ $activeTabPendingCount }} data prestasi Mahasiswa Reguler menunggu verifikasi
+                    </strong>
+                    <p style="margin:4px 0 0; color:#0C4A6E; font-size:13px;">Klik tombol di samping untuk menyetujui seluruh data pending khusus mahasiswa reguler secara massal.</p>
+                </div>
+                <button type="button" class="btn-approve btn-approve-reguler-all" onclick="showApproveAllModal('non_beasiswa', {{ $activeTabPendingCount }})">
+                    <i class="bi bi-check-all"></i> Approve Semua Pending (Reguler)
+                </button>
+            </div>
+        </div>
+        @else
+        <div class="content-card banner-approve-all" style="background: #FFFBF0; border: 1px solid #F4E5CD; border-left: 4px solid #D97706; margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <strong style="color:#C46A00; font-size: 15px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-lightning-charge-fill" style="color: #D97706;"></i> {{ $activeTabPendingCount }} data prestasi menunggu verifikasi
+                    </strong>
+                    <p style="margin:4px 0 0; color:#6B7280; font-size:13px;">Klik tombol di samping untuk menyetujui seluruh data pending secara massal (seluruh kategori mahasiswa).</p>
+                </div>
+                <button type="button" class="btn-approve" onclick="showApproveAllModal('all', {{ $activeTabPendingCount }})">
+                    <i class="bi bi-check-all"></i> Approve Semua Pending
+                </button>
+            </div>
+        </div>
+        @endif
     @endif
 
     @if($students->count() > 0)

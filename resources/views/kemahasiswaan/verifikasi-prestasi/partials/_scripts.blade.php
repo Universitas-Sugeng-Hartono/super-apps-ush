@@ -33,8 +33,34 @@
         document.getElementById('rejectModal').style.display = 'none';
     }
 
-    function showApproveAllModal() {
-        document.getElementById('approveAllModal').style.display = 'flex';
+    function showApproveAllModal(targetTab = '{{ $tab }}', count = null) {
+        const modal = document.getElementById('approveAllModal');
+        const tabInput = document.getElementById('approve_all_tab');
+        const title = document.getElementById('approve_all_modal_title');
+        const desc = document.getElementById('approve_all_modal_desc');
+        const submitText = document.getElementById('approve_all_submit_text');
+        const submitBtn = document.getElementById('approve_all_modal_submit');
+
+        if (tabInput) tabInput.value = targetTab;
+
+        if (targetTab === 'beasiswa') {
+            if (title) title.innerHTML = '<i class="bi bi-award-fill" style="color: #D97706; font-size: 20px;"></i> Approve Semua Prestasi Mahasiswa Beasiswa';
+            if (desc) desc.innerHTML = `Anda akan menyetujui seluruh <strong>${count ? count + ' ' : ''}data prestasi pending</strong> khusus mahasiswa <strong>Penerima Beasiswa & Ambassador</strong>. Data mahasiswa reguler tidak akan terpengaruh.`;
+            if (submitText) submitText.textContent = 'Setujui Semua (Beasiswa)';
+            if (submitBtn) submitBtn.style.background = '#059669';
+        } else if (targetTab === 'non_beasiswa') {
+            if (title) title.innerHTML = '<i class="bi bi-person-check-fill" style="color: #0284C7; font-size: 20px;"></i> Approve Semua Prestasi Mahasiswa Reguler';
+            if (desc) desc.innerHTML = `Anda akan menyetujui seluruh <strong>${count ? count + ' ' : ''}data prestasi pending</strong> khusus mahasiswa <strong>Reguler (Non-Beasiswa)</strong>. Data mahasiswa beasiswa tidak akan terpengaruh.`;
+            if (submitText) submitText.textContent = 'Setujui Semua (Reguler)';
+            if (submitBtn) submitBtn.style.background = '#0284C7';
+        } else {
+            if (title) title.innerHTML = '<i class="bi bi-check-all" style="color: #16A34A; font-size: 22px;"></i> Approve Semua Prestasi Mahasiswa';
+            if (desc) desc.innerHTML = `Anda akan menyetujui seluruh <strong>${count ? count + ' ' : ''}data prestasi pending</strong> untuk <strong>seluruh mahasiswa</strong>.`;
+            if (submitText) submitText.textContent = 'Setujui Semua Data';
+            if (submitBtn) submitBtn.style.background = '#16A34A';
+        }
+
+        modal.style.display = 'flex';
     }
 
     function closeApproveAllModal() {

@@ -941,6 +941,67 @@
         color: #FFFFFF;
     }
 
+    /* Pending Badge Pill di Toolbar */
+    .toggle-pending-badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #FEF3C7;
+        color: #B45309;
+        border: 1px solid #FDE68A;
+        line-height: 1.2;
+    }
+    .toggle-pending-badge.badge-pending-gold {
+        background: #FEF3C7;
+        color: #B45309;
+        border-color: #FDE68A;
+    }
+    .toggle-pending-badge.badge-pending-blue {
+        background: #E0F2FE;
+        color: #0369A1;
+        border-color: #BAE6FD;
+    }
+    .category-toggle-btn.active .toggle-pending-badge {
+        background: #FEF3C7;
+        color: #B45309;
+    }
+    .category-toggle-btn.btn-beasiswa-tab.active .toggle-pending-badge {
+        background: #D1FAE5;
+        color: #065F46;
+        border-color: #A7F3D0;
+    }
+    .category-toggle-btn.btn-reguler-tab.active .toggle-pending-badge {
+        background: #E0F2FE;
+        color: #0369A1;
+        border-color: #BAE6FD;
+    }
+
+    /* Button Approve Semua Massal Khusus Kategori */
+    .btn-approve-beasiswa-all {
+        background: #059669 !important;
+        border-color: #059669 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 1px 3px rgba(5, 150, 105, 0.25);
+    }
+    .btn-approve-beasiswa-all:hover {
+        background: #047857 !important;
+        box-shadow: 0 3px 6px rgba(5, 150, 105, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn-approve-reguler-all {
+        background: #0284C7 !important;
+        border-color: #0284C7 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+    }
+    .btn-approve-reguler-all:hover {
+        background: #0369A1 !important;
+        box-shadow: 0 3px 6px rgba(2, 132, 199, 0.35);
+        transform: translateY(-1px);
+    }
+
     /* Button Verifikasi Prestasi Reguler */
     .btn-view-reguler {
         background: #0284C7 !important;
