@@ -100,7 +100,7 @@ break;
             </div>
         </div>
         <div class="analytic-card skp-total">
-            <div class="card-label">TOTAL SKP SAAT INI</div>
+            <div class="card-label">TOTAL POIN / SKP SAAT INI</div>
             <div class="card-value">{{ $student->achievements->where('status', 'approved')->sum('skp_points') }}</div>
             <div class="card-footer">Hanya dari data terverifikasi</div>
         </div>
