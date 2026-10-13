@@ -747,6 +747,27 @@
     </style>
 </head>
 <body>
+    @php
+        $user = auth()->user();
+        $name = $user ? $user->name : session('user_name');
+        $userRole = $user ? \App\Models\User::normalizeRole($user->role) : null;
+        $roleLabel = $user ? $user->role_label : 'User';
+        if (in_array($userRole, ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'], true)) {
+            $subTitle = $roleLabel;
+        } else {
+            $prodi = $user ? $user->program_studi : session('user_prodi');
+            $subTitle = $roleLabel . ($prodi ? ' • ' . $prodi : '');
+        }
+        $photo = $user && $user->photo ? $user->photo : (session('user_photo') !== '0' && session('user_photo') !== 0 ? session('user_photo') : null);
+        $dashRoute = match ($userRole) {
+            'kemahasiswaan' => route('kemahasiswaan.dashboard'),
+            'akademik' => route('akademik.dashboard'),
+            default => route('admin.dashboard'),
+        };
+        $dashActive = request()->routeIs('admin.dashboard')
+            || request()->routeIs('kemahasiswaan.dashboard')
+            || request()->routeIs('akademik.dashboard');
+    @endphp
     <!-- Header -->
     <div class="header-section">
         <div class="header-content">
@@ -756,7 +777,7 @@
             </button>
 
             <!-- Logo Section (Desktop Only) link to dashboard -->
-            <a href="{{ auth()->check() && \App\Models\User::normalizeRole(auth()->user()->role) === 'kemahasiswaan' ? route('kemahasiswaan.dashboard') : route('admin.dashboard') }}" class="logo-section desktop-only" style="transform: translateX(50px);text-decoration: none;">
+            <a href="{{ $dashRoute }}" class="logo-section desktop-only" style="transform: translateX(50px);text-decoration: none;">
                 <img src="{{ asset('ush.png') }}" alt="USH Logo" class="header-logo">
                 <h4 class="app-title">Universitas Sugeng Hartono</h4>
             </a>
@@ -765,21 +786,6 @@
             <div class="user-info">
                 <div class="user-profile" id="userProfile">
                     <div class="user-details">
-                        @php
-                            $user = auth()->user();
-                            $name = $user ? $user->name : session('user_name');
-                            $userRole = $user ? \App\Models\User::normalizeRole($user->role) : null;
-                            $roleLabel = $user ? $user->role_label : 'User';
-                            if (in_array($userRole, ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'], true)) {
-                                $subTitle = $roleLabel;
-                            } else {
-                                $prodi = $user ? $user->program_studi : session('user_prodi');
-                                $subTitle = $roleLabel . ($prodi ? ' • ' . $prodi : '');
-                            }
-                            $photo = $user && $user->photo ? $user->photo : (session('user_photo') !== '0' && session('user_photo') !== 0 ? session('user_photo') : null);
-                            $dashRoute = $userRole === 'kemahasiswaan' ? route('kemahasiswaan.dashboard') : route('admin.dashboard');
-                            $dashActive = request()->routeIs('admin.dashboard') || request()->routeIs('kemahasiswaan.dashboard');
-                        @endphp
                         <h5>Halo, {{ explode(' ', $name ?? '')[0] }}!</h5>
                         <p>{{ $subTitle }}</p>
                     </div>

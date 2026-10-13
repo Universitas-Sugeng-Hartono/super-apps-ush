@@ -38,6 +38,11 @@ class DashboardController extends Controller
             return redirect()->route('kemahasiswaan.dashboard');
         }
 
+        // Dashboard khusus role Akademik - bukan dashboard dosen PA
+        if ($userRole === 'akademik') {
+            return redirect()->route('akademik.dashboard');
+        }
+
         // Dashboard khusus role Keuangan
         if ($userRole === 'keuangan') {
             $pendingCount = \App\Models\SkpiRegistration::where('payment_status', 'pending')->count();
@@ -250,6 +255,48 @@ class DashboardController extends Controller
             'rejectedCount',
             'totalCount',
             'recentAchievements',
+            'menus'
+        ));
+    }
+
+    /**
+     * Dashboard khusus role Akademik (/akademik/dashboard)
+     */
+    public function akademikDashboard(Request $request)
+    {
+        $user = auth()->user();
+
+        $studentCount = Student::count();
+        $prodiCount = \App\Models\StudyProgram::query()->where('is_active', true)->count();
+        $lecturerCount = User::where('role', 'admin')->count();
+
+        $announcementCount = 0;
+        $recentAnnouncements = collect();
+        if (Schema::hasTable('announcements')) {
+            $announcementCount = Announcement::query()->published()->count();
+            $recentAnnouncements = Announcement::query()
+                ->published()
+                ->orderByDesc('published_at')
+                ->limit(5)
+                ->get();
+        }
+
+        $menus = \App\Models\MenuItem::active()
+            ->forRole('akademik')
+            ->ordered()
+            ->get()
+            ->map(function ($menu) {
+                $menu->menu_url = $menu->full_url;
+                return $menu;
+            });
+
+        return view('akademik.dashboard.index', compact(
+            'user',
+            'studentCount',
+            'prodiCount',
+            'lecturerCount',
+            'announcementCount',
+            'recentAnnouncements',
             'menus'
         ));
     }

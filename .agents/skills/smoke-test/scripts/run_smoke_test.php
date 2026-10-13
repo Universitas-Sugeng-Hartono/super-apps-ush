@@ -335,8 +335,8 @@ runTest("AuthController - Redirect Logic Allows All New Roles", function () {
     $userAk = new User(['role' => 'akademik']);
     Auth::setUser($userAk);
     $responseAk = $controller->index();
-    if (!$responseAk->isRedirect(route('admin.dashboard'))) {
-        throw new \Exception("AuthController did not redirect 'akademik' to admin.dashboard");
+    if (!$responseAk->isRedirect(route('akademik.dashboard'))) {
+        throw new \Exception("AuthController did not redirect 'akademik' to akademik.dashboard");
     }
 
     return true;
@@ -410,6 +410,36 @@ runTest("DashboardController - Keuangan Dedicated Dashboard Renders Successfully
     if (empty($renderedHtml)) {
         throw new \Exception("Rendered HTML for keuangan dashboard is empty");
     }
+    return true;
+});
+
+runTest("DashboardController - Akademik Dedicated Dashboard Renders Successfully", function () {
+    $dashboardController = new \App\Http\Controllers\AdminController\DashboardController();
+    $userAk = User::where('role', 'akademik')->first() ?? new User(['name' => 'Staf Akademik', 'role' => 'akademik']);
+    Auth::setUser($userAk);
+
+    $req = Request::create('/admin/dashboard', 'GET');
+    $redirect = $dashboardController->dashboard($req);
+    if (!($redirect instanceof \Illuminate\Http\RedirectResponse) || !$redirect->isRedirect(route('akademik.dashboard'))) {
+        throw new \Exception("Accessing /admin/dashboard did not redirect akademik to akademik.dashboard");
+    }
+
+    $view = $dashboardController->akademikDashboard(Request::create('/akademik/dashboard', 'GET'));
+    if (!($view instanceof \Illuminate\View\View)) {
+        throw new \Exception("Dashboard did not return a View instance for akademik");
+    }
+    if ($view->name() !== 'akademik.dashboard.index') {
+        throw new \Exception("Expected view 'akademik.dashboard.index', got '{$view->name()}'");
+    }
+
+    $renderedHtml = $view->render();
+    if (empty($renderedHtml) || !str_contains($renderedHtml, 'Biro Akademik')) {
+        throw new \Exception("Akademik dashboard did not render the Biro Akademik banner");
+    }
+    if (str_contains($renderedHtml, 'Dashboard Dosen PA')) {
+        throw new \Exception("Akademik dashboard still renders the dosen dashboard");
+    }
+
     return true;
 });
 

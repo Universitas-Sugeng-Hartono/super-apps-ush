@@ -23,7 +23,10 @@ class AuthController extends Controller
             if ($role === 'kemahasiswaan') {
                 return redirect()->route('kemahasiswaan.dashboard');
             }
-            if (in_array($role, ['admin', 'superadmin', 'masteradmin', 'keuangan', 'akademik'], true)) {
+            if ($role === 'akademik') {
+                return redirect()->route('akademik.dashboard');
+            }
+            if (in_array($role, ['admin', 'superadmin', 'masteradmin', 'keuangan'], true)) {
                 return redirect()->route('admin.dashboard');
             }
         }
@@ -58,6 +61,9 @@ class AuthController extends Controller
             $role = User::normalizeRole($user->role);
             if ($role === 'kemahasiswaan') {
                 return redirect()->intended(route('kemahasiswaan.dashboard'));
+            }
+            if ($role === 'akademik') {
+                return redirect()->intended(route('akademik.dashboard'));
             }
 
             return redirect()->intended(route('admin.dashboard'));
