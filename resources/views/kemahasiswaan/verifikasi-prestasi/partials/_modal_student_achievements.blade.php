@@ -28,10 +28,10 @@
         <!-- Modal Tabs Navigation -->
         <div class="modal-tabs-nav">
             <button type="button" class="modal-tab-btn active" id="tabBtnEvaluation" onclick="switchModalTab('evaluation')">
-                <i class="bi bi-speedometer2"></i> Evaluasi POKEMA 7 Bidang & Beasiswa
+                Evaluasi POKEMA 7 Bidang & Beasiswa
             </button>
             <button type="button" class="modal-tab-btn" id="tabBtnAchievements" onclick="switchModalTab('achievements')">
-                <i class="bi bi-file-earmark-check"></i> Daftar Prestasi & Sertifikat (<span id="tab_cert_count">0</span>)
+                Daftar Prestasi & Sertifikat (<span id="tab_cert_count">0</span>)
             </button>
         </div>
 
@@ -49,7 +49,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                         <div>
                             <h5 style="margin: 0; font-size: 15px; font-weight: 700; color: #1E293B;">
-                                <i class="bi bi-calendar3-range-fill" style="color: #0284C7;"></i> Rincian & Akumulasi POKEMA Per Semester
+                                Rincian & Akumulasi POKEMA Per Semester
                             </h5>
                             <p style="margin: 3px 0 0; font-size: 12px; color: #64748B;">
                                 Tracking capaian prestasi dan konseling tiap semester menuju target tahunan beasiswa.
@@ -67,7 +67,7 @@
                     <div class="pokema-fields-header">
                         <div>
                             <h5 style="margin: 0; font-size: 15px; font-weight: 700; color: #1E293B;">
-                                <i class="bi bi-bar-chart-fill" style="color: #2563EB;"></i> Capaian 7 Bidang Kegiatan POKEMA
+                                Capaian 7 Bidang Kegiatan POKEMA
                             </h5>
                             <p style="margin: 3px 0 0; font-size: 12px; color: #64748B;">
                                 Standar minimal berdasarkan SK Rektor No: 2638/SK/01/2026.

@@ -229,11 +229,11 @@
         if (badgesContainer) {
             let badgeHtml = '';
             if (statusMhs === 'Student Ambassador') {
-                badgeHtml += `<span class="badge-status-mhs badge-ambassador" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-award-fill"></i> Student Ambassador</span>`;
+                badgeHtml += `<span class="badge-status-mhs badge-ambassador" style="font-size: 11px; padding: 2px 8px;">Student Ambassador</span>`;
             } else if (isBeasiswa) {
-                badgeHtml += `<span class="badge-beasiswa" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-mortarboard-fill"></i> Beasiswa ${escapeHtml(beasiswa)}</span>`;
+                badgeHtml += `<span class="badge-beasiswa" style="font-size: 11px; padding: 2px 8px;">Beasiswa ${escapeHtml(beasiswa)}</span>`;
             } else {
-                badgeHtml += `<span class="badge-status-mhs badge-reguler" style="font-size: 11px; padding: 2px 8px;"><i class="bi bi-person"></i> Mahasiswa Reguler (Non-Beasiswa)</span>`;
+                badgeHtml += `<span class="badge-status-mhs badge-reguler" style="font-size: 11px; padding: 2px 8px;">Mahasiswa Reguler (Non-Beasiswa)</span>`;
             }
             badgesContainer.innerHTML = badgeHtml;
         }
@@ -419,56 +419,56 @@
         if (recType === 'on_track') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-on_track" onclick="switchModalTab('achievements')">
-                    <i class="bi bi-file-earmark-check"></i> Periksa Prestasi Masuk
+                    Periksa Prestasi Masuk
                 </button>
             `;
         } else if (recType === 'upgrade') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-upgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
-                    <i class="bi bi-arrow-up-circle-fill"></i> Terapkan Promosi (${safeNewBeasiswa})
+                    Terapkan Promosi (${safeNewBeasiswa})
                 </button>
             `;
         } else if (recType === 'warning') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-warning" onclick="switchModalTab('achievements')">
-                    <i class="bi bi-exclamation-triangle"></i> Cek Prestasi Mahasiswa
+                    Cek Prestasi Mahasiswa
                 </button>
             `;
         } else if (recType === 'downgrade') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-downgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
-                    <i class="bi bi-arrow-down-circle-fill"></i> Sesuaikan ke Beasiswa ${safeNewBeasiswa}
+                    Sesuaikan ke Beasiswa ${safeNewBeasiswa}
                 </button>
             `;
         } else if (recType === 'revoke') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-revoke" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '0%', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
-                    <i class="bi bi-x-circle-fill"></i> Cabut Beasiswa (Turun Reguler)
+                    Cabut Beasiswa (Turun Reguler)
                 </button>
             `;
         } else if (recType === 'reguler') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action" style="background: #0284C7; color: #FFFFFF;" onclick="switchModalTab('achievements')">
-                    <i class="bi bi-patch-check-fill"></i> Periksa & Verifikasi Prestasi
+                    Periksa & Verifikasi Prestasi
                 </button>
             `;
         } else if (recType === 'future') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-future" onclick="switchModalTab('achievements')">
-                    <i class="bi bi-calendar-event"></i> Lihat Rincian Prestasi
+                    Lihat Rincian Prestasi
                 </button>
             `;
         } else if (evalData.current_beasiswa && evalData.current_beasiswa !== '0%') {
             smartBtnHtml = `
                 <button type="button" class="btn-smart-action btn-maintain" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeOldBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
-                    <i class="bi bi-check-circle-fill"></i> Pertahankan Beasiswa (${safeOldBeasiswa})
+                    Pertahankan Beasiswa (${safeOldBeasiswa})
                 </button>
             `;
         }
 
         const manualBtnHtml = (recType !== 'reguler') ? `
             <button type="button" class="btn-smart-action btn-manual" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '', true, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
-                <i class="bi bi-sliders"></i> Sesuaikan Manual
+                Sesuaikan Manual
             </button>
         ` : '';
 
@@ -485,14 +485,14 @@
 
         if (targetPts > 0 && recType !== 'reguler') {
             const statusTag = remaining > 0
-                ? `<span class="rec-remaining-tag"><i class="bi bi-hourglass-split"></i> Sisa target: <strong>${remaining} Poin</strong></span>`
-                : `<span class="rec-completed-tag"><i class="bi bi-check-all"></i> Target Poin Tercapai</span>`;
+                ? `<span class="rec-remaining-tag">Sisa target: <strong>${remaining} Poin</strong></span>`
+                : `<span class="rec-completed-tag">Target Poin Tercapai</span>`;
 
             progressBoxHtml = `
                 <div class="rec-progress-box">
                     <div class="rec-progress-info">
                         <span>
-                            <i class="bi bi-bullseye"></i> Capaian: <strong>${currentPts} / ${targetPts} Poin</strong> (${pct}%)
+                            Capaian: <strong>${currentPts} / ${targetPts} Poin</strong> (${pct}%)
                             ${evalData.ipk ? ` &bull; IPK: <strong>${evalData.ipk}</strong>` : ''}
                         </span>
                         ${statusTag}
@@ -509,10 +509,10 @@
             <div class="rec-main-content">
                 <div class="rec-top-meta">
                     <span class="rec-status-pill pill-${recType}">
-                        <i class="bi ${iconClass}"></i> ${badgeLabel}
+                        ${badgeLabel}
                     </span>
                     <span class="rec-period-badge">
-                        <i class="bi bi-calendar3"></i> Periode: <strong>${escapeHtml(evalData.study_year_label || 'Tahun I')}</strong>
+                        Periode: <strong>${escapeHtml(evalData.study_year_label || 'Tahun I')}</strong>
                         &bull; Target Acuan: <strong>Beasiswa ${escapeHtml(evalData.benchmark_tier_key || evalData.current_beasiswa || '75%')} (${targetPts} Poin)</strong>
                     </span>
                 </div>
@@ -536,20 +536,20 @@
             } else {
                 breakdown.forEach(sem => {
                     const isCur = sem.is_current;
-                    const currentBadge = isCur ? '<span class="badge-current-sem"><i class="bi bi-geo-alt-fill"></i> Semester Aktif</span>' : '';
+                    const currentBadge = isCur ? '<span class="badge-current-sem">Semester Aktif</span>' : '';
                     const ipkBadge = sem.ipk 
-                        ? `<span class="sem-meta-pill pill-ipk"><i class="bi bi-mortarboard-fill"></i> IPK: <strong>${sem.ipk}</strong></span>` 
-                        : '<span class="sem-meta-pill pill-empty"><i class="bi bi-dash"></i> Belum ada data konseling</span>';
+                        ? `<span class="sem-meta-pill pill-ipk">IPK: <strong>${sem.ipk}</strong></span>` 
+                        : '<span class="sem-meta-pill pill-empty">Belum ada data konseling</span>';
                     
                     const ipBadge = sem.ip ? `<span class="sem-meta-pill pill-ip">IP: <strong>${sem.ip}</strong></span>` : '';
                     
                     let milestoneHtml = '';
                     if (sem.is_period_milestone) {
                         if (sem.is_year_target_met) {
-                            milestoneHtml = `<div class="sem-milestone milestone-success"><i class="bi bi-check-circle-fill"></i> Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Target ${escapeHtml(sem.study_year_label)} Terpenuhi ✅)</div>`;
+                            milestoneHtml = `<div class="sem-milestone milestone-success">Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Target ${escapeHtml(sem.study_year_label)} Terpenuhi)</div>`;
                         } else {
                             const kurang = Math.max(0, sem.year_target - sem.cumulative_points);
-                            milestoneHtml = `<div class="sem-milestone milestone-warning"><i class="bi bi-exclamation-triangle-fill"></i> Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Kurang ${kurang} Poin menuju target beasiswa)</div>`;
+                            milestoneHtml = `<div class="sem-milestone milestone-warning">Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Kurang ${kurang} Poin menuju target beasiswa)</div>`;
                         }
                     }
 
@@ -590,33 +590,22 @@
             }
         }
 
-        // 3. 7 Progress Bars Grid
-        const fieldIcons = {
-            'wajib': 'bi-check2-circle text-primary',
-            'organisasi': 'bi-people-fill text-warning',
-            'penalaran': 'bi-lightbulb-fill text-info',
-            'minat_bakat': 'bi-trophy-fill text-warning',
-            'kepedulian_sosial': 'bi-heart-fill text-danger',
-            'lainnya': 'bi-briefcase-fill text-secondary',
-            'volunteer': 'bi-award-fill text-purple'
-        };
-
+        // 3. 7 Progress Bars Grid (Clean & Minimalist without Icons)
         let barsHtml = '';
         const progressList = Object.values(evalData.fields_progress || {});
 
         progressList.forEach(f => {
-            const icon = fieldIcons[f.key] || 'bi-bookmark-star';
             const isOk = f.current >= f.target;
             const fillClass = isOk ? 'fill-green' : 'fill-blue';
             const badgeHtml = isOk
-                ? `<span class="badge-field-status status-ok"><i class="bi bi-check-circle-fill"></i> Terpenuhi (${f.real_percent}%)</span>`
-                : `<span class="badge-field-status status-kurang"><i class="bi bi-exclamation-circle-fill"></i> Kurang ${f.target - f.current} Poin (${f.real_percent}%)</span>`;
+                ? `<span class="badge-field-status status-ok">Terpenuhi (${f.real_percent}%)</span>`
+                : `<span class="badge-field-status status-kurang">Kurang ${f.target - f.current} Poin (${f.real_percent}%)</span>`;
 
             barsHtml += `
                 <div class="pokema-field-row">
                     <div class="field-title-wrap">
                         <span class="field-name">
-                            <i class="bi ${icon}"></i> ${escapeHtml(f.label)}
+                            ${escapeHtml(f.label)}
                         </span>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <span class="field-score">
