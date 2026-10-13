@@ -61,8 +61,8 @@ break;
     {{-- PREMIUM HEADER --}}
     <div class="page-header-simple">
         <div class="header-info">
-            <h1 class="page-title-simple">Prestasi & Aktivitas Mahasiswa</h1>
-            <p class="page-subtitle-simple">Kelola seluruh catatan capaian ekstrakurikuler dan prestasi Anda untuk kebutuhan SKPI.</p>
+            <h1 class="page-title-simple">POKEMA - Point Keaktifan Mahasiswa</h1>
+            <p class="page-subtitle-simple">Kelola seluruh catatan capaian ekstrakurikuler dan prestasi Anda untuk kebutuhan POKEMA dan SKPI.</p>
         </div>
         <div class="header-actions">
             <a href="{{ route('student.dashboard') }}" class="btn-simple-outline">

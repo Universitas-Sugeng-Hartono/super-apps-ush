@@ -106,9 +106,9 @@ class StudentsController extends Controller
 
         if (!$menus->contains(fn($m) => ($m->route_name ?? '') === 'student.personal.achievements.index' || ($m->menu_url ?? '') === route('student.personal.achievements.index'))) {
             $fallback = new \App\Models\MenuItem([
-                'name' => 'Organisasi, Kompetensi',
+                'name' => 'POKEMA',
                 'icon' => 'bi bi-trophy',
-                'description' => 'Input data prestasi, penghargaan, dan organisasi',
+                'description' => 'Point Keaktifan Mahasiswa',
                 'badge_text' => 'Aktif',
                 'badge_color' => 'active',
                 'target' => '_self',
