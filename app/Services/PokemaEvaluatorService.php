@@ -436,6 +436,19 @@ class PokemaEvaluatorService
     }
 
     /**
+     * Dapatkan tier 1 tingkat di bawahnya untuk sanksi degradasi berjenjang (step-down)
+     */
+    public static function getNextLowerTierKey(string $tierKey): string
+    {
+        return match ($tierKey) {
+            '100%' => '75%',
+            '75%' => '50%',
+            '50%' => '25%',
+            default => '0%',
+        };
+    }
+
+    /**
      * Evaluasi kelayakan beasiswa mahasiswa secara menyeluruh
      */
     public static function evaluate(Student $student, int|string|null $forceYear = null): array
@@ -498,7 +511,25 @@ class PokemaEvaluatorService
             $totalApprovedPoints += $points;
         }
 
-        // Tentukan kualifikasi tier tertinggi yang berhasil dicapai mahasiswa (Hukum Nilai Minimum: IPK & POKEMA)
+        // Target 7 bidang untuk tier saat ini
+        $currentTargetFields = $currentTier['targets'][$studyYear]['fields'] ?? [];
+        $currentTierFulfilledCount = 0;
+        $currentTierUnfulfilledList = [];
+
+        foreach (self::FIELD_LABELS as $fKey => $fLabel) {
+            $fActual = $actualFields[$fKey] ?? 0;
+            $fTarget = $currentTargetFields[$fKey] ?? 0;
+            if ($fActual >= $fTarget) {
+                $currentTierFulfilledCount++;
+            } else {
+                $deficit = $fTarget - $fActual;
+                $currentTierUnfulfilledList[] = "{$fLabel} (kurang {$deficit} Poin)";
+            }
+        }
+        $currentTierAllFieldsMet = ($currentTierFulfilledCount === count(self::FIELD_LABELS));
+
+        // Tentukan kualifikasi tier tertinggi yang berhasil dicapai mahasiswa
+        // Berdasarkan SK Rektor No: 2638/SK/01/2026: Syarat beasiswa adalah IPK + Total POKEMA + Seluruh 7 Bidang Wajib Terpenuhi
         $qualifiedTierKey = '0%';
         $orderedTiers = ['100%', '75%', '50%', '25%'];
 
@@ -506,8 +537,18 @@ class PokemaEvaluatorService
             $tConfig = self::TIERS[$tKey];
             $minIpk = $tConfig['min_ipk'];
             $targetPoin = $tConfig['targets'][$studyYear]['total'] ?? $tConfig['targets'][1]['total'];
+            $tierFields = $tConfig['targets'][$studyYear]['fields'] ?? [];
 
-            if ($ipk >= $minIpk && $totalApprovedPoints >= $targetPoin) {
+            // Evaluasi apakah seluruh 7 bidang terpenuhi untuk tier ini
+            $tierAllFieldsMet = true;
+            foreach ($tierFields as $fKey => $fTarget) {
+                if (($actualFields[$fKey] ?? 0) < $fTarget) {
+                    $tierAllFieldsMet = false;
+                    break;
+                }
+            }
+
+            if ($ipk >= $minIpk && $totalApprovedPoints >= $targetPoin && $tierAllFieldsMet) {
                 $qualifiedTierKey = $tKey;
                 break;
             }
@@ -540,30 +581,40 @@ class PokemaEvaluatorService
             $actionClass = 'btn-upgrade';
             $badgeClass = 'badge-upgrade';
             $targetPoinNeeded = $qualifiedTier['targets'][$studyYear]['total'] ?? $qualifiedTier['targets'][1]['total'];
-            $reason = "Prestasi IPK ({$ipk} ≥ {$qualifiedTier['min_ipk']}) dan Total POKEMA ({$totalApprovedPoints} ≥ {$targetPoinNeeded} Poin) memenuhi kualifikasi kenaikan ke Beasiswa {$qualifiedTierKey}.";
-        } elseif ($totalApprovedPoints >= $targetCurrent && $ipk >= $minIpkCurrent) {
-            // 3. Target periode telah terpenuhi penuh
+            $reason = "Prestasi IPK ({$ipk} ≥ {$qualifiedTier['min_ipk']}), Total POKEMA ({$totalApprovedPoints} ≥ {$targetPoinNeeded} Poin), dan seluruh 7 bidang kegiatan memenuhi kualifikasi kenaikan ke Beasiswa {$qualifiedTierKey}.";
+        } elseif ($totalApprovedPoints >= $targetCurrent && $ipk >= $minIpkCurrent && $currentTierAllFieldsMet) {
+            // 3. Target periode telah terpenuhi penuh (IPK + Poin + Seluruh 7 Bidang Lengkap)
             $actionType = 'maintain';
             $actionLabel = "Target Periode Terpenuhi (Pertahankan {$currentTierKey})";
             $actionClass = 'btn-maintain';
             $badgeClass = 'badge-maintain';
-            $reason = "Perolehan {$totalApprovedPoints} Poin dan IPK {$ipk} stabil memenuhi standar Beasiswa {$currentTierKey} (Target {$targetCurrent} Poin & Min. IPK {$minIpkCurrent}).";
+            $reason = "Perolehan {$totalApprovedPoints} Poin, IPK {$ipk}, dan seluruh 7 bidang kegiatan POKEMA lengkap memenuhi standar Beasiswa {$currentTierKey} (Target {$targetCurrent} Poin & Min. IPK {$minIpkCurrent}).";
         } elseif ($isCurrentYear && AppSetting::isBeasiswaUploadOpen()) {
             // 4. Periode Tahun Berjalan (On-Going / Nilai terus di-update) - Hanya jika portal DIBUKA
-            if ($ipk >= $minIpkCurrent && $totalApprovedPoints >= ($targetCurrent * 0.35)) {
+            if ($totalApprovedPoints >= $targetCurrent && $ipk >= $minIpkCurrent && !$currentTierAllFieldsMet) {
+                // Poin sudah mencapai target, tapi 7 bidang belum lengkap
+                $unfulfilledCount = count($currentTierUnfulfilledList);
+                $actionType = 'warning';
+                $actionLabel = "Poin Tercapai, Namun Sebaran 7 Bidang Belum Lengkap ({$currentTierFulfilledCount}/7 Terpenuhi)";
+                $actionClass = 'btn-warning';
+                $badgeClass = 'badge-warning';
+                $reason = "Tahun {$studyYear} sedang berlangsung (Semester {$semester}). Total capaian ({$totalApprovedPoints}/{$targetCurrent} Poin) dan IPK ({$ipk}) telah mencapai standar, namun berdasarkan SK Rektor No: 2638/SK/01/2026 seluruh 7 bidang wajib terpenuhi. Mahasiswa belum memenuhi {$unfulfilledCount} bidang: " . implode(', ', $currentTierUnfulfilledList) . ". Mahasiswa harus melengkapi bidang tersebut sebelum evaluasi akhir periode beasiswa.";
+            } elseif ($ipk >= $minIpkCurrent && $totalApprovedPoints >= ($targetCurrent * 0.35)) {
                 // On Track: IPK aman & perolehan poin berjalan positif
                 $actionType = 'on_track';
-                $actionLabel = "Progres Berjalan: Beasiswa {$currentTierKey} (On Track)";
+                $actionLabel = "Progres Berjalan: Beasiswa {$currentTierKey} ({$currentTierFulfilledCount}/7 Bidang)";
                 $actionClass = 'btn-on-track';
                 $badgeClass = 'badge-on-track';
-                $reason = "Tahun {$studyYear} sedang berlangsung (Semester {$semester}). Capaian saat ini {$totalApprovedPoints} dari {$targetCurrent} Poin ({$progressPct}%) dengan IPK {$ipk} (Aman ≥ {$minIpkCurrent}). Mahasiswa membutuhkan {$pointsRemaining} Poin lagi di semester aktif untuk mengamankan Beasiswa {$currentTierKey}.";
+                $unfulfilledNote = !empty($currentTierUnfulfilledList) ? ' serta melengkapi bidang yang belum terpenuhi (' . implode(', ', $currentTierUnfulfilledList) . ')' : '';
+                $reason = "Tahun {$studyYear} sedang berlangsung (Semester {$semester}). Capaian saat ini {$totalApprovedPoints} dari {$targetCurrent} Poin ({$progressPct}%) dengan IPK {$ipk} (Aman ≥ {$minIpkCurrent}), dan {$currentTierFulfilledCount}/7 bidang terpenuhi. Mahasiswa membutuhkan {$pointsRemaining} Poin lagi{$unfulfilledNote} sebelum evaluasi akhir periode.";
             } elseif ($ipk >= 3.00) {
                 // Perlu peningkatan: Poin masih tertinggal
                 $actionType = 'warning';
-                $actionLabel = "Perlu Peningkatan: Sisa {$pointsRemaining} Poin";
+                $actionLabel = "Perlu Peningkatan: Sisa {$pointsRemaining} Poin ({$currentTierFulfilledCount}/7 Bidang)";
                 $actionClass = 'btn-warning';
                 $badgeClass = 'badge-warning';
-                $reason = "Tahun {$studyYear} sedang berlangsung (Semester {$semester}). Capaian saat ini {$totalApprovedPoints} dari {$targetCurrent} Poin ({$progressPct}%) dengan IPK {$ipk}. Mahasiswa perlu menambah {$pointsRemaining} Poin lagi sebelum evaluasi akhir periode.";
+                $unfulfilledNote = !empty($currentTierUnfulfilledList) ? ' dan pemenuhan bidang yang belum lengkap (' . implode(', ', $currentTierUnfulfilledList) . ')' : '';
+                $reason = "Tahun {$studyYear} sedang berlangsung (Semester {$semester}). Capaian saat ini {$totalApprovedPoints} dari {$targetCurrent} Poin ({$progressPct}%) dengan IPK {$ipk}, baru {$currentTierFulfilledCount}/7 bidang terpenuhi. Mahasiswa perlu menambah {$pointsRemaining} Poin lagi{$unfulfilledNote} sebelum evaluasi akhir periode.";
             } else {
                 // IPK di bawah standar minimal beasiswa (Min. 3.00)
                 $actionType = 'warning';
@@ -586,32 +637,46 @@ class PokemaEvaluatorService
             $actionClass = 'btn-on-track';
             $badgeClass = 'badge-on-track';
             $reason = "Akumulasi seluruh periode beasiswa hingga kelulusan. Capaian saat ini {$totalApprovedPoints} dari {$targetCurrent} Poin ({$progressPct}%) dengan IPK {$ipk}.";
-        } elseif ($qualifiedLevel > 0) {
-            // 7. Periode Telah Berakhir atau Portal Ditutup & belum memenuhi target: Downgrade
-            $isPortalOpen = AppSetting::isBeasiswaUploadOpen();
-            $actionType = 'downgrade';
-            $actionLabel = "Evaluasi Akhir: Sesuaikan ke Beasiswa {$qualifiedTierKey}";
-            $actionClass = 'btn-downgrade';
-            $badgeClass = 'badge-downgrade';
-            $reason = (!$isPortalOpen)
-                ? "Portal pengajuan prestasi ditutup untuk evaluasi semester. Capaian akhir ({$totalApprovedPoints}/{$targetCurrent} Poin) atau IPK ({$ipk}/{$minIpkCurrent}) belum memenuhi target Beasiswa {$currentTierKey}, namun memenuhi kualifikasi Beasiswa {$qualifiedTierKey}."
-                : "Periode Tahun {$studyYear} telah berakhir. Capaian akhir ({$totalApprovedPoints}/{$targetCurrent} Poin) atau IPK ({$ipk}/{$minIpkCurrent}) belum memenuhi target Beasiswa {$currentTierKey}, namun memenuhi kualifikasi Beasiswa {$qualifiedTierKey}.";
         } else {
-            // 8. Periode Telah Berakhir atau Portal Ditutup & di bawah 25%: Revoke
+            // 7. Periode Telah Berakhir atau Portal Ditutup & Gagal Memenuhi Syarat: Turun 1 Tingkat (Step-Down Downgrade)
             $isPortalOpen = AppSetting::isBeasiswaUploadOpen();
-            $actionType = 'revoke';
-            $actionLabel = "Evaluasi Akhir: Belum Memenuhi Syarat Minimal (Turun ke 0%)";
-            $actionClass = 'btn-revoke';
-            $badgeClass = 'badge-revoke';
-            $target25Poin = self::TIERS['25%']['targets'][$studyYear]['total'] ?? 120;
-            $reason = (!$isPortalOpen)
-                ? "Portal pengajuan prestasi ditutup untuk evaluasi semester. Capaian akhir IPK ({$ipk}) atau POKEMA ({$totalApprovedPoints} Poin) belum mencapai ambang batas minimal Beasiswa 25% (Min. IPK 3.00 & {$target25Poin} Poin). Direkomendasikan turun ke Reguler (0%)."
-                : "Periode Tahun {$studyYear} telah berakhir. Capaian akhir IPK ({$ipk}) atau POKEMA ({$totalApprovedPoints} Poin) belum mencapai ambang batas minimal Beasiswa 25% (Min. IPK 3.00 & {$target25Poin} Poin).";
+            $stepDownTierKey = self::getNextLowerTierKey($currentTierKey);
+            $nextTierLevel = self::TIERS[$stepDownTierKey]['level'] ?? 0;
+            $unfulfilledText = !empty($currentTierUnfulfilledList) ? 'Bidang belum terpenuhi: ' . implode(', ', $currentTierUnfulfilledList) . '. ' : '';
+            $nextYear = is_numeric($studyYear) ? min(3, (int)$studyYear + 1) : 2;
+            $nextYearRoman = match($nextYear) { 1 => 'I', 2 => 'II', default => 'III' };
+
+            if ($nextTierLevel > 0) {
+                // Turun 1 tingkat (100% -> 75%, 75% -> 50%, 50% -> 25%)
+                $actionType = 'downgrade';
+                $recommendedTierKey = $stepDownTierKey;
+                $actionLabel = "Evaluasi Akhir: Turun ke Beasiswa {$stepDownTierKey}";
+                $actionClass = 'btn-downgrade';
+                $badgeClass = 'badge-downgrade';
+                $nextMinIpk = self::TIERS[$stepDownTierKey]['min_ipk'];
+                $nextTargetPts = self::TIERS[$stepDownTierKey]['targets'][$nextYear]['total'] ?? 120;
+
+                $reason = (!$isPortalOpen)
+                    ? "Portal pengajuan prestasi ditutup untuk evaluasi akhir periode. Capaian belum memenuhi seluruh syarat Beasiswa {$currentTierKey} ({$unfulfilledText}Total: {$totalApprovedPoints}/{$targetCurrent} Poin, IPK: {$ipk}/{$minIpkCurrent}). Sesuai ketentuan, beasiswa diturunkan 1 tingkat ke Beasiswa {$stepDownTierKey} untuk periode Tahun {$nextYearRoman}. Pada Tahun {$nextYearRoman}, mahasiswa wajib memenuhi 3 standar Beasiswa {$stepDownTierKey}: IPK ≥ {$nextMinIpk}, target {$nextTargetPts} Poin, dan seluruh 7 bidang POKEMA."
+                    : "Periode Tahun {$studyYear} telah berakhir. Capaian belum memenuhi seluruh syarat Beasiswa {$currentTierKey} ({$unfulfilledText}Total: {$totalApprovedPoints}/{$targetCurrent} Poin, IPK: {$ipk}/{$minIpkCurrent}). Sesuai ketentuan, beasiswa diturunkan 1 tingkat ke Beasiswa {$stepDownTierKey} untuk periode Tahun {$nextYearRoman}. Pada Tahun {$nextYearRoman}, mahasiswa wajib memenuhi 3 standar Beasiswa {$stepDownTierKey}: IPK ≥ {$nextMinIpk}, target {$nextTargetPts} Poin, dan seluruh 7 bidang POKEMA.";
+            } else {
+                // Mahasiswa pada tier terendah (25%) gagal memenuhi syarat -> Turun ke Reguler (0%)
+                $actionType = 'revoke';
+                $recommendedTierKey = '0%';
+                $actionLabel = "Evaluasi Akhir: Belum Memenuhi Syarat Minimal (Turun ke 0%)";
+                $actionClass = 'btn-revoke';
+                $badgeClass = 'badge-revoke';
+
+                $reason = (!$isPortalOpen)
+                    ? "Portal pengajuan prestasi ditutup untuk evaluasi akhir periode. Mahasiswa pada Beasiswa 25% belum memenuhi syarat minimal ({$unfulfilledText}Total: {$totalApprovedPoints} Poin, IPK: {$ipk}). Sesuai ketentuan, beasiswa dicabut dan status dialihkan ke Mahasiswa Reguler (0%). Admin Kemahasiswaan tetap dapat menyesuaikan status ini secara manual."
+                    : "Periode Tahun {$studyYear} telah berakhir. Mahasiswa pada Beasiswa 25% belum memenuhi syarat minimal ({$unfulfilledText}Total: {$totalApprovedPoints} Poin, IPK: {$ipk}). Sesuai ketentuan, beasiswa dicabut dan status dialihkan ke Mahasiswa Reguler (0%). Admin Kemahasiswaan tetap dapat menyesuaikan status ini secara manual.";
+            }
         }
 
-        // Rekomendasi beasiswa sistem dihitung secara REALTIME berdasarkan perolehan aktual IPK & Total POKEMA.
-        // Mahasiswa hanya direkomendasikan tier jika dan hanya jika poin & IPK aktual telah mencapai ambang batas tier tersebut.
-        $recommendedTierKey = $qualifiedTierKey;
+        // Tentukan tier yang direkomendasikan jika belum di-set secara spesifik
+        if (!isset($recommendedTierKey)) {
+            $recommendedTierKey = ($actionType === 'upgrade') ? $qualifiedTierKey : $currentTierKey;
+        }
 
         // Tentukan target per bidang yang diacu (gunakan target dari tier yang relevan atau target saat ini)
         $benchmarkTierKey = ($currentLevel > 0) ? (($qualifiedLevel > $currentLevel) ? $qualifiedTierKey : $currentTierKey) : '0%';
@@ -741,6 +806,10 @@ class PokemaEvaluatorService
             'is_current_year' => $isCurrentYear,
             'fields_progress' => $fieldsProgress,
             'semester_breakdown' => $semesterBreakdown,
+            'fulfilled_fields_count' => $currentTierFulfilledCount,
+            'unfulfilled_fields_count' => count($currentTierUnfulfilledList),
+            'unfulfilled_fields_list' => $currentTierUnfulfilledList,
+            'all_fields_met' => $currentTierAllFieldsMet,
         ];
     }
 }

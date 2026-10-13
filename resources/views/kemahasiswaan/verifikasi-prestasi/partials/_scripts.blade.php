@@ -590,7 +590,45 @@
             }
         }
 
-        // 3. 7 Progress Bars Grid (Clean & Minimalist without Icons)
+        // 3. 7 Fields Summary Banner
+        const summaryAlert = document.getElementById('pokema_fields_summary_alert');
+        if (summaryAlert) {
+            const progressList = Object.values(evalData.fields_progress || {});
+            const totalFields = progressList.length || 7;
+            const fulfilledCount = (evalData.fulfilled_fields_count !== undefined)
+                ? evalData.fulfilled_fields_count
+                : progressList.filter(f => f.current >= f.target).length;
+            const allMet = (evalData.all_fields_met !== undefined)
+                ? evalData.all_fields_met
+                : (fulfilledCount === totalFields && totalFields > 0);
+
+            if (allMet) {
+                summaryAlert.style.display = 'block';
+                summaryAlert.innerHTML = `
+                    <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px; color: #065F46; font-size: 13px; font-weight: 600;">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 16px;"></i>
+                            <span>Seluruh 7 Bidang POKEMA Terpenuhi (${fulfilledCount}/7 Bidang Sesuai Standar)</span>
+                        </div>
+                        <span style="background: #10B981; color: white; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;">Lengkap 100%</span>
+                    </div>
+                `;
+            } else {
+                const unfulfilledCount = Math.max(0, totalFields - fulfilledCount);
+                summaryAlert.style.display = 'block';
+                summaryAlert.innerHTML = `
+                    <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px; color: #92400E; font-size: 13px; font-weight: 600;">
+                            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 16px;"></i>
+                            <span>Sebaran Bidang: <strong>${fulfilledCount} dari ${totalFields} Bidang Terpenuhi</strong> (${unfulfilledCount} Bidang Masih Belum Mencukupi)</span>
+                        </div>
+                        <span style="background: #F59E0B; color: white; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;">Wajib Lengkap 7 Bidang</span>
+                    </div>
+                `;
+            }
+        }
+
+        // 4. 7 Progress Bars Grid (Clean & Minimalist without Icons)
         let barsHtml = '';
         const progressList = Object.values(evalData.fields_progress || {});
 

@@ -21,9 +21,9 @@
             <h4>Informasi Utama & Status</h4>
 
             <div class="form-row">
-                <div class="form-group highlight-box">
+                <div class="form-group">
                     <label>Status Penetapan</label>
-                    <div>
+                    <div style="margin-top: 4px;">
                         @if($student->status === 'studentambassador')
                             <span class="status-badge-ambassador">
                                 <i class="bi bi-star-fill"></i> Student Ambassador (Duta Kampus)
@@ -55,7 +55,7 @@
 
                 <div class="form-group">
                     <label>Nilai IPK</label>
-                    <input type="text" class="form-control" value="{{ $student->ipk ? number_format((float)$student->ipk, 2) : 'Belum diisi / 0.00' }}" disabled>
+                    <input type="text" class="form-control" value="{{ filled($student->ipk) ? number_format((float)$student->ipk, 2) : 'Belum ada IPK (Mahasiswa Baru)' }}" disabled>
                 </div>
             </div>
 
@@ -169,13 +169,6 @@
         flex-direction: column;
         gap: 6px;
         margin-bottom: 16px;
-    }
-
-    .form-group.highlight-box {
-        background: #FFFDE7;
-        padding: 12px 16px;
-        border-radius: 10px;
-        border: 1.5px solid #FFF59D;
     }
 
     .form-group label {
