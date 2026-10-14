@@ -16,5 +16,9 @@ Route::controller(AuthController::class)
         Route::post('/login/mahasiswa', 'loginMahasiswa')->name('login.mahasiswa');
 
         // Logout
-        Route::get('/logout', 'logout')->name('logout');  
+        Route::get('/logout', 'logout')->name('logout');
+
+        Route::post('/switch-role', 'switchDashboardRole')
+            ->middleware('auth')
+            ->name('switch-role');
     });

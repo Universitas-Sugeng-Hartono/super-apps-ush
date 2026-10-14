@@ -33,6 +33,10 @@ class DashboardController extends Controller
         $user = auth()->user();
         $userRole = User::normalizeRole($user->role);
 
+        if ($user->canSwitchDashboardRole() && $user->activeDashboardRole() === 'akademik') {
+            return redirect()->route('akademik.dashboard');
+        }
+
         // Dashboard khusus role Kemahasiswaan - redirect ke dedicated route
         if ($userRole === 'kemahasiswaan') {
             return redirect()->route('kemahasiswaan.dashboard');
@@ -265,6 +269,10 @@ class DashboardController extends Controller
     public function akademikDashboard(Request $request)
     {
         $user = auth()->user();
+
+        if ($user->canSwitchDashboardRole() && $user->activeDashboardRole() !== 'akademik') {
+            return redirect()->route('admin.dashboard');
+        }
 
         $studentCount = Student::count();
         $prodiCount = \App\Models\StudyProgram::query()->where('is_active', true)->count();
