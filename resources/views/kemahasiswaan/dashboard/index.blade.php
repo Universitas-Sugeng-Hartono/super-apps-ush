@@ -58,26 +58,96 @@
     </div>
 
     {{-- Layanan & Modul Utama (Menu Dinamis dari Management Menu) --}}
-    <div class="section-block">
+    <div class="menu-section">
         <div class="section-header">
-            <h4><i class="bi bi-grid-fill me-2 text-warning"></i> Layanan & Modul Utama</h4>
+            <h3><i class="bi bi-grid-fill me-2 text-warning"></i> Layanan & Modul Utama</h3>
         </div>
-        <div class="actions-grid">
+
+        <div class="menu-grid">
             @forelse($menus ?? [] as $menu)
-                <a href="{{ $menu->menu_url }}" class="action-card" target="{{ $menu->target ?? '_self' }}">
-                    <div class="card-icon"><i class="{{ $menu->icon ?: 'bi bi-grid-fill' }}"></i></div>
-                    <div class="card-text">
-                        <h5>{{ $menu->name }}</h5>
-                        <p>{{ $menu->description ?? 'Layanan operasional kemahasiswaan' }}</p>
+                @php
+                    $iconColors = [
+                        'bi-people-fill' => 'linear-gradient(135deg, #FF9800, #FFB347)',
+                        'bi-mortarboard' => 'linear-gradient(135deg, #FF5252, #FF8A80)',
+                        'bi-person-badge-fill' => 'linear-gradient(135deg, #5B9BD5, #7DB8E8)',
+                        'bi-person-circle' => 'linear-gradient(135deg, #FFC107, #FFD54F)',
+                        'bi-person-badge' => 'linear-gradient(135deg, #5B9BD5, #7DB8E8)',
+                        'bi-book-half' => 'linear-gradient(135deg, #4CAF50, #81C784)',
+                        'bi-stars' => 'linear-gradient(135deg, #9C27B0, #BA68C8)',
+                        'bi-megaphone-fill' => 'linear-gradient(135deg, #1E5BB6, #73C2FB)',
+                        'bi-menu-button-wide' => 'linear-gradient(135deg, #607D8B, #90A4AE)',
+                        'bi-award-fill' => 'linear-gradient(135deg, #FF9800, #FFB347)',
+                        'bi-award' => 'linear-gradient(135deg, #FF9800, #FFB347)',
+                        'bi-patch-check-fill' => 'linear-gradient(135deg, #00897B, #26A69A)',
+                        'bi-patch-check' => 'linear-gradient(135deg, #00897B, #26A69A)',
+                        'bi-trophy' => 'linear-gradient(135deg, #FFD54F, #FFC107)',
+                        'bi-trophy-fill' => 'linear-gradient(135deg, #FFD54F, #FFC107)',
+                        'bi-building' => 'linear-gradient(135deg, #FFC107, #FFD54F)',
+                        'bi-envelope-paper' => 'linear-gradient(135deg, #26A69A, #80CBC4)',
+                    ];
+                    $defaultColor = 'linear-gradient(135deg, #00796B, #26A69A)';
+                    $iconKey = trim(str_replace('bi ', '', $menu->icon ?? ''));
+                    $iconColor = $iconColors[$menu->icon] ?? $iconColors[$iconKey] ?? $iconColors['bi-' . $iconKey] ?? $defaultColor;
+
+                    $badgeClass = match($menu->badge_color) {
+                        'active' => 'active',
+                        'warning' => 'warning',
+                        'info' => 'info',
+                        'pending' => 'pending',
+                        default => 'active'
+                    };
+                @endphp
+                <a href="{{ $menu->menu_url ?? $menu->full_url }}"
+                   target="{{ $menu->target ?? '_self' }}"
+                   class="menu-card">
+                    <div class="menu-icon" style="background: {{ $iconColor }};">
+                        @if($menu->icon)
+                            <i class="{{ $menu->icon }}"></i>
+                        @else
+                            <i class="bi bi-grid-fill"></i>
+                        @endif
                     </div>
-                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <h5>{{ $menu->name }}</h5>
+                    @if($menu->description)
+                        <p>{{ $menu->description }}</p>
+                    @endif
+                    @if($menu->badge_text)
+                        <span class="status-badge {{ $badgeClass }}">{{ $menu->badge_text }}</span>
+                    @else
+                        <span class="status-badge active">Aktif</span>
+                    @endif
                 </a>
             @empty
-                <div class="col-12 py-4 text-center text-muted" style="grid-column: span 2;">
-                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
-                    Belum ada menu yang ditambahkan untuk Kemahasiswaan. Menu baru dapat ditambahkan dari Management Menu Superuser.
-                </div>
+                <!-- Fallback menu jika belum ada menu di database -->
+                <a href="{{ route('kemahasiswaan.verifikasi-prestasi.index') }}" class="menu-card">
+                    <div class="menu-icon" style="background: linear-gradient(135deg, #00897B, #26A69A);">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                    <h5>Verifikasi Data Prestasi</h5>
+                    <p>Verifikasi pengajuan prestasi dan beasiswa mahasiswa</p>
+                    <span class="status-badge active">Aktif</span>
+                </a>
+                <a href="{{ route('kemahasiswaan.student-ambassador.index') }}" class="menu-card">
+                    <div class="menu-icon" style="background: linear-gradient(135deg, #FF9800, #FFB347);">
+                        <i class="bi bi-award-fill"></i>
+                    </div>
+                    <h5>Management Student Ambassador</h5>
+                    <p>Kelola direktori mahasiswa dan status Student Ambassador</p>
+                    <span class="status-badge active">Aktif</span>
+                </a>
             @endforelse
+
+            @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'masteradmin')
+                <!-- Management Menu (Static - untuk akses ke menu management) -->
+                <a href="{{ route('admin.management.menus.index') }}" class="menu-card">
+                    <div class="menu-icon" style="background: linear-gradient(135deg, #607D8B, #90A4AE);">
+                        <i class="bi bi-menu-button-wide"></i>
+                    </div>
+                    <h5>Management Menu</h5>
+                    <p>Kelola menu dinamis untuk semua role</p>
+                    <span class="status-badge active">Aktif</span>
+                </a>
+            @endif
         </div>
     </div>
 
@@ -287,79 +357,127 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     }
 
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .section-header h3,
     .section-header h4 {
         font-size: 18px;
         font-weight: 700;
-        margin: 0 0 20px;
+        margin: 0;
         color: #1E293B;
+        display: flex;
+        align-items: center;
     }
 
-    .actions-grid {
+    /* Menu Section & Cards (Harmonized with SuperApp Home) */
+    .menu-section {
+        margin-bottom: 30px;
+    }
+
+    .menu-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 16px;
     }
 
-    .action-card {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 20px;
-        border-radius: 16px;
-        background: #F8FAFC;
+    @media (min-width: 769px) {
+        .menu-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+    }
+
+    .menu-card {
+        background: white;
+        border-radius: 20px;
+        padding: 24px 20px;
+        text-align: center;
+        box-shadow: var(--shadow, 0 4px 20px rgba(0, 0, 0, 0.06));
         border: 1px solid #E2E8F0;
+        transition: var(--transition-normal, all 0.3s ease);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
         text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .menu-card:hover {
+        box-shadow: var(--shadow-hover, 0 10px 30px rgba(0, 0, 0, 0.12));
+        transform: translateY(-8px);
+        border-color: #CBD5E1;
         color: inherit;
-        transition: all 0.25s ease;
     }
 
-    .action-card:hover {
-        background: #F0FDF4;
-        border-color: #00796B;
-        transform: translateY(-2px);
-    }
-
-    .action-card.highlight {
-        background: linear-gradient(135deg, rgba(0, 121, 107, 0.06), rgba(0, 77, 64, 0.02));
-        border-color: rgba(0, 121, 107, 0.25);
-    }
-
-    .action-card .card-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: #00796B;
-        color: white;
+    .menu-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
-        flex-shrink: 0;
+        margin: 0 auto 16px;
+        font-size: 32px;
+        color: white;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        transition: var(--transition-normal, transform 0.3s ease);
     }
 
-    .action-card .card-text h5 {
-        font-size: 16px;
+    .menu-card:hover .menu-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .menu-card h5 {
+        font-size: 15px;
         font-weight: 700;
-        margin: 0 0 4px;
-        color: #1E293B;
+        color: var(--text-dark, #1E293B);
+        margin-bottom: 8px;
+        line-height: 1.35;
     }
 
-    .action-card .card-text p {
-        font-size: 13px;
-        color: #64748B;
-        margin: 0;
+    .menu-card p {
+        font-size: 12px;
+        color: var(--text-gray, #64748B);
+        margin-bottom: 14px;
+        line-height: 1.45;
+        flex-grow: 1;
     }
 
-    .action-card .card-arrow {
-        margin-left: auto;
-        color: #94A3B8;
-        font-size: 20px;
-        transition: transform 0.2s ease;
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
     }
 
-    .action-card:hover .card-arrow {
-        color: #00796B;
-        transform: translateX(4px);
+    .status-badge.active {
+        background: #E8F5E9;
+        color: #4CAF50;
+    }
+
+    .status-badge.warning {
+        background: #FFF3E0;
+        color: #FF9800;
+    }
+
+    .status-badge.pending {
+        background: #E3F2FD;
+        color: #2196F3;
+    }
+
+    .status-badge.info {
+        background: #F3E5F5;
+        color: #9C27B0;
     }
 
     .custom-table {
@@ -434,13 +552,46 @@
 
     @media (max-width: 992px) {
         .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        .actions-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+        .menu-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .menu-card {
+            padding: 18px 12px;
+        }
+
+        .menu-icon {
+            width: 58px;
+            height: 58px;
+            font-size: 26px;
+            margin-bottom: 12px;
+            border-radius: 15px;
+        }
+
+        .menu-card h5 {
+            font-size: 14px;
+        }
+
+        .menu-card p {
+            font-size: 11px;
+            margin-bottom: 10px;
+        }
     }
 
     @media (max-width: 600px) {
         .stats-grid { grid-template-columns: 1fr; }
         .welcome-banner { padding: 30px 20px; }
         .icon-side { display: none; }
+    }
+
+    @media (max-width: 480px) {
+        .menu-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 @endpush

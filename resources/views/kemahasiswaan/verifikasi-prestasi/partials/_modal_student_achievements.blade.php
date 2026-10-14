@@ -84,6 +84,9 @@
                         </div>
                     </div>
 
+                    <!-- 7 Fields Fulfillment Banner -->
+                    <div id="pokema_fields_summary_alert" style="margin-bottom: 14px; display: none;"></div>
+
                     <!-- 7 Progress Bars Grid -->
                     <div id="pokema_7_bars_grid" class="pokema-bars-grid">
                         <!-- Populated via JS -->

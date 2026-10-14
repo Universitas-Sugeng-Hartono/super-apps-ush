@@ -368,12 +368,22 @@
                                     <span class="badge-rec badge-rec-warning" title="{{ $eval['reason'] }}">
                                         Target {{ $currPercent }}
                                     </span>
-                                    <span class="action-warning-badge">
-                                        Sisa {{ $eval['points_remaining'] }} Poin
+                                    <span class="action-warning-badge" title="{{ $eval['reason'] }}">
+                                        @if(($eval['points_remaining'] ?? 0) == 0 && !($eval['all_fields_met'] ?? true))
+                                            Kurang {{ $eval['unfulfilled_fields_count'] ?? 0 }} Bidang
+                                        @else
+                                            Sisa {{ $eval['points_remaining'] }} Poin
+                                        @endif
                                     </span>
                                 @else
                                     <span class="badge-rec badge-rec-maintain">
                                         Rekomendasi {{ $recPercent }}
+                                    </span>
+                                @endif
+
+                                @if(isset($eval['fulfilled_fields_count']))
+                                    <span style="font-size: 10.5px; color: {{ ($eval['all_fields_met'] ?? false) ? '#059669' : '#D97706' }}; font-weight: 600; margin-top: 1px;" title="{{ ($eval['all_fields_met'] ?? false) ? 'Semua 7 bidang terpenuhi' : ($eval['unfulfilled_fields_count'] ?? 0) . ' bidang belum terpenuhi' }}">
+                                        <i class="bi bi-pie-chart-fill"></i> {{ $eval['fulfilled_fields_count'] }}/7 Bidang {{ ($eval['all_fields_met'] ?? false) ? '✓' : '' }}
                                     </span>
                                 @endif
                             </div>

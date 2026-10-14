@@ -56,14 +56,14 @@
 
                 <!-- Status Penetapan & Beasiswa -->
                 <div class="form-row">
-                    <div class="form-group highlight-box">
-                        <label><i class="bi bi-award-fill text-warning me-1"></i> Status Penetapan *</label>
-                        <select name="status" class="form-control status-select" required>
+                    <div class="form-group">
+                        <label>Status Penetapan *</label>
+                        <select name="status" class="form-control" required>
                             <option value="studentambassador" {{ old('status', $student->status) == 'studentambassador' ? 'selected' : '' }}>
-                                ⭐ Student Ambassador (Duta Kampus)
+                                Student Ambassador (Duta Kampus)
                             </option>
                             <option value="mahasiswa" {{ old('status', $student->status) == 'mahasiswa' || empty(old('status', $student->status)) ? 'selected' : '' }}>
-                                👤 Mahasiswa Reguler
+                                Mahasiswa Reguler
                             </option>
                         </select>
                         <small class="text-muted">Ubah status apakah mahasiswa ini adalah Student Ambassador atau Mahasiswa biasa.</small>
@@ -71,7 +71,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label><i class="bi bi-mortarboard-fill text-success me-1"></i> Beasiswa (%)</label>
+                        <label>Beasiswa (%)</label>
                         <input type="text" name="beasiswa" list="beasiswaList" class="form-control" value="{{ old('beasiswa', $student->beasiswa) }}" placeholder="Pilih atau ketik persentase, misal: 100%, 75%, 50%, 25%, 0%">
                         <datalist id="beasiswaList">
                             <option value="100%">100% (Beasiswa Penuh - Sangat Baik)</option>
@@ -87,7 +87,7 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label><i class="bi bi-calendar-event text-primary me-1"></i> Semester</label>
+                        <label>Semester</label>
                         <input type="number" name="semester" class="form-control" value="{{ old('semester', $student->semester) }}" placeholder="Contoh: 1 - 14" min="1" max="14">
                         <small class="text-muted">Semester aktif mahasiswa saat ini (1 sampai 14).</small>
                         @error('semester')<span class="error">{{ $message }}</span>@enderror
@@ -109,9 +109,9 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Nilai IPK</label>
-                        <input type="number" step="0.01" min="0" max="4.00" name="ipk" class="form-control" value="{{ old('ipk', $student->ipk) }}" placeholder="Contoh: 3.75">
-                        <small class="text-muted">IPK kumulatif terakhir (0.00 - 4.00, opsional).</small>
+                        <label>Nilai IPK <span style="font-weight: 400; color: #888;">(Opsional)</span></label>
+                        <input type="number" step="0.01" min="0" max="4.00" name="ipk" class="form-control" value="{{ old('ipk', $student->ipk) }}" placeholder="Contoh: 3.75 (kosongkan jika mahasiswa baru)">
+                        <small class="text-muted">IPK kumulatif terakhir (0.00 - 4.00). Opsional, kosongkan jika belum memiliki IPK / mahasiswa baru.</small>
                         @error('ipk')<span class="error">{{ $message }}</span>@enderror
                     </div>
 
@@ -215,13 +215,6 @@
         margin-bottom: 16px;
     }
 
-    .form-group.highlight-box {
-        background: #FFFDE7;
-        padding: 12px 16px;
-        border-radius: 10px;
-        border: 1.5px solid #FFF59D;
-    }
-
     .form-group label {
         font-weight: 600;
         font-size: 13px;
@@ -240,11 +233,6 @@
     .form-control:focus {
         outline: none;
         border-color: var(--primary-orange);
-    }
-
-    .status-select {
-        font-weight: 600;
-        color: #2c3e50;
     }
 
     .error {
