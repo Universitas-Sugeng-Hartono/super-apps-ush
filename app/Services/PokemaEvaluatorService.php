@@ -349,18 +349,11 @@ class PokemaEvaluatorService
         $semester = null;
         $ipk = null;
 
-        if ($latestCounseling) {
-            if ($latestCounseling->semester) {
-                $semester = (int) $latestCounseling->semester;
-            }
-            if ($latestCounseling->ipk !== null && is_numeric($latestCounseling->ipk)) {
-                $ipk = (float) $latestCounseling->ipk;
-            }
-        }
-
-        // Jika belum ada kartu konseling, cek kolom semester di tabel students
-        if (!$semester && !empty($student->semester)) {
+        // Prioritas utama: Semester resmi mahasiswa di profil/tabel students (disinkronkan dari Siakad)
+        if (!empty($student->semester) && (int) $student->semester >= 1) {
             $semester = (int) $student->semester;
+        } elseif ($latestCounseling && $latestCounseling->semester) {
+            $semester = (int) $latestCounseling->semester;
         }
 
         // Jika masih belum ada, hitung dari angkatan kalender
@@ -368,9 +361,11 @@ class PokemaEvaluatorService
             $semester = $student->getCurrentSemester();
         }
 
-        // IPK fallback ke profil student
-        if ($ipk === null && is_numeric($student->ipk)) {
+        // Prioritas utama: IPK resmi mahasiswa di profil/tabel students (disinkronkan dari Siakad)
+        if ($student->ipk !== null && is_numeric($student->ipk)) {
             $ipk = (float) $student->ipk;
+        } elseif ($latestCounseling && $latestCounseling->ipk !== null && is_numeric($latestCounseling->ipk)) {
+            $ipk = (float) $latestCounseling->ipk;
         }
 
         // Petakan Semester ke Tahun Studi POKEMA (Berdasarkan SK Rektor Lampiran II)

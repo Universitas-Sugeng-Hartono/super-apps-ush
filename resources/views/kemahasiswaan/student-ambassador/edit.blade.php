@@ -12,6 +12,20 @@
             </a>
         </div>
 
+        @if(session('success'))
+            <div class="alert-success" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="bi bi-check-circle-fill" style="font-size: 18px;"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert-danger" style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="bi bi-exclamation-circle-fill" style="font-size: 18px;"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
         <form action="{{ route('kemahasiswaan.student-ambassador.update', $student->id) }}" method="POST">
             @csrf
             @method('PUT')
@@ -21,36 +35,25 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Nama Lengkap *</label>
-                        <input type="text" name="full_name" class="form-control" value="{{ old('full_name', $student->nama_lengkap) }}" required>
-                        @error('full_name')<span class="error">{{ $message }}</span>@enderror
+                        <label>Nama Lengkap <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="full_name" class="form-control readonly-input" value="{{ old('full_name', $student->nama_lengkap) }}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>NIM *</label>
-                        <input type="text" name="nim" class="form-control" value="{{ old('nim', $student->nim) }}" required>
-                        @error('nim')<span class="error">{{ $message }}</span>@enderror
+                        <label>NIM <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="nim" class="form-control readonly-input font-monospace" value="{{ old('nim', $student->nim) }}" readonly>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Periode Masuk (Bulan & Tahun) *</label>
-                        <input type="month" name="periode_masuk" class="form-control" value="{{ old('periode_masuk', $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->format('Y-m') : '') }}" required>
-                        @error('periode_masuk')<span class="error">{{ $message }}</span>@enderror
+                        <label>Periode Masuk (Bulan & Tahun) <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="periode_masuk" class="form-control readonly-input" value="{{ $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->format('Y-m') : ($student->angkatan ?? '-') }}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Program Studi *</label>
-                        <select name="program_studi" class="form-control" required>
-                            <option value="">-- Pilih Program Studi --</option>
-                            @foreach($studyPrograms as $prodi)
-                                <option value="{{ $prodi->name }}" {{ old('program_studi', $student->program_studi) == $prodi->name ? 'selected' : '' }}>
-                                    {{ $prodi->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('program_studi')<span class="error">{{ $message }}</span>@enderror
+                        <label>Program Studi <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="program_studi" class="form-control readonly-input" value="{{ $student->program_studi ?? '-' }}" readonly>
                     </div>
                 </div>
 
@@ -58,7 +61,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Status Penetapan *</label>
-                        <select name="status" class="form-control" required>
+                        <select name="status" class="form-control" required style="border-color: #0284C7; font-weight: 600;">
                             <option value="studentambassador" {{ old('status', $student->status) == 'studentambassador' ? 'selected' : '' }}>
                                 Student Ambassador (Duta Kampus)
                             </option>
@@ -71,83 +74,59 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Beasiswa (%)</label>
-                        <input type="text" name="beasiswa" list="beasiswaList" class="form-control" value="{{ old('beasiswa', $student->beasiswa) }}" placeholder="Pilih atau ketik persentase, misal: 100%, 75%, 50%, 25%, 0%">
-                        <datalist id="beasiswaList">
-                            <option value="100%">100% (Beasiswa Penuh - Sangat Baik)</option>
-                            <option value="75%">75% (Baik Sekali)</option>
-                            <option value="50%">50% (Baik)</option>
-                            <option value="25%">25% (Cukup Baik)</option>
-                            <option value="0%">0% (Reguler / Non-Beasiswa)</option>
-                        </datalist>
-                        <small class="text-muted">Pilih atau ketik persentase beasiswa (misal: 100%, 75%, 50%, 25%, atau 0% untuk reguler).</small>
-                        @error('beasiswa')<span class="error">{{ $message }}</span>@enderror
+                        <label>Beasiswa (%) <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="beasiswa" class="form-control readonly-input" value="{{ $student->beasiswa ?: '0%' }}" readonly>
+                        <small class="text-muted">Persentase beasiswa diambil langsung dari SIAKAD.</small>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Semester</label>
-                        <input type="number" name="semester" class="form-control" value="{{ old('semester', $student->semester) }}" placeholder="Contoh: 1 - 14" min="1" max="14">
-                        <small class="text-muted">Semester aktif mahasiswa saat ini (1 sampai 14).</small>
-                        @error('semester')<span class="error">{{ $message }}</span>@enderror
+                        <label>Semester <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="semester" class="form-control readonly-input" value="{{ $student->semester ? 'Semester ' . $student->semester : '-' }}" readonly>
+                        <small class="text-muted">Semester aktif mahasiswa dari SIAKAD.</small>
                     </div>
 
                     <div class="form-group">
-                        <label>Dosen PA</label>
-                        <select name="id_lecturer" class="form-control">
-                            <option value="">Pilih Dosen PA (Opsional)</option>
-                            @foreach($lecturers as $lecturer)
-                                <option value="{{ $lecturer->id }}" {{ old('id_lecturer', $student->id_lecturer) == $lecturer->id ? 'selected' : '' }}>
-                                    {{ $lecturer->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('id_lecturer')<span class="error">{{ $message }}</span>@enderror
+                        <label>Dosen PA <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" class="form-control readonly-input" value="{{ $student->academicAdvisor->name ?? ($student->id_lecturer ? 'ID: ' . $student->id_lecturer : '-') }}" readonly>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Nilai IPK <span style="font-weight: 400; color: #888;">(Opsional)</span></label>
-                        <input type="number" step="0.01" min="0" max="4.00" name="ipk" class="form-control" value="{{ old('ipk', $student->ipk) }}" placeholder="Contoh: 3.75 (kosongkan jika mahasiswa baru)">
-                        <small class="text-muted">IPK kumulatif terakhir (0.00 - 4.00). Opsional, kosongkan jika belum memiliki IPK / mahasiswa baru.</small>
-                        @error('ipk')<span class="error">{{ $message }}</span>@enderror
+                        <label>Nilai IPK <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="ipk" class="form-control readonly-input" value="{{ $student->ipk !== null ? number_format((float)$student->ipk, 2) : '-' }}" readonly>
+                        <small class="text-muted">IPK kumulatif terakhir dari KHS SIAKAD.</small>
                     </div>
 
                     <div class="form-group">
-                        <label>Jenis Kelamin</label>
-                        <select name="gender" class="form-control">
-                            <option value="L" {{ old('gender', $student->jenis_kelamin) == 'L' ? 'selected' : '' }}>Laki-laki</option>
-                            <option value="P" {{ old('gender', $student->jenis_kelamin) == 'P' ? 'selected' : '' }}>Perempuan</option>
-                        </select>
-                        @error('gender')<span class="error">{{ $message }}</span>@enderror
+                        <label>Jenis Kelamin <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" class="form-control readonly-input" value="{{ $student->jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki' }}" readonly>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>No. Telepon / WhatsApp</label>
-                        <input type="text" name="phone" class="form-control" value="{{ old('phone', $student->no_telepon) }}">
-                        @error('phone')<span class="error">{{ $message }}</span>@enderror
+                        <label>No. Telepon / WhatsApp <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="phone" class="form-control readonly-input" value="{{ $student->no_telepon ?: '-' }}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" class="form-control" value="{{ old('email', $student->email) }}">
-                        @error('email')<span class="error">{{ $message }}</span>@enderror
+                        <label>Email <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                        <input type="text" name="email" class="form-control readonly-input" value="{{ $student->email ?: '-' }}" readonly>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Alamat Domisili</label>
-                    <textarea name="address" class="form-control" rows="3">{{ old('address', $student->alamat) }}</textarea>
-                    @error('address')<span class="error">{{ $message }}</span>@enderror
+                    <label>Alamat Domisili <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
+                    <textarea name="address" class="form-control readonly-input" rows="3" readonly>{{ $student->alamat ?: '-' }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Catatan / Rekam Prestasi Ambassador</label>
-                    <textarea name="notes" class="form-control" rows="3">{{ old('notes', $student->notes) }}</textarea>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Tambahkan catatan khusus, penugasan, atau rekam jejak ambassador...">{{ old('notes', $student->notes) }}</textarea>
+                    <small class="text-muted">Catatan internal Bagian Kemahasiswaan terkait aktivitas atau penugasan mahasiswa.</small>
                     @error('notes')<span class="error">{{ $message }}</span>@enderror
                 </div>
             </div>
@@ -219,6 +198,9 @@
         font-weight: 600;
         font-size: 13px;
         color: #37474F;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .form-control {
@@ -233,6 +215,13 @@
     .form-control:focus {
         outline: none;
         border-color: var(--primary-orange);
+    }
+
+    .readonly-input {
+        background-color: #F1F5F9 !important;
+        color: #64748B !important;
+        border-color: #CBD5E1 !important;
+        cursor: not-allowed !important;
     }
 
     .error {
@@ -262,6 +251,11 @@
         gap: 6px;
     }
 
+    .btn-secondary:hover {
+        background: #CFD8DC;
+        color: #263238;
+    }
+
     .btn-primary {
         padding: 10px 22px;
         background: var(--primary-orange);
@@ -274,6 +268,10 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.9;
     }
 </style>
 @endsection

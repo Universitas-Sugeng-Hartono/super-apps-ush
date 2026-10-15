@@ -31,30 +31,49 @@
                     </div>
                 </div>
 
-                <!-- Metrik Nyata (IPK & Poin POKEMA) -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <!-- Metrik Nyata (IPK, Poin POKEMA, & Sebaran 7 Bidang) -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
                     <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 30px; height: 30px; border-radius: 6px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">
+                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
                             <i class="bi bi-mortarboard-fill"></i>
                         </div>
-                        <div>
-                            <div style="font-size: 10.5px; color: #64748B; text-transform: uppercase; font-weight: 600;">IPK Mahasiswa</div>
-                            <div id="adjust_mhs_ipk" style="font-size: 14px; font-weight: 700; color: #1E293B;">-</div>
+                        <div style="min-width: 0;">
+                            <div style="font-size: 10px; color: #64748B; text-transform: uppercase; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">IPK Mahasiswa</div>
+                            <div id="adjust_mhs_ipk" style="font-size: 13.5px; font-weight: 700; color: #1E293B;">-</div>
                         </div>
                     </div>
 
                     <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 30px; height: 30px; border-radius: 6px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">
+                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
                             <i class="bi bi-trophy-fill"></i>
                         </div>
-                        <div>
-                            <div style="font-size: 10.5px; color: #64748B; text-transform: uppercase; font-weight: 600;">Poin POKEMA</div>
-                            <div id="adjust_mhs_poin" style="font-size: 14px; font-weight: 700; color: #1E293B;">-</div>
+                        <div style="min-width: 0;">
+                            <div style="font-size: 10px; color: #64748B; text-transform: uppercase; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Poin POKEMA</div>
+                            <div id="adjust_mhs_poin" style="font-size: 13.5px; font-weight: 700; color: #1E293B;">-</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 8px;">
+                        <div id="adjust_mhs_bidang_icon" style="width: 28px; height: 28px; border-radius: 6px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+                            <i class="bi bi-pie-chart-fill"></i>
+                        </div>
+                        <div style="min-width: 0;">
+                            <div style="font-size: 10px; color: #64748B; text-transform: uppercase; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Sebaran 7 Bidang</div>
+                            <div id="adjust_mhs_bidang" style="font-size: 13.5px; font-weight: 700; color: #1E293B;">-</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Komparasi Status Saat Ini vs Rekomendasi Realtime -->
+                <!-- Box Rincian Bidang yang Belum Terpenuhi (jika ada) -->
+                <div id="adjust_unfulfilled_box" style="display: none; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 11px; color: #92400E;">
+                    <div style="font-weight: 700; display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                        <span><i class="bi bi-exclamation-triangle-fill text-warning"></i> <span id="adjust_unfulfilled_title">Bidang Belum Terpenuhi:</span></span>
+                        <span style="font-size: 10px; color: #B45309; font-weight: 600;">Wajib 7 Bidang Sesuai SK Rektor</span>
+                    </div>
+                    <div id="adjust_unfulfilled_pills" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;"></div>
+                </div>
+
+                <!-- Komparasi Status Saat Ini vs Rekomendasi Sistem -->
                 <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;">
                     <div>
                         <span style="font-size: 10px; color: #64748B; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">Status Saat Ini</span>
@@ -66,7 +85,7 @@
                         <i class="bi bi-arrow-right"></i>
                     </div>
                     <div style="text-align: right;">
-                        <span style="font-size: 10px; color: #64748B; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">Rekomendasi Realtime</span>
+                        <span style="font-size: 10px; color: #64748B; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">Rekomendasi Sistem</span>
                         <div id="adjust_rec_beasiswa_display" style="margin-top: 2px;">
                             <strong id="adjust_rec_beasiswa_badge" style="font-size: 14px; font-weight: 700;">-</strong>
                         </div>
@@ -156,6 +175,7 @@
                 <label for="adjust_notes" style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 5px;">Catatan Penyesuaian / Pesan ke Mahasiswa (Opsional)</label>
                 <textarea id="adjust_notes" name="notes" class="form-control textarea-control" rows="2" style="min-height: 55px; resize: vertical;" placeholder="Pesan ucapan selamat, instruksi, atau catatan Monev kemahasiswaan..."></textarea>
             </div>
+
 
             <!-- Audit Trail Safety Banner -->
             <div style="font-size: 11px; color: #475569; background: #F1F5F9; border: 1px solid #E2E8F0; border-radius: 6px; padding: 6px 10px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; line-height: 1.35;">

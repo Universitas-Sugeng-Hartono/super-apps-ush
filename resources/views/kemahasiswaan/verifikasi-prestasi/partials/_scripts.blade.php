@@ -415,6 +415,9 @@
         const studentPoin = evalData.total_approved_points || 0;
         const studentPeriode = escapeHtml(evalData.study_year_label || '');
         const studentTarget = evalData.target_current || evalData.total_target_points || 0;
+        const studentFulfilledCount = evalData.fulfilled_fields_count || 0;
+        const studentAllFieldsMet = evalData.all_fields_met ? 1 : 0;
+        const studentUnfulfilledRaw = btoa(JSON.stringify(evalData.unfulfilled_fields_list || []));
 
         if (recType === 'on_track') {
             smartBtnHtml = `
@@ -424,7 +427,7 @@
             `;
         } else if (recType === 'upgrade') {
             smartBtnHtml = `
-                <button type="button" class="btn-smart-action btn-upgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
+                <button type="button" class="btn-smart-action btn-upgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}', ${studentFulfilledCount}, ${studentAllFieldsMet}, '${studentUnfulfilledRaw}')">
                     Terapkan Promosi (${safeNewBeasiswa})
                 </button>
             `;
@@ -436,13 +439,13 @@
             `;
         } else if (recType === 'downgrade') {
             smartBtnHtml = `
-                <button type="button" class="btn-smart-action btn-downgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
+                <button type="button" class="btn-smart-action btn-downgrade" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}', ${studentFulfilledCount}, ${studentAllFieldsMet}, '${studentUnfulfilledRaw}')">
                     Sesuaikan ke Beasiswa ${safeNewBeasiswa}
                 </button>
             `;
         } else if (recType === 'revoke') {
             smartBtnHtml = `
-                <button type="button" class="btn-smart-action btn-revoke" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '0%', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
+                <button type="button" class="btn-smart-action btn-revoke" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '0%', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}', ${studentFulfilledCount}, ${studentAllFieldsMet}, '${studentUnfulfilledRaw}')">
                     Cabut Beasiswa (Turun Reguler)
                 </button>
             `;
@@ -460,14 +463,14 @@
             `;
         } else if (evalData.current_beasiswa && evalData.current_beasiswa !== '0%') {
             smartBtnHtml = `
-                <button type="button" class="btn-smart-action btn-maintain" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeOldBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
+                <button type="button" class="btn-smart-action btn-maintain" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeOldBeasiswa}', '${safeReason}', false, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}', ${studentFulfilledCount}, ${studentAllFieldsMet}, '${studentUnfulfilledRaw}')">
                     Pertahankan Beasiswa (${safeOldBeasiswa})
                 </button>
             `;
         }
 
         const manualBtnHtml = (recType !== 'reguler') ? `
-            <button type="button" class="btn-smart-action btn-manual" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '', true, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}')">
+            <button type="button" class="btn-smart-action btn-manual" onclick="openAdjustBeasiswaModal('${currentStudentId}', '${safeName}', '${safeNim}', '${safeOldBeasiswa}', '${safeNewBeasiswa}', '', true, '${studentIpk}', '${studentPoin}', '${studentPeriode}', '${studentTarget}', ${studentFulfilledCount}, ${studentAllFieldsMet}, '${studentUnfulfilledRaw}')">
                 Sesuaikan Manual
             </button>
         ` : '';
@@ -752,40 +755,64 @@
         }
     }
 
-    function openAdjustBeasiswaModal(studentId, nama, nim, oldBeasiswa, targetBeasiswa, reason, isManual = false, ipkVal = null, poinVal = null, periodLabel = null, targetPointsVal = null) {
+    function openAdjustBeasiswaModal(studentId, nama, nim, oldBeasiswa, targetBeasiswa, reason, isManual = false, ipkVal = null, poinVal = null, periodLabel = null, targetPointsVal = null, fulfilledCountVal = null, allFieldsMetVal = null, unfulfilledListRaw = null) {
         const modal = document.getElementById('adjustBeasiswaModal');
         const form = document.getElementById('adjustBeasiswaForm');
         form.action = `/kemahasiswaan/verifikasi-prestasi/students/${studentId}/update-beasiswa`;
+
+        // Ambil data evaluasi lengkap jika ada
+        let evalObj = null;
+        if (typeof currentEvaluation !== 'undefined' && currentEvaluation && currentEvaluation.student_id == studentId) {
+            evalObj = currentEvaluation;
+        }
 
         // Fallbacks from currentEvaluation if values are not provided directly
         let finalIpk = ipkVal;
         let finalPoin = poinVal;
         let finalPeriode = periodLabel;
         let finalTargetPts = targetPointsVal;
+        let finalFulfilledCount = fulfilledCountVal;
+        let finalAllFieldsMet = allFieldsMetVal;
+        let finalUnfulfilledList = [];
 
-        if ((!finalIpk || finalIpk === '-' || finalIpk === 'null') && typeof currentEvaluation !== 'undefined' && currentEvaluation && currentEvaluation.student_id == studentId) {
-            finalIpk = currentEvaluation.ipk;
-        }
-        if ((finalPoin === null || finalPoin === undefined || finalPoin === '' || finalPoin === '0') && typeof currentEvaluation !== 'undefined' && currentEvaluation && currentEvaluation.student_id == studentId) {
-            finalPoin = currentEvaluation.total_approved_points;
-        }
-        if ((!finalPeriode || finalPeriode === 'null') && typeof currentEvaluation !== 'undefined' && currentEvaluation && currentEvaluation.student_id == studentId) {
-            finalPeriode = currentEvaluation.study_year_label || `Tahun ${currentEvaluation.study_year || 1}`;
-        }
-        if ((!finalTargetPts || finalTargetPts === '0') && typeof currentEvaluation !== 'undefined' && currentEvaluation && currentEvaluation.student_id == studentId) {
-            finalTargetPts = currentEvaluation.target_current || currentEvaluation.total_target_points || 0;
+        if (evalObj) {
+            if (!finalIpk || finalIpk === '-' || finalIpk === 'null') finalIpk = evalObj.ipk;
+            if (finalPoin === null || finalPoin === undefined || finalPoin === '' || finalPoin === '0') finalPoin = evalObj.total_approved_points;
+            if (!finalPeriode || finalPeriode === 'null') finalPeriode = evalObj.study_year_label || `Tahun ${evalObj.study_year || 1}`;
+            if (!finalTargetPts || finalTargetPts === '0') finalTargetPts = evalObj.target_current || evalObj.total_target_points || 0;
+            if (finalFulfilledCount === null || finalFulfilledCount === undefined) finalFulfilledCount = evalObj.fulfilled_fields_count;
+            if (finalAllFieldsMet === null || finalAllFieldsMet === undefined) finalAllFieldsMet = evalObj.all_fields_met;
+            if (evalObj.unfulfilled_fields_list && Array.isArray(evalObj.unfulfilled_fields_list)) {
+                finalUnfulfilledList = evalObj.unfulfilled_fields_list;
+            }
         }
 
-        // Hitung Rekomendasi Realtime (Strictly Realtime by POKEMA Points & IPK)
+        if (unfulfilledListRaw) {
+            try {
+                if (typeof unfulfilledListRaw === 'string' && unfulfilledListRaw.length > 0) {
+                    finalUnfulfilledList = JSON.parse(atob(unfulfilledListRaw));
+                } else if (Array.isArray(unfulfilledListRaw)) {
+                    finalUnfulfilledList = unfulfilledListRaw;
+                }
+            } catch (e) {
+                console.warn('Error parsing unfulfilled list:', e);
+            }
+        }
+
+        // Rekomendasi Resmi Sistem:
+        // Prioritaskan rekomendasi hasil evaluasi backend PHP yang telah mengkalkulasi IPK + 7 Bidang + Status Portal
         let resolvedRec = null;
-        if (typeof currentEvaluation !== 'undefined' && currentEvaluation && currentEvaluation.student_id == studentId) {
-            resolvedRec = currentEvaluation.recommended_beasiswa || currentEvaluation.qualified_beasiswa;
+        if (evalObj && (evalObj.recommended_beasiswa || evalObj.qualified_beasiswa)) {
+            resolvedRec = evalObj.recommended_beasiswa || evalObj.qualified_beasiswa;
+        }
+        if (!resolvedRec && targetBeasiswa && targetBeasiswa !== '') {
+            resolvedRec = targetBeasiswa;
         }
         if (!resolvedRec) {
             resolvedRec = getSmartRecommendedTier(finalIpk, finalPoin, finalPeriode);
         }
         if (!resolvedRec) {
-            resolvedRec = '0%';
+            resolvedRec = oldBeasiswa || '0%';
         }
 
         // Tentukan target pilihan default di dropdown:
@@ -793,7 +820,7 @@
         // Jika mode manual, gunakan status saat ini mahasiswa (oldBeasiswa) agar admin dapat mengevaluasi
         let autoSelectedTarget = targetBeasiswa;
         if (!autoSelectedTarget || autoSelectedTarget === '') {
-            autoSelectedTarget = oldBeasiswa || '0%';
+            autoSelectedTarget = resolvedRec || oldBeasiswa || '0%';
         }
 
         currentAdjustStudentData = {
@@ -808,14 +835,17 @@
             ipk: (finalIpk !== null && finalIpk !== undefined && finalIpk !== '' && finalIpk !== '-') ? parseFloat(finalIpk) : null,
             poin: parseInt(finalPoin, 10) || 0,
             periode: finalPeriode || 'Tahun I',
-            targetPoints: parseInt(finalTargetPts, 10) || 0
+            targetPoints: parseInt(finalTargetPts, 10) || 0,
+            fulfilledCount: (finalFulfilledCount !== null && finalFulfilledCount !== undefined) ? parseInt(finalFulfilledCount, 10) : null,
+            allFieldsMet: (finalAllFieldsMet === true || finalAllFieldsMet === 1 || finalAllFieldsMet === '1'),
+            unfulfilledList: finalUnfulfilledList
         };
 
         document.getElementById('adjust_mhs_nama').textContent = nama;
         document.getElementById('adjust_mhs_nim').textContent = nim;
         document.getElementById('adjust_old_beasiswa').textContent = (oldBeasiswa && oldBeasiswa !== '0%') ? `Beasiswa ${oldBeasiswa}` : 'Non-Beasiswa (0%)';
         
-        // Update badge Rekomendasi Realtime
+        // Update badge Rekomendasi Sistem
         const recBadge = document.getElementById('adjust_rec_beasiswa_badge');
         if (recBadge) {
             if (resolvedRec === '0%') {
@@ -847,6 +877,55 @@
             poinElem.innerHTML = `<span class="badge" style="background: #FEF3C7; color: #B45309; font-size: 14px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">${ptsText}</span>`;
         }
 
+        // Sebaran 7 Bidang badge
+        const bidangElem = document.getElementById('adjust_mhs_bidang');
+        const bidangIcon = document.getElementById('adjust_mhs_bidang_icon');
+        if (bidangElem) {
+            const isAllMet = currentAdjustStudentData.allFieldsMet;
+            const fCount = currentAdjustStudentData.fulfilledCount;
+            if (fCount !== null && fCount !== undefined) {
+                if (isAllMet || fCount >= 7) {
+                    bidangElem.innerHTML = `<span class="badge" style="background: #ECFDF5; color: #047857; font-size: 13.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">7/7 Bidang ✓</span>`;
+                    if (bidangIcon) {
+                        bidangIcon.style.background = '#ECFDF5';
+                        bidangIcon.style.color = '#059669';
+                    }
+                } else {
+                    bidangElem.innerHTML = `<span class="badge" style="background: #FEF3C7; color: #B45309; font-size: 13.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">${fCount}/7 Bidang</span>`;
+                    if (bidangIcon) {
+                        bidangIcon.style.background = '#FEF3C7';
+                        bidangIcon.style.color = '#D97706';
+                    }
+                }
+            } else {
+                bidangElem.innerHTML = `<span class="badge" style="background: #F1F5F9; color: #64748B; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 6px;">-</span>`;
+            }
+        }
+
+        // Rincian Bidang yang Belum Terpenuhi
+        const unfulfilledBox = document.getElementById('adjust_unfulfilled_box');
+        const unfulfilledPills = document.getElementById('adjust_unfulfilled_pills');
+        const unfulfilledTitle = document.getElementById('adjust_unfulfilled_title');
+        if (unfulfilledBox && unfulfilledPills) {
+            const isAllMet = currentAdjustStudentData.allFieldsMet;
+            const unList = currentAdjustStudentData.unfulfilledList;
+            if (!isAllMet && Array.isArray(unList) && unList.length > 0) {
+                if (unfulfilledTitle) {
+                    unfulfilledTitle.textContent = `${unList.length} dari 7 Bidang Belum Terpenuhi:`;
+                }
+                let pillsHtml = '';
+                unList.forEach(item => {
+                    pillsHtml += `<span style="background: #FFFFFF; border: 1px solid #FCD34D; color: #92400E; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="bi bi-x-circle-fill" style="color: #EF4444; font-size: 10px;"></i> ${escapeHtml(item)}
+                    </span>`;
+                });
+                unfulfilledPills.innerHTML = pillsHtml;
+                unfulfilledBox.style.display = 'block';
+            } else {
+                unfulfilledBox.style.display = 'none';
+            }
+        }
+
         // Periode badge
         const periodeElem = document.getElementById('adjust_mhs_periode');
         if (periodeElem) {
@@ -866,12 +945,12 @@
         if (reasonBox) {
             let ptsNeeded = Math.max(0, currentAdjustStudentData.targetPoints - currentAdjustStudentData.poin);
             let analysisHtml = '';
-            if (currentAdjustStudentData.oldBeasiswa !== '0%' && resolvedRec === '0%') {
-                analysisHtml = `<strong><i class="bi bi-info-circle-fill text-primary"></i> Analisis Sistem:</strong> Capaian POKEMA saat ini <strong>${currentAdjustStudentData.poin} Poin</strong> dengan IPK <strong>${currentAdjustStudentData.ipk !== null ? currentAdjustStudentData.ipk.toFixed(2) : '-'}</strong>. Berdasarkan perhitungan poin realtime, belum memenuhi target Beasiswa ${currentAdjustStudentData.oldBeasiswa} (Target ${currentAdjustStudentData.targetPoints} Poin, Kurang ${ptsNeeded} Poin) dan belum mencapai batas minimum beasiswa (Min. 120 Poin). Mahasiswa masih dalam proses mengumpulkan prestasi di semester aktif.`;
+            if (reason && !isManual) {
+                analysisHtml = `<strong><i class="bi bi-info-circle-fill text-primary"></i> Analisis Sistem:</strong> ${reason}`;
+            } else if (currentAdjustStudentData.oldBeasiswa !== '0%' && resolvedRec === '0%') {
+                analysisHtml = `<strong><i class="bi bi-info-circle-fill text-primary"></i> Analisis Sistem:</strong> Capaian POKEMA saat ini <strong>${currentAdjustStudentData.poin} Poin</strong> dengan IPK <strong>${currentAdjustStudentData.ipk !== null ? currentAdjustStudentData.ipk.toFixed(2) : '-'}</strong>. Berdasarkan perhitungan poin realtime, belum memenuhi target Beasiswa ${currentAdjustStudentData.oldBeasiswa} (Target ${currentAdjustStudentData.targetPoints} Poin, Kurang ${ptsNeeded} Poin) dan belum mencapai batas minimum beasiswa (Min. 120 Poin).`;
             } else if (resolvedRec !== '0%' && resolvedRec === currentAdjustStudentData.oldBeasiswa) {
                 analysisHtml = `<strong><i class="bi bi-check-circle-fill text-success"></i> Analisis Sistem:</strong> Target Beasiswa ${resolvedRec} telah terpenuhi penuh secara realtime (POKEMA: ${currentAdjustStudentData.poin} Poin, IPK: ${currentAdjustStudentData.ipk !== null ? currentAdjustStudentData.ipk.toFixed(2) : '-'}).`;
-            } else if (reason && !isManual) {
-                analysisHtml = `<strong><i class="bi bi-info-circle-fill text-primary"></i> Analisis Sistem:</strong> ${reason}`;
             } else {
                 analysisHtml = `<strong><i class="bi bi-sliders text-primary"></i> Mode Manual:</strong> Evaluasi mandiri oleh Admin Kemahasiswaan. Pilihan diselaraskan dengan capaian IPK dan POKEMA mahasiswa saat ini.`;
             }
@@ -952,15 +1031,40 @@
                 </div>
             `;
         } else if (selectedTier === recommended && recommended !== '0%') {
-            feedbackHtml = `
-                <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #065F46; display: flex; align-items: flex-start; gap: 8px;">
-                    <i class="bi bi-check-circle-fill" style="font-size: 16px; color: #10B981; flex-shrink: 0; margin-top: 1px;"></i>
-                    <div>
-                        <strong style="color: #064E3B;">Sesuai Rekomendasi Realtime Penuh:</strong><br>
-                        Mahasiswa telah memenuhi target penuh <strong>${rule.name}</strong> (Capaian POKEMA <strong>${poin} Poin</strong> & IPK <strong>${ipk !== null ? ipk.toFixed(2) : '-'}</strong>). Memenuhi pedoman SK Rektor No: 2638/SK/01/2026.
+            if (oldRule.level > rule.level) {
+                // Downgrade sesuai hasil evaluasi (misal 7 bidang belum lengkap / portal ditutup)
+                feedbackHtml = `
+                    <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
+                        <i class="bi bi-arrow-down-circle-fill" style="font-size: 16px; color: #D97706; flex-shrink: 0; margin-top: 1px;"></i>
+                        <div>
+                            <strong style="color: #78350F;">Sesuai Hasil Evaluasi Sistem (Penyesuaian ke ${rule.name}):</strong><br>
+                            Status beasiswa disesuaikan dari <strong>${oldBeasiswa}</strong> ke <strong>${rule.name}</strong> berdasarkan evaluasi akhir periode (POKEMA: <strong>${poin} Poin</strong>, IPK: <strong>${ipk !== null ? ipk.toFixed(2) : '-'}</strong>). Target POKEMA periode selanjutnya akan disesuaikan dengan standar ${rule.name}.
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else if (rule.level > oldRule.level) {
+                // Upgrade
+                feedbackHtml = `
+                    <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #065F46; display: flex; align-items: flex-start; gap: 8px;">
+                        <i class="bi bi-arrow-up-circle-fill" style="font-size: 16px; color: #059669; flex-shrink: 0; margin-top: 1px;"></i>
+                        <div>
+                            <strong style="color: #064E3B;">Sesuai Hasil Evaluasi (Promosi ke ${rule.name}):</strong><br>
+                            Mahasiswa berhasil memenuhi seluruh syarat promosi ke <strong>${rule.name}</strong> (Capaian POKEMA: <strong>${poin} Poin</strong> & IPK: <strong>${ipk !== null ? ipk.toFixed(2) : '-'}</strong>).
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Maintain
+                feedbackHtml = `
+                    <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #065F46; display: flex; align-items: flex-start; gap: 8px;">
+                        <i class="bi bi-check-circle-fill" style="font-size: 16px; color: #10B981; flex-shrink: 0; margin-top: 1px;"></i>
+                        <div>
+                            <strong style="color: #064E3B;">Sesuai Rekomendasi Evaluasi (Pertahankan ${rule.name}):</strong><br>
+                            Mahasiswa memenuhi syarat untuk mempertahankan <strong>${rule.name}</strong> (Capaian POKEMA: <strong>${poin} Poin</strong> & IPK: <strong>${ipk !== null ? ipk.toFixed(2) : '-'}</strong>). Memenuhi pedoman SK Rektor No: 2638/SK/01/2026.
+                        </div>
+                    </div>
+                `;
+            }
         } else if (selectedTier === oldBeasiswa && oldBeasiswa !== '0%') {
             const ptsRemaining = Math.max(0, targetPts - poin);
             feedbackHtml = `
@@ -1300,5 +1404,81 @@
             }
             alert('Gagal mengubah status portal upload: ' + err.message);
         });
+    }
+
+    function handleSendAllSiakadVerifikasi() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Kirim Rekomendasi ke SIAKAD?',
+                html: `
+                    <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.55;">
+                        <p>Seluruh hasil rekomendasi beasiswa POKEMA untuk mahasiswa <strong>angkatan 2026 ke atas</strong> akan dikirimkan langsung ke kolom <strong>Rekomendasi</strong> pada menu <em>Rekomendasi Beasiswa Termin</em> di SIAKAD.</p>
+                        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 14px; margin-top: 10px; color: #166534; font-size: 12.5px;">
+                            <i class="bi bi-info-circle-fill"></i> Data yang dikirim berstatus <strong>Draft</strong> sehingga aman dan dapat ditinjau terlebih dahulu oleh Bagian Akademik & Keuangan di Siakad sebelum diterbitkan.
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: '<i class="bi bi-send-check"></i> Ya, Kirim Sekarang',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Mengirim Rekomendasi...',
+                        text: 'Sedang memproses dan menyimpan data rekomendasi ke SIAKAD...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    document.getElementById('form-send-all-siakad').submit();
+                }
+            });
+        } else {
+            if (confirm('Kirim seluruh rekomendasi hasil evaluasi beasiswa ke SIAKAD?')) {
+                document.getElementById('form-send-all-siakad').submit();
+            }
+        }
+    }
+
+    function handleApplyAllRecommendations() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Terapkan Semua Rekomendasi?',
+                html: `
+                    <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.55;">
+                        <p>Sistem akan memperbarui kolom <strong>Beasiswa (%)</strong> seluruh mahasiswa penerima beasiswa & ambassador sesuai dengan hasil rekomendasi evaluasi POKEMA & IPK saat ini.</p>
+                        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 10px 14px; margin-top: 10px; color: #1E40AF; font-size: 12.5px;">
+                            <i class="bi bi-info-circle-fill"></i> Mahasiswa yang mengalami penyesuaian (naik, turun, atau cabut beasiswa) akan otomatis diperbarui dan dicatat dalam riwayat audit mahasiswa.
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563EB',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: '<i class="bi bi-check2-all"></i> Ya, Terapkan Semua',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Menerapkan Rekomendasi...',
+                        text: 'Sedang memperbarui status beasiswa seluruh mahasiswa...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    document.getElementById('form-apply-all-recommendations').submit();
+                }
+            });
+        } else {
+            if (confirm('Terapkan seluruh rekomendasi beasiswa hasil evaluasi POKEMA ke status beasiswa mahasiswa saat ini?')) {
+                document.getElementById('form-apply-all-recommendations').submit();
+            }
+        }
     }
 </script>
