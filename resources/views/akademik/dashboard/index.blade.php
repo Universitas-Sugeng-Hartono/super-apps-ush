@@ -28,6 +28,30 @@
                 <span class="stat-tag students">Semua Angkatan</span>
             </div>
         </div>
+        <div class="stat-card active-students">
+            <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
+            <div class="stat-info">
+                <h3>{{ $activeStudentCount ?? 0 }}</h3>
+                <p>Mahasiswa Aktif</p>
+                <span class="stat-tag active-students">Status Aktif</span>
+            </div>
+        </div>
+        <div class="stat-card leave-students">
+            <div class="stat-icon"><i class="bi bi-person-dash-fill"></i></div>
+            <div class="stat-info">
+                <h3>{{ $leaveStudentCount ?? 0 }}</h3>
+                <p>Mahasiswa Cuti</p>
+                <span class="stat-tag leave-students">Status Cuti</span>
+            </div>
+        </div>
+        <div class="stat-card inactive-students">
+            <div class="stat-icon"><i class="bi bi-person-x-fill"></i></div>
+            <div class="stat-info">
+                <h3>{{ $inactiveStudentCount ?? 0 }}</h3>
+                <p>Mahasiswa Tidak Aktif</p>
+                <span class="stat-tag inactive-students">Nonaktif</span>
+            </div>
+        </div>
         <div class="stat-card prodi">
             <div class="stat-icon"><i class="bi bi-diagram-3-fill"></i></div>
             <div class="stat-info">
@@ -52,6 +76,111 @@
                 <span class="stat-tag announcements">Aktif</span>
             </div>
         </div>
+    </div>
+
+    <div class="akademik-student-list">
+        <div class="filter-card shadow-sm">
+            <form method="GET" action="{{ $listRoute }}" class="filter-grid">
+                <div class="filter-item">
+                    <label>Cari Mahasiswa</label>
+                    <div class="input-with-icon">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" class="form-control-modern" value="{{ $search }}" placeholder="Nama atau NIM">
+                    </div>
+                </div>
+                <div class="filter-item">
+                    <label>Status Mahasiswa</label>
+                    <select name="status_mahasiswa" class="form-select-modern" onchange="this.form.submit()">
+                        <option value="">Semua Status</option>
+                        <option value="Aktif" {{ $statusMahasiswa === 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                        <option value="Cuti" {{ $statusMahasiswa === 'Cuti' ? 'selected' : '' }}>Cuti</option>
+                        <option value="Tidak Aktif" {{ $statusMahasiswa === 'Tidak Aktif' ? 'selected' : '' }}>Tidak Aktif</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Program Studi</label>
+                    <select name="program_studi" class="form-select-modern" onchange="this.form.submit()">
+                        <option value="">Semua Program Studi</option>
+                        @foreach($programOptions as $prodi)
+                            <option value="{{ $prodi }}" {{ $programStudi === $prodi ? 'selected' : '' }}>{{ $prodi }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Angkatan</label>
+                    <select name="angkatan" class="form-select-modern" onchange="this.form.submit()">
+                        <option value="">Semua Angkatan</option>
+                        @foreach($angkatanOptions as $year)
+                            <option value="{{ $year }}" {{ (string) $angkatan === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="filter-actions-modern">
+                    <a href="{{ $listRoute }}" class="btn-reset-modern" title="Reset Filter">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                    <button type="submit" class="btn-search-modern">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-card shadow-sm">
+            <div class="table-responsive-modern">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Mahasiswa & NIM</th>
+                            <th>Program Studi</th>
+                            <th>Angkatan</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($students as $student)
+                            <tr>
+                                <td>
+                                    <div class="student-profile">
+                                        <div class="student-meta">
+                                            <span class="student-name">{{ $student->nama_lengkap }}</span>
+                                            <span class="student-nim">{{ $student->nim }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="prodi-tag">{{ $student->program_studi ?? '-' }}</span></td>
+                                <td>{{ $student->angkatan ?? '-' }}</td>
+                                <td>
+                                    @php
+                                        $statusClass = match ($student->status_mahasiswa) {
+                                            'Aktif' => 'status-approved',
+                                            'Cuti' => 'status-pending',
+                                            default => 'status-rejected',
+                                        };
+                                        $statusLabel = match ($student->status_mahasiswa) {
+                                            'Aktif' => 'Aktif',
+                                            'Cuti' => 'Cuti',
+                                            default => $student->status_mahasiswa ?: 'Tidak Aktif',
+                                        };
+                                    @endphp
+                                    <span class="badge-status {{ $statusClass }}">{{ $statusLabel }}</span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">Belum ada mahasiswa yang cocok dengan filter.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if($students->hasPages())
+            <div class="pagination-container">
+                {{ $students->links('pagination::bootstrap-5') }}
+            </div>
+        @endif
     </div>
 
     <div class="menu-section">
@@ -135,7 +264,24 @@
 @endsection
 
 @push('css')
+<link rel="stylesheet" href="{{ asset('admin/css/skpi-daftar-skpi.css') }}">
 <style>
+    .akademik-student-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+
+    .akademik-student-list .filter-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    }
+
+    @media (max-width: 1100px) {
+        .akademik-student-list .filter-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
     .dashboard-akademik-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -234,6 +380,9 @@
     }
 
     .dashboard-akademik-container .stat-card.students .stat-icon { background: #DBEAFE; color: #1D4ED8; }
+    .dashboard-akademik-container .stat-card.active-students .stat-icon { background: #DCFCE7; color: #15803D; }
+    .dashboard-akademik-container .stat-card.leave-students .stat-icon { background: #FEF3C7; color: #B45309; }
+    .dashboard-akademik-container .stat-card.inactive-students .stat-icon { background: #FEE2E2; color: #B91C1C; }
     .dashboard-akademik-container .stat-card.prodi .stat-icon { background: #E0E7FF; color: #4338CA; }
     .dashboard-akademik-container .stat-card.lecturers .stat-icon { background: #E0F2FE; color: #0369A1; }
     .dashboard-akademik-container .stat-card.announcements .stat-icon { background: #FEF3C7; color: #B45309; }
@@ -260,6 +409,9 @@
     }
 
     .dashboard-akademik-container .stat-tag.students { background: #DBEAFE; color: #1E3A8A; }
+    .dashboard-akademik-container .stat-tag.active-students { background: #DCFCE7; color: #166534; }
+    .dashboard-akademik-container .stat-tag.leave-students { background: #FEF3C7; color: #92400E; }
+    .dashboard-akademik-container .stat-tag.inactive-students { background: #FEE2E2; color: #991B1B; }
     .dashboard-akademik-container .stat-tag.prodi { background: #E0E7FF; color: #3730A3; }
     .dashboard-akademik-container .stat-tag.lecturers { background: #E0F2FE; color: #0C4A6E; }
     .dashboard-akademik-container .stat-tag.announcements { background: #FDE68A; color: #92400E; }
