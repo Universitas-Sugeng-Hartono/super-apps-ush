@@ -231,6 +231,62 @@
         gap: 12px;
         margin-bottom: 20px;
     }
+    .toolbar-controls-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .btn-apply-all-recommendations-toolbar {
+        background: #2563EB;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 12px;
+        padding: 0 16px;
+        height: 48px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-apply-all-recommendations-toolbar:hover {
+        background: #1D4ED8;
+        box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn-apply-all-recommendations-toolbar:active {
+        transform: translateY(0);
+    }
+    .btn-send-all-siakad-toolbar {
+        background: #10B981;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 12px;
+        padding: 0 16px;
+        height: 48px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(16, 185, 129, 0.25);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-send-all-siakad-toolbar:hover {
+        background: #059669;
+        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn-send-all-siakad-toolbar:active {
+        transform: translateY(0);
+    }
     .portal-lock-inline {
         background: #FFFFFF;
         border: 1px solid #E2E8F0;

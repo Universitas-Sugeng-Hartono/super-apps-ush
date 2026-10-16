@@ -147,18 +147,60 @@
             </a>
         </div>
 
-        {{-- Control: Status Portal Pengajuan Prestasi (Ambassador & Beasiswa) Disejajarkan di Sebelah Kanan --}}
-        <div class="portal-lock-inline" id="portalLockInline" title="{{ !empty($isPortalOpen) ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.' : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.' }}">
-            <span class="portal-inline-label">Portal Upload:</span>
-            <label class="switch-toggle" title="Klik untuk membuka atau menutup portal upload">
-                <input type="checkbox" id="portalUploadSwitch" {{ !empty($isPortalOpen) ? 'checked' : '' }} onchange="togglePortalUpload(this.checked)">
-                <span class="switch-slider"></span>
-            </label>
-            <span id="portalStatusBadge" class="portal-status-badge {{ !empty($isPortalOpen) ? 'badge-open' : 'badge-closed' }}">
-                {{ !empty($isPortalOpen) ? 'Dibuka (Aktif)' : 'Ditutup (Review)' }}
-            </span>
+        {{-- Controls Kanan: Khusus Tab Penerima Beasiswa & Ambassador (Terapkan Rekomendasi, Kirim Rekomendasi ke Siakad, & Status Portal) --}}
+        @if($tab === 'beasiswa')
+        <div class="toolbar-controls-right" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            {{-- Tombol aksi massal HANYA MUNCUL KETIKA PORTAL UPLOAD DITUTUP --}}
+            @if(empty($isPortalOpen))
+            <button type="button" class="btn-apply-all-recommendations-toolbar" id="btn-apply-all-recommendations-toolbar" onclick="handleApplyAllRecommendations()" title="Terapkan seluruh rekomendasi beasiswa hasil evaluasi POKEMA menjadi status beasiswa mahasiswa saat ini di SuperApps">
+                <i class="bi bi-check2-all"></i> Terapkan Semua Rekomendasi
+            </button>
+            <button type="button" class="btn-send-all-siakad-toolbar" id="btn-send-all-siakad-toolbar" onclick="handleSendAllSiakadVerifikasi()" title="Kirim seluruh rekomendasi beasiswa hasil evaluasi POKEMA ke kolom Rekomendasi di SIAKAD">
+                <i class="bi bi-send-check-fill"></i> Kirim Semua Rekomendasi ke SIAKAD
+            </button>
+            @endif
+            <div class="portal-lock-inline" id="portalLockInline" title="{{ !empty($isPortalOpen) ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.' : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.' }}">
+                <span class="portal-inline-label">Portal Upload:</span>
+                <label class="switch-toggle" title="Klik untuk membuka atau menutup portal upload">
+                    <input type="checkbox" id="portalUploadSwitch" {{ !empty($isPortalOpen) ? 'checked' : '' }} onchange="togglePortalUpload(this.checked)">
+                    <span class="switch-slider"></span>
+                </label>
+                <span id="portalStatusBadge" class="portal-status-badge {{ !empty($isPortalOpen) ? 'badge-open' : 'badge-closed' }}">
+                    {{ !empty($isPortalOpen) ? 'Dibuka (Aktif)' : 'Ditutup (Review)' }}
+                </span>
+            </div>
+        </div>
+        @endif
+    </div>
+
+    {{-- Hidden Forms untuk Aksi Massal Beasiswa --}}
+    @if($tab === 'beasiswa')
+    <form id="form-send-all-siakad" action="{{ route('kemahasiswaan.verifikasi-prestasi.send-all-siakad') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+    <form id="form-apply-all-recommendations" action="{{ route('kemahasiswaan.verifikasi-prestasi.apply-all-recommendations') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+    @endif
+
+    {{-- Banner Khusus Evaluasi Akhir Saat Portal Pengajuan Ditutup (Hanya di Tab Penerima Beasiswa & Ambassador) --}}
+    @if($tab === 'beasiswa' && empty($isPortalOpen))
+    <div class="content-card banner-portal-closed" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border: 1px solid #BFDBFE; border-left: 5px solid #2563EB; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);">
+                <i class="bi bi-lock-fill"></i>
+            </div>
+            <div>
+                <strong style="color:#1E40AF; font-size: 15.5px; display: inline-flex; align-items: center; gap: 8px;">
+                    Portal Ditutup: Masa Evaluasi Akhir & Rekomendasi Beasiswa
+                </strong>
+                <p style="margin:4px 0 0; color:#1E3A8A; font-size:13px; line-height: 1.45;">
+                    Pengajuan prestasi mahasiswa beasiswa & ambassador telah dikunci. Sistem telah menghitung rekomendasi kelayakan (IPK + POKEMA 7 Bidang). Anda dapat memeriksa hasil evaluasi pada tabel di bawah, lalu kirimkan rekomendasi ke SIAKAD menggunakan tombol di atas.
+                </p>
+            </div>
         </div>
     </div>
+    @endif
 
     {{-- Banner & Tombol Approve Massal Spesifik Kategori (Beasiswa vs Reguler vs Semua) --}}
     @if(($activeTabPendingCount ?? 0) > 0)
@@ -424,26 +466,44 @@
                                     <i class="bi bi-speedometer2"></i> Evaluasi & Prestasi
                                 </button>
                                 @if(isset($student->pokema_evaluation))
-                                    @php $evalRow = $student->pokema_evaluation; @endphp
+                                    @php 
+                                        $evalRow = $student->pokema_evaluation; 
+                                        $encodedUnfulfilled = base64_encode(json_encode($evalRow['unfulfilled_fields_list'] ?? []));
+                                        $fulfilledCount = (int) ($evalRow['fulfilled_fields_count'] ?? 0);
+                                        $allFieldsMet = !empty($evalRow['all_fields_met']) ? 1 : 0;
+                                        $targetBeasiswa = $evalRow['recommended_beasiswa'] ?? ($evalRow['qualified_beasiswa'] ?? '0%');
+                                        $evalBase64 = base64_encode(json_encode($evalRow));
+                                    @endphp
                                     @if($evalRow['action_type'] === 'upgrade')
                                         <button type="button" class="btn-quick-upgrade"
                                             title="{{ $evalRow['reason'] }}"
-                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}')">
+                                            data-evaluation="{{ $evalBase64 }}"
+                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $targetBeasiswa }}', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}', {{ $fulfilledCount }}, {{ $allFieldsMet }}, '{{ $encodedUnfulfilled }}')">
                                             Naikkan Beasiswa
                                         </button>
                                     @elseif($evalRow['action_type'] === 'downgrade')
                                         <button type="button" class="btn-quick-downgrade"
                                             title="{{ $evalRow['reason'] }}"
-                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $evalRow['qualified_beasiswa'] }}', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}')">
+                                            data-evaluation="{{ $evalBase64 }}"
+                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $targetBeasiswa }}', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}', {{ $fulfilledCount }}, {{ $allFieldsMet }}, '{{ $encodedUnfulfilled }}')">
                                             Sesuaikan Beasiswa
                                         </button>
                                     @elseif($evalRow['action_type'] === 'revoke')
                                         <button type="button" class="btn-quick-downgrade" style="background: #DC2626;"
                                             title="{{ $evalRow['reason'] }}"
-                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '0%', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}')">
+                                            data-evaluation="{{ $evalBase64 }}"
+                                            onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '0%', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}', {{ $fulfilledCount }}, {{ $allFieldsMet }}, '{{ $encodedUnfulfilled }}')">
                                             Cabut Beasiswa
                                         </button>
                                     @endif
+                                @endif
+                                @if($student->nim && $student->nim !== '-')
+                                    <form action="{{ route('kemahasiswaan.verifikasi-prestasi.send-siakad', $student->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Kirim rekomendasi beasiswa hasil evaluasi POKEMA untuk {{ addslashes($student->nama_lengkap) }} ke kolom Rekomendasi di SIAKAD?')">
+                                        @csrf
+                                        <button type="submit" class="btn-send-single-siakad" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Kirim rekomendasi beasiswa hasil evaluasi POKEMA ke SIAKAD" onmouseover="this.style.background='#047857'; this.style.color='#fff';" onmouseout="this.style.background='#ECFDF5'; this.style.color='#047857';">
+                                            <i class="bi bi-send-check"></i>
+                                        </button>
+                                    </form>
                                 @endif
                             @else
                                 <button type="button" class="btn-view"

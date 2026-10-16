@@ -7,7 +7,15 @@
                 <h3>Detail Mahasiswa / Ambassador - {{ $student->nama_lengkap }}</h3>
                 <p class="text-muted mb-0" style="font-size: 13px;">Informasi profil lengkap dan status penetapan Student Ambassador.</p>
             </div>
-            <div class="header-actions">
+            <div class="header-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                @if($student->nim && $student->nim !== '-')
+                    <form action="{{ route('kemahasiswaan.student-ambassador.send-single-siakad', $student->id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Kirim rekomendasi beasiswa mahasiswa ini ({{ $student->beasiswa ?: '0%' }}) ke kolom Rekomendasi di SIAKAD?')">
+                        @csrf
+                        <button type="submit" class="btn-secondary" style="border: 1px solid #10b981; color: #047857; background: #ecfdf5;" title="Kirim rekomendasi beasiswa mahasiswa ini ke menu Rekomendasi Beasiswa Termin di SIAKAD">
+                            <i class="bi bi-send-check"></i> Kirim Rekomendasi ke Siakad
+                        </button>
+                    </form>
+                @endif
                 <a href="{{ route('kemahasiswaan.student-ambassador.edit', $student->id) }}" class="btn-primary">
                     <i class="bi bi-pencil"></i> Edit Data
                 </a>

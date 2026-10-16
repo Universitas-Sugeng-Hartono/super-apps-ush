@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use App\Services\SiakadSyncService;
+use App\Services\PokemaEvaluatorService;
 
 class StudentAmbassadorController extends Controller
 {
@@ -191,68 +194,26 @@ class StudentAmbassadorController extends Controller
     public function update(Request $request, $id)
     {
         $student = Student::findOrFail($id);
-        $validPrograms = StudyProgram::where('is_active', true)->pluck('name')->toArray();
 
         $validator = Validator::make($request->all(), [
-            'full_name'     => 'required|string|max:100',
-            'nim'           => 'required|string|max:12|unique:students,nim,' . $student->id,
-            'periode_masuk' => 'required|date_format:Y-m',
-            'program_studi' => 'required|string|in:' . implode(',', $validPrograms),
-            'status'        => 'required|string|in:mahasiswa,studentambassador',
-            'semester'      => 'nullable|integer|min:1|max:14',
-            'ipk'           => 'nullable|numeric|min:0|max:4',
-            'beasiswa'      => 'nullable|string|max:100',
-            'gender'        => 'nullable|in:L,P',
-            'address'       => 'nullable|string|max:500',
-            'notes'         => 'nullable|string|max:1000',
-            'email'         => 'nullable|email|max:100|unique:students,email,' . $student->id,
-            'phone'         => 'nullable|string|max:15',
-            'id_lecturer'   => 'nullable|exists:users,id',
+            'status' => 'required|string|in:mahasiswa,studentambassador',
+            'notes'  => 'nullable|string|max:1000',
         ], [
-            'semester.integer' => 'Semester harus berupa angka bulat.',
-            'semester.min'     => 'Semester minimal 1.',
-            'semester.max'     => 'Semester maksimal 14.',
-            'ipk.numeric'      => 'IPK harus berupa angka.',
-            'ipk.min'          => 'IPK minimal 0.00.',
-            'ipk.max'          => 'IPK maksimal 4.00.',
+            'status.required' => 'Status penetapan wajib dipilih.',
+            'status.in'       => 'Pilihan status penetapan tidak valid.',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $beasiswa = $request->beasiswa;
-        if (filled($beasiswa)) {
-            $beasiswa = trim((string) $beasiswa);
-            if (is_numeric($beasiswa)) {
-                $beasiswa = $beasiswa . '%';
-            } elseif (!str_ends_with($beasiswa, '%') && preg_match('/^\d+(\.\d+)?$/', $beasiswa)) {
-                $beasiswa = $beasiswa . '%';
-            }
-        } else {
-            $beasiswa = null;
-        }
-
         $student->update([
-            'nama_lengkap'     => $request->full_name,
-            'nim'              => $request->nim,
-            'angkatan'         => (int) substr($request->periode_masuk, 0, 4),
-            'program_studi'    => $request->program_studi,
-            'status'           => $request->status,
-            'semester'         => $request->filled('semester') ? (int) $request->semester : null,
-            'ipk'              => $request->filled('ipk') ? $request->ipk : null,
-            'beasiswa'         => $beasiswa,
-            'email'            => $request->email,
-            'no_telepon'       => $request->phone,
-            'notes'            => $request->notes,
-            'jenis_kelamin'    => $request->gender ?? $student->jenis_kelamin,
-            'alamat'           => $request->address,
-            'id_lecturer'      => $request->id_lecturer ?: $student->id_lecturer,
-            'tanggal_masuk'    => $request->periode_masuk . '-01',
+            'status' => $request->status,
+            'notes'  => $request->notes,
         ]);
 
         return redirect()->route('kemahasiswaan.student-ambassador.index')
-            ->with('success', 'Data berhasil diperbarui.');
+            ->with('success', "Data {$student->nama_lengkap} berhasil diperbarui (Status Penetapan & Catatan).");
     }
 
     /**
@@ -475,5 +436,134 @@ class StudentAmbassadorController extends Controller
         }
 
         return redirect()->route('kemahasiswaan.student-ambassador.index')->with('success', $msg);
+    }
+
+    /**
+     * Preview ringkasan data dari Siakad (Rekomendasi Beasiswa Termin) sebelum sinkronisasi
+     */
+    public function previewSiakadData(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $data = $syncService->preview();
+            return response()->json(array_merge(['success' => true], $data));
+        } catch (\Throwable $e) {
+            Log::error('Siakad preview failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal terhubung ke API Siakad: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Sinkronisasi seluruh data Student Ambassador dari Siakad (Menu Rekomendasi Beasiswa Termin)
+     * Mengambil Semester & IPK resmi dari Siakad (bukan dari bimbingan PA).
+     */
+    public function syncFromSiakad(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $result = $syncService->syncAll();
+
+            if ($result['total'] === 0) {
+                return redirect()->route('kemahasiswaan.student-ambassador.index')
+                    ->with('error', 'Tidak ada data rekomendasi beasiswa termin di Siakad yang dapat disinkronkan.');
+            }
+
+            return redirect()->route('kemahasiswaan.student-ambassador.index')
+                ->with('success', "Sinkronisasi Siakad berhasil! Total {$result['total']} data diproses ({$result['created']} mahasiswa baru ditambahkan sebagai Student Ambassador, {$result['updated']} data diperbarui). Semester & IPK telah diperbarui dari Siakad.");
+        } catch (\Throwable $e) {
+            Log::error('Siakad sync failed: ' . $e->getMessage());
+            return redirect()->route('kemahasiswaan.student-ambassador.index')
+                ->with('error', 'Gagal menyinkronkan data dari Siakad: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sinkronisasi data 1 mahasiswa langsung dari Siakad berdasarkan NIM
+     */
+    public function syncSingleStudent(Request $request, $id, SiakadSyncService $syncService)
+    {
+        $student = Student::findOrFail($id);
+        try {
+            $updated = $syncService->syncSingleStudent($student);
+            if ($updated) {
+                $student->refresh();
+                $semInfo = $student->semester ? "Semester {$student->semester}" : "-";
+                $ipkInfo = $student->ipk !== null ? "IPK " . number_format((float)$student->ipk, 2) : "IPK -";
+                return back()->with('success', "Data {$student->nama_lengkap} (NIM: {$student->nim}) berhasil diperbarui langsung dari Siakad! ({$semInfo}, {$ipkInfo}, Beasiswa: {$student->beasiswa}).");
+            }
+
+            return back()->with('error', "NIM {$student->nim} tidak ditemukan dalam daftar rekomendasi beasiswa termin di Siakad.");
+        } catch (\Throwable $e) {
+            Log::error("Single sync failed for student #{$id}: " . $e->getMessage());
+            return back()->with('error', 'Gagal menyinkronkan data dari Siakad: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim rekomendasi beasiswa 1 mahasiswa ke Siakad (menu rekomendasi-beasiswa-termin)
+     */
+    public function sendRecommendation(Request $request, $id, SiakadSyncService $syncService)
+    {
+        $student = Student::findOrFail($id);
+
+        if (empty($student->nim) || $student->nim === '-') {
+            return back()->with('error', "Mahasiswa {$student->nama_lengkap} belum memiliki NIM.");
+        }
+
+        $eval = PokemaEvaluatorService::evaluate($student);
+        $persentase = $request->input('beasiswa') 
+            ?: ($eval['recommended_beasiswa'] ?? ($student->beasiswa ?: '0%'));
+
+        $catatan = $request->input('notes') 
+            ?: ("Rekomendasi POKEMA SuperApps: " . ($eval['reason'] ?? "Hasil evaluasi capaian beasiswa {$persentase}"));
+
+        try {
+            $res = $syncService->sendRecommendation($student, $persentase, $catatan, 'draft');
+            return back()->with('success', "Rekomendasi beasiswa ({$persentase}) untuk {$student->nama_lengkap} (NIM: {$student->nim}) berhasil dikirim ke kolom Rekomendasi di SIAKAD!");
+        } catch (\Throwable $e) {
+            return back()->with('error', "Gagal mengirim rekomendasi ke SIAKAD: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim rekomendasi beasiswa massal ke Siakad
+     */
+    public function sendAllRecommendations(Request $request, SiakadSyncService $syncService)
+    {
+        $students = Student::where('angkatan', '>=', 2026)
+            ->whereNotNull('nim')
+            ->where('nim', '!=', '-')
+            ->where(function ($q) {
+                $q->where('status', 'studentambassador')
+                    ->orWhereNotNull('beasiswa');
+            })
+            ->get();
+
+        if ($students->isEmpty()) {
+            return back()->with('error', 'Tidak ada data mahasiswa angkatan 2026+ yang memenuhi kriteria untuk dikirim ke Siakad.');
+        }
+
+        $items = [];
+        foreach ($students as $stu) {
+            $eval = PokemaEvaluatorService::evaluate($stu);
+            $recPct = $eval['recommended_beasiswa'] ?? ($stu->beasiswa ?: '0%');
+            $catatan = "Rekomendasi POKEMA SuperApps: " . ($eval['reason'] ?? "Beasiswa {$recPct}");
+
+            $items[] = [
+                'nim'        => $stu->nim,
+                'persentase' => $recPct,
+                'catatan'    => $catatan,
+                'status'     => 'draft',
+            ];
+        }
+
+        try {
+            $res = $syncService->sendBulkRecommendations($items);
+            $successCount = $res['success_count'] ?? count($items);
+            return back()->with('success', "Berhasil mengirim {$successCount} rekomendasi beasiswa ke SIAKAD (Menu Rekomendasi Beasiswa Termin). Rekomendasi kini dapat ditinjau oleh Bagian Akademik & Keuangan di Siakad.");
+        } catch (\Throwable $e) {
+            return back()->with('error', "Gagal mengirim rekomendasi massal ke SIAKAD: " . $e->getMessage());
+        }
     }
 }
