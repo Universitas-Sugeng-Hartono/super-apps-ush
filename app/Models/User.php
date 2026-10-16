@@ -62,6 +62,48 @@ class User extends Authenticatable
     }
 
     /**
+     * Akun yang boleh berpindah dashboard tanpa mengubah role tersimpan.
+     *
+     * @var array<string, list<string>>
+     */
+    public const DASHBOARD_ROLE_SWITCHERS = [
+        'ianhendramukti@sugenghartono.ac.id' => ['masteradmin', 'akademik'],
+    ];
+
+    public function canSwitchDashboardRole(): bool
+    {
+        return isset(self::DASHBOARD_ROLE_SWITCHERS[$this->switcherEmail()]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function dashboardRoles(): array
+    {
+        return self::DASHBOARD_ROLE_SWITCHERS[$this->switcherEmail()] ?? [];
+    }
+
+    public function activeDashboardRole(): string
+    {
+        $stored = self::normalizeRole($this->role) ?? 'masteradmin';
+        if (!$this->canSwitchDashboardRole()) {
+            return $stored;
+        }
+
+        $active = self::normalizeRole(session('active_dashboard_role'));
+        if ($active && in_array($active, $this->dashboardRoles(), true)) {
+            return $active;
+        }
+
+        return in_array($stored, $this->dashboardRoles(), true) ? $stored : $this->dashboardRoles()[0];
+    }
+
+    private function switcherEmail(): string
+    {
+        return strtolower(trim((string) $this->email));
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

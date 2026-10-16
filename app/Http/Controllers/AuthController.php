@@ -19,11 +19,23 @@ class AuthController extends Controller
         }
 
         if (Auth::check()) {
-            $role = User::normalizeRole(Auth::user()->role);
+            $authUser = Auth::user();
+            if ($authUser->canSwitchDashboardRole()) {
+                $target = $authUser->activeDashboardRole() === 'akademik'
+                    ? route('akademik.dashboard')
+                    : route('admin.dashboard');
+
+                return redirect()->to($target);
+            }
+
+            $role = User::normalizeRole($authUser->role);
             if ($role === 'kemahasiswaan') {
                 return redirect()->route('kemahasiswaan.dashboard');
             }
-            if (in_array($role, ['admin', 'superadmin', 'masteradmin', 'keuangan', 'akademik'], true)) {
+            if ($role === 'akademik') {
+                return redirect()->route('akademik.dashboard');
+            }
+            if (in_array($role, ['admin', 'superadmin', 'masteradmin', 'keuangan'], true)) {
                 return redirect()->route('admin.dashboard');
             }
         }
@@ -55,9 +67,14 @@ class AuthController extends Controller
                 'user_prodi'      => $user->program_studi ?? 'Bisnis Digital',
             ]);
 
+            $request->session()->forget('active_dashboard_role');
+
             $role = User::normalizeRole($user->role);
             if ($role === 'kemahasiswaan') {
                 return redirect()->intended(route('kemahasiswaan.dashboard'));
+            }
+            if ($role === 'akademik') {
+                return redirect()->intended(route('akademik.dashboard'));
             }
 
             return redirect()->intended(route('admin.dashboard'));
@@ -113,5 +130,31 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * Pindah dashboard untuk akun yang memiliki lebih dari satu role tampilan.
+     */
+    public function switchDashboardRole(Request $request)
+    {
+        $user = $request->user();
+        if (!$user || !$user->canSwitchDashboardRole()) {
+            abort(403);
+        }
+
+        $role = User::normalizeRole($request->input('role'));
+        if (!$role || !in_array($role, $user->dashboardRoles(), true)) {
+            abort(422);
+        }
+
+        $request->session()->put('active_dashboard_role', $role);
+
+        $target = match ($role) {
+            'akademik' => route('akademik.dashboard'),
+            'kemahasiswaan' => route('kemahasiswaan.dashboard'),
+            default => route('admin.dashboard'),
+        };
+
+        return redirect()->to($target);
     }
 }

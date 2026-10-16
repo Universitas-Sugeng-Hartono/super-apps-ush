@@ -175,6 +175,32 @@
             margin: 0;
         }
 
+        .role-switch {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+        }
+
+        .role-switch-btn {
+            border: 0;
+            background: transparent;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1;
+            padding: 7px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .role-switch-btn.is-active {
+            background: white;
+            color: #E65100;
+        }
+
         /* Burger Menu Button */
         .burger-menu-btn {
             position: relative !important;
@@ -450,7 +476,13 @@
                 order: 1;
                 width: 100%;
                 flex-direction: row-reverse;
-                display: block !important;
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .role-switch {
+                order: 2;
             }
 
             .user-details {
@@ -747,6 +779,30 @@
     </style>
 </head>
 <body>
+    @php
+        $user = auth()->user();
+        $name = $user ? $user->name : session('user_name');
+        $canSwitchRole = $user && $user->canSwitchDashboardRole();
+        $userRole = $user
+            ? ($canSwitchRole ? $user->activeDashboardRole() : \App\Models\User::normalizeRole($user->role))
+            : null;
+        $roleLabel = $userRole ? \App\Models\User::roleLabel($userRole) : 'User';
+        if (in_array($userRole, ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'], true)) {
+            $subTitle = $roleLabel;
+        } else {
+            $prodi = $user ? $user->program_studi : session('user_prodi');
+            $subTitle = $roleLabel . ($prodi ? ' • ' . $prodi : '');
+        }
+        $photo = $user && $user->photo ? $user->photo : (session('user_photo') !== '0' && session('user_photo') !== 0 ? session('user_photo') : null);
+        $dashRoute = match ($userRole) {
+            'kemahasiswaan' => route('kemahasiswaan.dashboard'),
+            'akademik' => route('akademik.dashboard'),
+            default => route('admin.dashboard'),
+        };
+        $dashActive = request()->routeIs('admin.dashboard')
+            || request()->routeIs('kemahasiswaan.dashboard')
+            || request()->routeIs('akademik.dashboard');
+    @endphp
     <!-- Header -->
     <div class="header-section">
         <div class="header-content">
@@ -756,30 +812,26 @@
             </button>
 
             <!-- Logo Section (Desktop Only) link to dashboard -->
-            <a href="{{ auth()->check() && \App\Models\User::normalizeRole(auth()->user()->role) === 'kemahasiswaan' ? route('kemahasiswaan.dashboard') : route('admin.dashboard') }}" class="logo-section desktop-only" style="transform: translateX(50px);text-decoration: none;">
+            <a href="{{ $dashRoute }}" class="logo-section desktop-only" style="transform: translateX(50px);text-decoration: none;">
                 <img src="{{ asset('ush.png') }}" alt="USH Logo" class="header-logo">
                 <h4 class="app-title">Universitas Sugeng Hartono</h4>
             </a>
 
             <!-- User Info -->
             <div class="user-info">
+                @if($canSwitchRole)
+                    <form method="POST" action="{{ route('auth.switch-role') }}" class="role-switch">
+                        @csrf
+                        <button type="submit" name="role" value="masteradmin" class="role-switch-btn {{ $userRole === 'masteradmin' ? 'is-active' : '' }}">
+                            Superuser
+                        </button>
+                        <button type="submit" name="role" value="akademik" class="role-switch-btn {{ $userRole === 'akademik' ? 'is-active' : '' }}">
+                            Akademik
+                        </button>
+                    </form>
+                @endif
                 <div class="user-profile" id="userProfile">
                     <div class="user-details">
-                        @php
-                            $user = auth()->user();
-                            $name = $user ? $user->name : session('user_name');
-                            $userRole = $user ? \App\Models\User::normalizeRole($user->role) : null;
-                            $roleLabel = $user ? $user->role_label : 'User';
-                            if (in_array($userRole, ['kemahasiswaan', 'keuangan', 'masteradmin', 'akademik'], true)) {
-                                $subTitle = $roleLabel;
-                            } else {
-                                $prodi = $user ? $user->program_studi : session('user_prodi');
-                                $subTitle = $roleLabel . ($prodi ? ' • ' . $prodi : '');
-                            }
-                            $photo = $user && $user->photo ? $user->photo : (session('user_photo') !== '0' && session('user_photo') !== 0 ? session('user_photo') : null);
-                            $dashRoute = $userRole === 'kemahasiswaan' ? route('kemahasiswaan.dashboard') : route('admin.dashboard');
-                            $dashActive = request()->routeIs('admin.dashboard') || request()->routeIs('kemahasiswaan.dashboard');
-                        @endphp
                         <h5>Halo, {{ explode(' ', $name ?? '')[0] }}!</h5>
                         <p>{{ $subTitle }}</p>
                     </div>

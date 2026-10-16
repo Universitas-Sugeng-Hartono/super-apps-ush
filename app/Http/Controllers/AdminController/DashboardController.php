@@ -33,9 +33,18 @@ class DashboardController extends Controller
         $user = auth()->user();
         $userRole = User::normalizeRole($user->role);
 
+        if ($user->canSwitchDashboardRole() && $user->activeDashboardRole() === 'akademik') {
+            return redirect()->route('akademik.dashboard');
+        }
+
         // Dashboard khusus role Kemahasiswaan - redirect ke dedicated route
         if ($userRole === 'kemahasiswaan') {
             return redirect()->route('kemahasiswaan.dashboard');
+        }
+
+        // Dashboard khusus role Akademik - bukan dashboard dosen PA
+        if ($userRole === 'akademik') {
+            return redirect()->route('akademik.dashboard');
         }
 
         // Dashboard khusus role Keuangan
@@ -45,20 +54,35 @@ class DashboardController extends Controller
             $rejectedCount = \App\Models\SkpiRegistration::whereIn('payment_status', ['rejected', 'revision'])->count();
             $totalCount = \App\Models\SkpiRegistration::count();
 
-            $recentRegistrations = \App\Models\SkpiRegistration::with('student')
-                ->latest()
-                ->limit(5)
-                ->get();
+            $search = trim((string) $request->input('search'));
+            $status = $request->input('status');
+            $studyProgramId = $request->input('study_program_id');
 
-            // Load menu dinamis dari database untuk role Keuangan
-            $menus = \App\Models\MenuItem::active()
-                ->forRole('keuangan')
-                ->ordered()
-                ->get()
-                ->map(function ($menu) {
-                    $menu->menu_url = $menu->full_url;
-                    return $menu;
-                });
+            $registrations = \App\Models\SkpiRegistration::with(['student'])
+                ->whereNotNull('doc_pembayaran_wisuda')
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('nama_lengkap', 'like', "%{$search}%")
+                            ->orWhere('nim', 'like', "%{$search}%");
+                    });
+                })
+                ->when(in_array($status, ['pending', 'approved', 'revision', 'rejected'], true), function ($query) use ($status) {
+                    $query->where('payment_status', $status);
+                })
+                ->when($studyProgramId, function ($query) use ($studyProgramId) {
+                    $query->whereHas('student', function ($q) use ($studyProgramId) {
+                        $studyProgram = \App\Models\StudyProgram::find($studyProgramId);
+                        if ($studyProgram) {
+                            $q->where('program_studi', $studyProgram->name);
+                        }
+                    });
+                })
+                ->latest('updated_at')
+                ->paginate(15)
+                ->appends($request->query());
+
+            $studyPrograms = \App\Models\StudyProgram::all();
+            $listRoute = route('admin.dashboard');
 
             return view('keuangan.dashboard.index', compact(
                 'user',
@@ -66,8 +90,12 @@ class DashboardController extends Controller
                 'approvedCount',
                 'rejectedCount',
                 'totalCount',
-                'recentRegistrations',
-                'menus'
+                'registrations',
+                'search',
+                'status',
+                'studyPrograms',
+                'studyProgramId',
+                'listRoute'
             ));
         }
 
@@ -250,6 +278,127 @@ class DashboardController extends Controller
             'rejectedCount',
             'totalCount',
             'recentAchievements',
+            'menus'
+        ));
+    }
+
+    /**
+     * Dashboard khusus role Akademik (/akademik/dashboard)
+     */
+    public function akademikDashboard(Request $request)
+    {
+        $user = auth()->user();
+
+        if ($user->canSwitchDashboardRole() && $user->activeDashboardRole() !== 'akademik') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        $studentCount = Student::count();
+        $activeStudentCount = Student::where('status_mahasiswa', 'Aktif')->count();
+        $leaveStudentCount = Student::where('status_mahasiswa', 'Cuti')->count();
+        $inactiveStudentCount = Student::where(function ($query) {
+            $query->whereNotIn('status_mahasiswa', ['Aktif', 'Cuti'])
+                ->orWhereNull('status_mahasiswa');
+        })->count();
+        $search = trim((string) $request->input('search'));
+        $statusMahasiswa = $request->input('status_mahasiswa');
+        $programStudi = trim((string) $request->input('program_studi'));
+        $angkatan = trim((string) $request->input('angkatan'));
+
+        $programOptions = \App\Models\StudyProgram::query()->orderBy('name')->pluck('name')
+            ->merge(
+                Student::query()
+                    ->whereNotNull('program_studi')
+                    ->where('program_studi', '!=', '')
+                    ->distinct()
+                    ->orderBy('program_studi')
+                    ->pluck('program_studi')
+            )
+            ->map(fn ($name) => trim((string) $name))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        $angkatanOptions = Student::query()
+            ->whereNotNull('angkatan')
+            ->where('angkatan', '!=', '')
+            ->distinct()
+            ->orderByDesc('angkatan')
+            ->pluck('angkatan');
+
+        $prodiCount = $programOptions->count();
+
+        $students = Student::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('nim', 'like', "%{$search}%");
+                });
+            })
+            ->when($statusMahasiswa === 'Aktif', function ($query) {
+                $query->where('status_mahasiswa', 'Aktif');
+            })
+            ->when($statusMahasiswa === 'Cuti', function ($query) {
+                $query->where('status_mahasiswa', 'Cuti');
+            })
+            ->when($statusMahasiswa === 'Tidak Aktif', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNotIn('status_mahasiswa', ['Aktif', 'Cuti'])
+                        ->orWhereNull('status_mahasiswa');
+                });
+            })
+            ->when($programStudi !== '', function ($query) use ($programStudi) {
+                $query->where('program_studi', $programStudi);
+            })
+            ->when($angkatan !== '', function ($query) use ($angkatan) {
+                $query->where('angkatan', $angkatan);
+            })
+            ->orderBy('nama_lengkap')
+            ->paginate(15)
+            ->appends($request->query());
+
+        $listRoute = route('akademik.dashboard');
+        $lecturerCount = User::where('role', 'admin')->count();
+
+        $announcementCount = 0;
+        $recentAnnouncements = collect();
+        if (Schema::hasTable('announcements')) {
+            $announcementCount = Announcement::query()->published()->count();
+            $recentAnnouncements = Announcement::query()
+                ->published()
+                ->orderByDesc('published_at')
+                ->limit(5)
+                ->get();
+        }
+
+        $menus = \App\Models\MenuItem::active()
+            ->forRole('akademik')
+            ->ordered()
+            ->get()
+            ->map(function ($menu) {
+                $menu->menu_url = $menu->full_url;
+                return $menu;
+            });
+
+        return view('akademik.dashboard.index', compact(
+            'user',
+            'studentCount',
+            'activeStudentCount',
+            'leaveStudentCount',
+            'inactiveStudentCount',
+            'prodiCount',
+            'students',
+            'search',
+            'statusMahasiswa',
+            'programOptions',
+            'programStudi',
+            'angkatanOptions',
+            'angkatan',
+            'listRoute',
+            'lecturerCount',
+            'announcementCount',
+            'recentAnnouncements',
             'menus'
         ));
     }

@@ -57,132 +57,27 @@
         </div>
     </div>
 
-    {{-- Quick Actions --}}
-    <div class="section-block">
-        <div class="section-header">
-            <h4><i class="bi bi-grid-fill me-2 text-success"></i> Layanan & Menu Cepat</h4>
-        </div>
-        <div class="actions-grid">
-            @if(isset($menus) && $menus->count() > 0)
-                @foreach($menus as $menu)
-                    <a href="{{ $menu->menu_url }}" class="action-card" target="{{ $menu->target ?? '_self' }}">
-                        <div class="card-icon"><i class="{{ $menu->icon ?: 'bi bi-grid-fill' }}"></i></div>
-                        <div class="card-text">
-                            <h5>{{ $menu->name }}</h5>
-                            <p>{{ $menu->description ?? 'Layanan operasional keuangan' }}</p>
-                        </div>
-                        <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-                    </a>
-                @endforeach
-            @else
-                <a href="{{ route('admin.skpi.verifikasi-pembayaran.index') }}" class="action-card highlight">
-                    <div class="card-icon"><i class="bi bi-credit-card-2-front-fill"></i></div>
-                    <div class="card-text">
-                        <h5>Verifikasi Pembayaran Wisuda</h5>
-                        <p>Validasi transfer bank, slip pembayaran, dan naskah publikasi.</p>
-                    </div>
-                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-                </a>
-                <a href="{{ route('admin.skpi.index') }}" class="action-card">
-                    <div class="card-icon"><i class="bi bi-award"></i></div>
-                    <div class="card-text">
-                        <h5>Alur Kelulusan SKPI</h5>
-                        <p>Pantau keterkaitan status pembayaran dengan penerbitan berkas.</p>
-                    </div>
-                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-                </a>
-                <a href="{{ route('admin.announcements.index') }}" class="action-card">
-                    <div class="card-icon"><i class="bi bi-megaphone-fill"></i></div>
-                    <div class="card-text">
-                        <h5>Pengumuman Keuangan</h5>
-                        <p>Informasi jadwal dan ketentuan pembayaran wisuda mahasiswa.</p>
-                    </div>
-                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-                </a>
-                <a href="{{ route('calendar.index') }}" class="action-card">
-                    <div class="card-icon"><i class="bi bi-calendar-check"></i></div>
-                    <div class="card-text">
-                        <h5>Kalender Akademik</h5>
-                        <p>Jadwal batas akhir pembayaran dan periode wisuda.</p>
-                    </div>
-                    <div class="card-arrow"><i class="bi bi-arrow-right"></i></div>
-                </a>
-            @endif
-        </div>
-    </div>
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
-    {{-- Recent Payments Table --}}
-    <div class="section-block">
-        <div class="section-header d-flex justify-content-between align-items-center">
-            <h4><i class="bi bi-receipt me-2 text-success"></i> Pengajuan Pembayaran Wisuda Terbaru</h4>
-            <a href="{{ route('admin.skpi.verifikasi-pembayaran.index') }}" class="btn-link-action">Lihat Semua Data <i class="bi bi-arrow-right"></i></a>
-        </div>
-        <div class="table-container">
-            <table class="custom-table">
-                <thead>
-                    <tr>
-                        <th>Mahasiswa</th>
-                        <th>Program Studi</th>
-                        <th>Status Pembayaran</th>
-                        <th>Bukti Pembayaran</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse(($recentRegistrations ?? collect()) as $item)
-                        <tr>
-                            <td>
-                                <strong>{{ $item->nama_lengkap ?? $item->student->nama_lengkap ?? '-' }}</strong><br>
-                                <small class="text-muted">NIM: {{ $item->nim ?? $item->student->nim ?? '-' }}</small>
-                            </td>
-                            <td>
-                                <span class="badge-prodi">{{ $item->student->program_studi ?? '-' }}</span>
-                            </td>
-                            <td>
-                                @if($item->payment_status === 'approved')
-                                    <span class="status-pill approved">Disetujui</span>
-                                @elseif($item->payment_status === 'rejected')
-                                    <span class="status-pill rejected">Ditolak</span>
-                                @elseif($item->payment_status === 'revision')
-                                    <span class="status-pill revision">Revisi</span>
-                                @else
-                                    <span class="status-pill pending">Pending</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($item->doc_pembayaran_wisuda)
-                                    <span class="text-success"><i class="bi bi-file-earmark-check-fill me-1"></i> Terlampir</span>
-                                @else
-                                    <span class="text-muted"><i class="bi bi-file-earmark-x me-1"></i> Belum ada</span>
-                                @endif
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.skpi.verifikasi-pembayaran.index', ['search' => $item->nim ?? '']) }}" class="btn-detail">
-                                    <i class="bi bi-check2-square"></i> Validasi
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
-                                <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
-                                Belum ada pengajuan pembayaran wisuda yang menunggu verifikasi.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    @include('keuangan.dashboard._payment_table')
 </div>
 @endsection
 
 @push('css')
+<link rel="stylesheet" href="{{ asset('admin/css/skpi-daftar-skpi.css') }}">
 <style>
     .dashboard-keuangan-container {
-        max-width: 1200px;
+        max-width: 1280px;
         margin: 0 auto;
         padding-bottom: 40px;
+    }
+
+    .keuangan-payment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
     }
 
     .welcome-banner {
