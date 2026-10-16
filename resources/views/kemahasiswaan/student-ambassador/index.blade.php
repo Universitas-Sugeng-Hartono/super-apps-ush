@@ -220,14 +220,6 @@
                                         <a href="{{ route('kemahasiswaan.student-ambassador.edit', $student->id) }}" class="btn-edit" title="Edit">
                                             <i class="bi bi-pencil"></i> Edit
                                         </a>
-                                        @if($student->nim && $student->nim !== '-')
-                                            <form action="{{ route('kemahasiswaan.student-ambassador.send-single-siakad', $student->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Kirim rekomendasi beasiswa mahasiswa ini ({{ $student->beasiswa ?: '0%' }}) ke kolom Rekomendasi di SIAKAD?')">
-                                                @csrf
-                                                <button type="submit" class="btn-send-single-siakad" title="Kirim Rekomendasi ke SIAKAD">
-                                                    <i class="bi bi-send-check"></i>
-                                                </button>
-                                            </form>
-                                        @endif
                                         <a href="{{ route('kemahasiswaan.student-ambassador.reset-password', $student->id) }}"
                                            class="btn-reset"
                                            onclick="return confirm('Yakin ingin mereset password mahasiswa ini ke 12345678?')"
@@ -369,26 +361,6 @@
         transform: translateY(0);
     }
 
-    .btn-send-single-siakad {
-        background: #ECFDF5;
-        border: 1px solid #A7F3D0;
-        color: #047857;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 14px;
-    }
-    .btn-send-single-siakad:hover {
-        background: #059669;
-        border-color: #059669;
-        color: white;
-        transform: translateY(-1px);
-    }
 
     /* Manual Add Button */
     .btn-outline-manual {

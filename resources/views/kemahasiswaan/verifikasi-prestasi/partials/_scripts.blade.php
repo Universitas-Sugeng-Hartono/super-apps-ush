@@ -399,7 +399,7 @@
             badgeLabel = 'EVALUASI AKHIR PERIODE';
         } else if (recType === 'reguler') {
             iconClass = 'bi-mortarboard-fill';
-            badgeLabel = 'KETENTUAN SKPI REGULER';
+            badgeLabel = 'STANDAR BEASISWA BELUM TERCAPAI';
         } else if (recType === 'future') {
             iconClass = 'bi-calendar-range-fill';
             badgeLabel = 'TARGET PERIODE MENDATANG';
@@ -636,11 +636,12 @@
         const progressList = Object.values(evalData.fields_progress || {});
 
         progressList.forEach(f => {
-            const isOk = f.current >= f.target;
+            const isOk = f.is_fulfilled !== undefined ? !!f.is_fulfilled : (f.target > 0 && f.current >= f.target);
             const fillClass = isOk ? 'fill-green' : 'fill-blue';
+            const deficit = Math.max(0, (f.target || 0) - (f.current || 0));
             const badgeHtml = isOk
                 ? `<span class="badge-field-status status-ok">Terpenuhi (${f.real_percent}%)</span>`
-                : `<span class="badge-field-status status-kurang">Kurang ${f.target - f.current} Poin (${f.real_percent}%)</span>`;
+                : `<span class="badge-field-status status-kurang">Kurang ${deficit} Poin (${f.real_percent}%)</span>`;
 
             barsHtml += `
                 <div class="pokema-field-row">

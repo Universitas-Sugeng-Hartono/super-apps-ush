@@ -89,7 +89,7 @@
 
                     <div class="form-group">
                         <label>Dosen PA <i class="bi bi-lock-fill text-muted" style="font-size: 11px;"></i></label>
-                        <input type="text" class="form-control readonly-input" value="{{ $student->academicAdvisor->name ?? ($student->id_lecturer ? 'ID: ' . $student->id_lecturer : '-') }}" readonly>
+                        <input type="text" class="form-control readonly-input" value="{{ $student->dosenPA->name ?? ($student->academicAdvisor->name ?? ($student->id_lecturer ? 'ID: ' . $student->id_lecturer : '-')) }}" readonly>
                     </div>
                 </div>
 
