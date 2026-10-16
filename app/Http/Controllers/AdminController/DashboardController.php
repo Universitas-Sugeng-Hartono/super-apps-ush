@@ -47,56 +47,9 @@ class DashboardController extends Controller
             return redirect()->route('akademik.dashboard');
         }
 
-        // Dashboard khusus role Keuangan
+        // Dashboard khusus role Keuangan - redirect ke dedicated route
         if ($userRole === 'keuangan') {
-            $pendingCount = \App\Models\SkpiRegistration::where('payment_status', 'pending')->count();
-            $approvedCount = \App\Models\SkpiRegistration::where('payment_status', 'approved')->count();
-            $rejectedCount = \App\Models\SkpiRegistration::whereIn('payment_status', ['rejected', 'revision'])->count();
-            $totalCount = \App\Models\SkpiRegistration::count();
-
-            $search = trim((string) $request->input('search'));
-            $status = $request->input('status');
-            $studyProgramId = $request->input('study_program_id');
-
-            $registrations = \App\Models\SkpiRegistration::with(['student'])
-                ->whereNotNull('doc_pembayaran_wisuda')
-                ->when($search !== '', function ($query) use ($search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('nama_lengkap', 'like', "%{$search}%")
-                            ->orWhere('nim', 'like', "%{$search}%");
-                    });
-                })
-                ->when(in_array($status, ['pending', 'approved', 'revision', 'rejected'], true), function ($query) use ($status) {
-                    $query->where('payment_status', $status);
-                })
-                ->when($studyProgramId, function ($query) use ($studyProgramId) {
-                    $query->whereHas('student', function ($q) use ($studyProgramId) {
-                        $studyProgram = \App\Models\StudyProgram::find($studyProgramId);
-                        if ($studyProgram) {
-                            $q->where('program_studi', $studyProgram->name);
-                        }
-                    });
-                })
-                ->latest('updated_at')
-                ->paginate(15)
-                ->appends($request->query());
-
-            $studyPrograms = \App\Models\StudyProgram::all();
-            $listRoute = route('admin.dashboard');
-
-            return view('keuangan.dashboard.index', compact(
-                'user',
-                'pendingCount',
-                'approvedCount',
-                'rejectedCount',
-                'totalCount',
-                'registrations',
-                'search',
-                'status',
-                'studyPrograms',
-                'studyProgramId',
-                'listRoute'
-            ));
+            return redirect()->route('keuangan.dashboard');
         }
 
         // Data untuk Chart: Mahasiswa per Angkatan
@@ -300,65 +253,17 @@ class DashboardController extends Controller
             $query->whereNotIn('status_mahasiswa', ['Aktif', 'Cuti'])
                 ->orWhereNull('status_mahasiswa');
         })->count();
-        $search = trim((string) $request->input('search'));
-        $statusMahasiswa = $request->input('status_mahasiswa');
-        $programStudi = trim((string) $request->input('program_studi'));
-        $angkatan = trim((string) $request->input('angkatan'));
+        $ambassadorCount = Student::where('status', 'studentambassador')->count();
+        $scholarshipCount = Student::whereNotNull('beasiswa')
+            ->whereNotIn('beasiswa', ['', '0%', '0'])
+            ->count();
 
-        $programOptions = \App\Models\StudyProgram::query()->orderBy('name')->pluck('name')
-            ->merge(
-                Student::query()
-                    ->whereNotNull('program_studi')
-                    ->where('program_studi', '!=', '')
-                    ->distinct()
-                    ->orderBy('program_studi')
-                    ->pluck('program_studi')
-            )
-            ->map(fn ($name) => trim((string) $name))
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values();
+        $recentStudents = Student::with(['dosenPA'])
+            ->latest()
+            ->limit(5)
+            ->get();
 
-        $angkatanOptions = Student::query()
-            ->whereNotNull('angkatan')
-            ->where('angkatan', '!=', '')
-            ->distinct()
-            ->orderByDesc('angkatan')
-            ->pluck('angkatan');
-
-        $prodiCount = $programOptions->count();
-
-        $students = Student::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nama_lengkap', 'like', "%{$search}%")
-                        ->orWhere('nim', 'like', "%{$search}%");
-                });
-            })
-            ->when($statusMahasiswa === 'Aktif', function ($query) {
-                $query->where('status_mahasiswa', 'Aktif');
-            })
-            ->when($statusMahasiswa === 'Cuti', function ($query) {
-                $query->where('status_mahasiswa', 'Cuti');
-            })
-            ->when($statusMahasiswa === 'Tidak Aktif', function ($query) {
-                $query->where(function ($q) {
-                    $q->whereNotIn('status_mahasiswa', ['Aktif', 'Cuti'])
-                        ->orWhereNull('status_mahasiswa');
-                });
-            })
-            ->when($programStudi !== '', function ($query) use ($programStudi) {
-                $query->where('program_studi', $programStudi);
-            })
-            ->when($angkatan !== '', function ($query) use ($angkatan) {
-                $query->where('angkatan', $angkatan);
-            })
-            ->orderBy('nama_lengkap')
-            ->paginate(15)
-            ->appends($request->query());
-
-        $listRoute = route('akademik.dashboard');
+        $prodiCount = \App\Models\StudyProgram::where('is_active', true)->count() ?: Student::whereNotNull('program_studi')->where('program_studi', '!=', '')->distinct()->count('program_studi');
         $lecturerCount = User::where('role', 'admin')->count();
 
         $announcementCount = 0;
@@ -381,25 +286,81 @@ class DashboardController extends Controller
                 return $menu;
             });
 
+        $activePeriod = \App\Services\SiakadAcademicPeriodService::getActivePeriod();
+        $academicPeriods = \App\Services\SiakadAcademicPeriodService::getAllPeriods();
+
         return view('akademik.dashboard.index', compact(
             'user',
+            'activePeriod',
+            'academicPeriods',
             'studentCount',
             'activeStudentCount',
             'leaveStudentCount',
             'inactiveStudentCount',
+            'ambassadorCount',
+            'scholarshipCount',
             'prodiCount',
-            'students',
-            'search',
-            'statusMahasiswa',
-            'programOptions',
-            'programStudi',
-            'angkatanOptions',
-            'angkatan',
-            'listRoute',
+            'recentStudents',
             'lecturerCount',
             'announcementCount',
             'recentAnnouncements',
             'menus'
+        ));
+    }
+
+    /**
+     * Dashboard khusus role Keuangan (/keuangan/dashboard)
+     */
+    public function keuanganDashboard(Request $request)
+    {
+        $user = auth()->user();
+        $pendingCount = \App\Models\SkpiRegistration::where('payment_status', 'pending')->count();
+        $approvedCount = \App\Models\SkpiRegistration::where('payment_status', 'approved')->count();
+        $rejectedCount = \App\Models\SkpiRegistration::whereIn('payment_status', ['rejected', 'revision'])->count();
+        $totalCount = \App\Models\SkpiRegistration::count();
+
+        $search = trim((string) $request->input('search'));
+        $status = $request->input('status');
+        $studyProgramId = $request->input('study_program_id');
+
+        $registrations = \App\Models\SkpiRegistration::with(['student'])
+            ->whereNotNull('doc_pembayaran_wisuda')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('nim', 'like', "%{$search}%");
+                });
+            })
+            ->when(in_array($status, ['pending', 'approved', 'revision', 'rejected'], true), function ($query) use ($status) {
+                $query->where('payment_status', $status);
+            })
+            ->when($studyProgramId, function ($query) use ($studyProgramId) {
+                $query->whereHas('student', function ($q) use ($studyProgramId) {
+                    $studyProgram = \App\Models\StudyProgram::find($studyProgramId);
+                    if ($studyProgram) {
+                        $q->where('program_studi', $studyProgram->name);
+                    }
+                });
+            })
+            ->latest('updated_at')
+            ->paginate(15)
+            ->appends($request->query());
+
+        $studyPrograms = \App\Models\StudyProgram::all();
+        $listRoute = route('keuangan.dashboard');
+
+        return view('keuangan.dashboard.index', compact(
+            'user',
+            'pendingCount',
+            'approvedCount',
+            'rejectedCount',
+            'totalCount',
+            'registrations',
+            'search',
+            'status',
+            'studyPrograms',
+            'studyProgramId',
+            'listRoute'
         ));
     }
 }

@@ -640,8 +640,8 @@
             const fillClass = isOk ? 'fill-green' : 'fill-blue';
             const deficit = Math.max(0, (f.target || 0) - (f.current || 0));
             const badgeHtml = isOk
-                ? `<span class="badge-field-status status-ok">Terpenuhi (${f.real_percent}%)</span>`
-                : `<span class="badge-field-status status-kurang">Kurang ${deficit} Poin (${f.real_percent}%)</span>`;
+                ? `<span class="badge-field-status status-ok">Terpenuhi</span>`
+                : `<span class="badge-field-status status-kurang">Kurang ${deficit} Poin</span>`;
 
             barsHtml += `
                 <div class="pokema-field-row">

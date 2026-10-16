@@ -3,8 +3,13 @@
 @section('content')
 <div class="page-shell">
     <div class="mb-3" style="padding-top: 10px;">
-        <a href="{{ route('admin.skpi.index') }}" class="text-decoration-none text-secondary" style="font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; gap: 8px;">
-            <i class="bi bi-arrow-left"></i> Kembali ke Menu Utama SKPI
+        @php
+            $isKeuangan = auth()->user()?->role === 'keuangan';
+            $backUrl = $isKeuangan ? route('keuangan.dashboard') : route('admin.skpi.index');
+            $backText = $isKeuangan ? 'Kembali ke Dashboard Keuangan' : 'Kembali ke Menu Utama SKPI';
+        @endphp
+        <a href="{{ $backUrl }}" class="text-decoration-none text-secondary" style="font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="bi bi-arrow-left"></i> {{ $backText }}
         </a>
     </div>
 
@@ -155,17 +160,13 @@
                                 </button>
                                 @endif
                               @if($reg->payment_status !== 'revision')
-                                <form action="{{ route('admin.skpi.verifikasi-pembayaran.revision', $reg->id) }}" method="POST" class="d-inline m-0 p-0">
-                                 @csrf
-                                 @method('PATCH')
-                                <button type="submit" 
-                                class="btn-action btn-warning text-white" 
+                                <button type="button" 
+                                class="btn-action btn-warning text-white btn-revision" 
                                 style="background-color: #ffc107; border-color: #ffc107; color: #fff;" 
                                 title="Minta Revisi" 
-                                onclick="showRevisionModal('{{ $reg->id }}', '{{ $reg->student->name ?? '' }}')">
+                                onclick="showRevisionModal('{{ $reg->id }}', '{{ addslashes($reg->nama_lengkap ?? $reg->student->name ?? '') }}')">
                                 <i class="bi bi-arrow-repeat me-1"></i>
                                 </button>
-                                </form>
                                 @endif
                                 
                                 <button class="btn-table btn-table-danger" onclick="showRejectModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Tolak">
@@ -247,6 +248,34 @@
             <div class="modal-footer-modern">
                 <button type="button" class="btn-cancel-modern" onclick="closeRejectModal()">Batal</button>
                 <button type="submit" class="btn-submit-modern bg-danger">Tolak & Minta Perbaikan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Modal Revision --}}
+<div id="revisionModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern">
+        <div class="modal-header-modern bg-warning text-dark">
+            <div class="modal-icon-wrap" style="color: #212529;"><i class="bi bi-arrow-repeat"></i></div>
+            <div class="modal-title-wrap">
+                <h4 style="color: #212529;">Minta Revisi Dokumen</h4>
+                <p id="revision_target_name" style="color: #495057;"></p>
+            </div>
+        </div>
+        <form id="revisionForm" method="POST">
+            @csrf
+            @method('PATCH')
+            <div class="modal-body-modern">
+                <p style="color: #4b5563;">Status verifikasi akan diubah menjadi <strong>Revisi</strong> agar mahasiswa dapat memperbaiki dokumen.</p>
+                <div class="form-group-modern mt-3">
+                    <label>Catatan Revisi (Opsional)</label>
+                    <textarea name="payment_approval_notes" class="form-control-modern" rows="3" placeholder="Tulis instruksi revisi yang jelas..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modern" onclick="closeRevisionModal()">Batal</button>
+                <button type="submit" class="btn-submit-modern bg-warning text-dark font-weight-bold">Kirim Revisi</button>
             </div>
         </form>
     </div>

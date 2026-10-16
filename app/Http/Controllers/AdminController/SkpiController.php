@@ -21,9 +21,11 @@ class SkpiController extends Controller
 {
     public function index()
     {
+        if (auth()->user()?->role === 'keuangan') {
+            return redirect()->route('keuangan.dashboard');
+        }
 
-
-        return view('admin.skpi.index',);
+        return view('admin.skpi.index');
     }
 
     public function daftarSkpi(Request $request)
@@ -282,28 +284,36 @@ class SkpiController extends Controller
             'payment_approval_notes' => $request->payment_approval_notes,
         ]);
 
+        $fallback = auth()->user()?->role === 'keuangan'
+            ? route('keuangan.dashboard')
+            : route('admin.skpi.verifikasi-pembayaran.index');
+
         return redirect()
-            ->route('admin.skpi.verifikasi-pembayaran.index')
+            ->back(fallback: $fallback)
             ->with('success', 'Pembayaran mahasiswa berhasil disetujui.');
     }
 
     public function revisionPembayaran(Request $request, $id)
-{
-    $registration = \App\Models\SkpiRegistration::findOrFail($id);
+    {
+        $registration = \App\Models\SkpiRegistration::findOrFail($id);
 
-    $request->validate([
-        'payment_approval_notes' => 'nullable|string',
-    ]);
+        $request->validate([
+            'payment_approval_notes' => 'nullable|string',
+        ]);
 
-    $registration->update([
-        'payment_status' => 'revision',
-        'payment_approval_notes' => $request->payment_approval_notes,
-    ]);
+        $registration->update([
+            'payment_status' => 'revision',
+            'payment_approval_notes' => $request->payment_approval_notes,
+        ]);
 
-    return redirect()
-        ->route('admin.skpi.verifikasi-pembayaran.index')
-        ->with('success', 'Status verifikasi berhasil diubah menjadi Revisi.');
-}
+        $fallback = auth()->user()?->role === 'keuangan'
+            ? route('keuangan.dashboard')
+            : route('admin.skpi.verifikasi-pembayaran.index');
+
+        return redirect()
+            ->back(fallback: $fallback)
+            ->with('success', 'Status verifikasi berhasil diubah menjadi Revisi.');
+    }
 
     public function rejectPembayaran(Request $request, $id)
     {
@@ -320,8 +330,12 @@ class SkpiController extends Controller
             'payment_approval_notes' => $request->payment_approval_notes,
         ]);
 
+        $fallback = auth()->user()?->role === 'keuangan'
+            ? route('keuangan.dashboard')
+            : route('admin.skpi.verifikasi-pembayaran.index');
+
         return redirect()
-            ->route('admin.skpi.verifikasi-pembayaran.index')
+            ->back(fallback: $fallback)
             ->with('success', 'Pembayaran mahasiswa berhasil ditolak.');
     }
 

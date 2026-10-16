@@ -4,7 +4,15 @@
     <!-- Page Header -->
     <div class="page-header mb-4">
         <h2 class="page-title">Dashboard Dosen PA</h2>
-        <span class="semester-badge">{{ session('user_prodi') ?? 'Bisnis Digital' }}</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            @if(!empty($activePeriod))
+                <span class="ta-top-pill" title="Tahun Akademik & Semester Aktif (SIAKAD)">
+                    <span class="ta-dot"></span>
+                    TA: {{ $activePeriod['tahun_akademik'] ?? '-' }} {{ !empty($activePeriod['semester']) ? '• ' . $activePeriod['semester'] : '' }}
+                </span>
+            @endif
+            <span class="semester-badge">{{ session('user_prodi') ?? 'Bisnis Digital' }}</span>
+        </div>
     </div>
 
     <!-- Charts Section -->
@@ -218,6 +226,33 @@
         font-size: 13px;
         font-weight: 600;
         box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+    }
+
+    .ta-top-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        color: #1D4ED8;
+        padding: 7px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+    }
+    .ta-top-pill .ta-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10B981;
+        display: inline-block;
+        animation: pulseTaDot 2s infinite;
+    }
+    @keyframes pulseTaDot {
+        0% { transform: scale(0.95); opacity: 0.8; }
+        50% { transform: scale(1.3); opacity: 1; }
+        100% { transform: scale(0.95); opacity: 0.8; }
     }
 
     /* Menu Section */

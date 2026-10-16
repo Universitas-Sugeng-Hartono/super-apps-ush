@@ -4,10 +4,16 @@
 <div class="dashboard-kemahasiswaan-container">
     {{-- Header Banner --}}
     <div class="welcome-banner">
+        @if(!empty($activePeriod))
+            <div class="banner-top-ta-badge" title="Tahun Akademik & Semester Aktif (SIAKAD)">
+                <span class="ta-indicator-dot"></span>
+                TA: {{ $activePeriod['tahun_akademik'] ?? '-' }} {{ !empty($activePeriod['semester']) ? '• ' . $activePeriod['semester'] : '' }}
+            </div>
+        @endif
         <div class="banner-content">
             <div class="text-side">
                 <span class="role-badge-tag"><i class="bi bi-award-fill"></i> Biro Kemahasiswaan</span>
-                <h1>Selamat Datang, {{ explode(' ', auth()->user()->name ?? 'Staf')[0] }}! 👋</h1>
+                <h1>Selamat Datang, {{ explode(' ', auth()->user()->name ?? 'Staf')[0] }}!</h1>
                 <p>Pusat verifikasi prestasi, pembinaan aktivitas mahasiswa, dan validasi data kelulusan SKPI Universitas Sugeng Hartono.</p>
                 <div class="banner-badges">
                     <span class="b-badge"><i class="bi bi-shield-check"></i> Portal Institusi</span>
@@ -15,7 +21,7 @@
                 </div>
             </div>
             <div class="icon-side">
-                <i class="bi bi-patch-check"></i>
+                
             </div>
         </div>
         <div class="banner-pattern"></div>
@@ -229,6 +235,47 @@
         overflow: hidden;
         margin-bottom: 30px;
         box-shadow: 0 15px 35px rgba(0, 77, 64, 0.25);
+    }
+
+    /* Header Banner Top-Right Academic Period Badge */
+    .banner-top-ta-badge {
+        position: absolute;
+        top: 24px;
+        right: 32px;
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        color: #ffffff;
+        padding: 6px 16px;
+        border-radius: 99px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    }
+    .banner-top-ta-badge .ta-indicator-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #34D399;
+        display: inline-block;
+        animation: pulseLiveDot 2s infinite;
+    }
+    @keyframes pulseLiveDot {
+        0% { transform: scale(0.95); opacity: 0.8; }
+        50% { transform: scale(1.3); opacity: 1; }
+        100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    @media (max-width: 768px) {
+        .banner-top-ta-badge {
+            position: static;
+            display: inline-flex;
+            margin-bottom: 14px;
+        }
     }
 
     .role-badge-tag {
