@@ -25,7 +25,18 @@ class StudentAmbassadorController extends Controller
         $search = $request->input('search');
         $programStudi = $request->input('program_studi');
         $statusFilter = $request->input('status');
+        $angkatanFilter = $request->input('angkatan');
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
+
+        $availableAngkatan = Student::whereNotNull('angkatan')
+            ->where('angkatan', '>', 0)
+            ->distinct()
+            ->orderBy('angkatan', 'desc')
+            ->pluck('angkatan');
+
+        if ($availableAngkatan->isEmpty()) {
+            $availableAngkatan = collect([2026, 2025, 2024, 2023]);
+        }
 
         $students = Student::with(['dosenPA'])
             ->when($search, function ($query, $search) {
@@ -50,9 +61,17 @@ class StudentAmbassadorController extends Controller
                     });
                 }
             })
+            ->when($angkatanFilter, function ($query, $angkatanFilter) {
+                $query->where('angkatan', $angkatanFilter);
+            })
             ->latest()
-            ->paginate($programStudi || $statusFilter ? 9999 : 15)
-            ->appends(['search' => $search, 'program_studi' => $programStudi, 'status' => $statusFilter]);
+            ->paginate($programStudi || $statusFilter || $angkatanFilter ? 9999 : 15)
+            ->appends([
+                'search' => $search,
+                'program_studi' => $programStudi,
+                'status' => $statusFilter,
+                'angkatan' => $angkatanFilter,
+            ]);
 
         $totalAmbassador = Student::where('status', 'studentambassador')->count();
         $totalMahasiswa = Student::where(function ($q) {
@@ -66,7 +85,9 @@ class StudentAmbassadorController extends Controller
             'search',
             'programStudi',
             'statusFilter',
+            'angkatanFilter',
             'studyPrograms',
+            'availableAngkatan',
             'totalAmbassador',
             'totalMahasiswa'
         ));
@@ -214,30 +235,6 @@ class StudentAmbassadorController extends Controller
 
         return redirect()->route('kemahasiswaan.student-ambassador.index')
             ->with('success', "Data {$student->nama_lengkap} berhasil diperbarui (Status Penetapan & Catatan).");
-    }
-
-    /**
-     * Hapus data
-     */
-    public function destroy($id)
-    {
-        $student = Student::findOrFail($id);
-        $student->delete();
-
-        return redirect()->route('kemahasiswaan.student-ambassador.index')
-            ->with('success', 'Data berhasil dihapus.');
-    }
-
-    /**
-     * Reset password ke default (12345678)
-     */
-    public function resetPassword($id)
-    {
-        $student = Student::findOrFail($id);
-        $student->password = Hash::make('12345678');
-        $student->save();
-
-        return redirect()->back()->with('success', 'Password mahasiswa/ambassador berhasil direset ke 12345678.');
     }
 
     /**
@@ -456,25 +453,58 @@ class StudentAmbassadorController extends Controller
     }
 
     /**
-     * Sinkronisasi seluruh data Student Ambassador dari Siakad (Menu Rekomendasi Beasiswa Termin)
-     * Mengambil Semester & IPK resmi dari Siakad (bukan dari bimbingan PA).
+     * Sinkronisasi data mahasiswa baru dari Siakad (Menu Rekomendasi Beasiswa & Mahasiswa Reguler)
+     * Hanya memasukkan mahasiswa baru yang BELUM terdaftar di SuperApps (tidak menimpa/mengupdate data mahasiswa yang sudah ada).
      */
     public function syncFromSiakad(Request $request, SiakadSyncService $syncService)
     {
         try {
-            $result = $syncService->syncAll();
+            $result = $syncService->syncNewStudents();
 
             if ($result['total'] === 0) {
                 return redirect()->route('kemahasiswaan.student-ambassador.index')
-                    ->with('error', 'Tidak ada data rekomendasi beasiswa termin di Siakad yang dapat disinkronkan.');
+                    ->with('error', 'Tidak ada data mahasiswa di Siakad yang dapat ditarik.');
             }
 
+            if ($result['created'] === 0) {
+                return redirect()->route('kemahasiswaan.student-ambassador.index')
+                    ->with('success', "Seluruh data mahasiswa dari Siakad ({$result['total']} mahasiswa) sudah terdaftar di SuperApps. Tidak ada data mahasiswa baru yang perlu ditarik.");
+            }
+
+            $detailBeasiswa = $result['created_beasiswa'] > 0 ? "{$result['created_beasiswa']} Beasiswa / Student Ambassador" : null;
+            $detailReguler = $result['created_reguler'] > 0 ? "{$result['created_reguler']} Mahasiswa Reguler" : null;
+            $parts = array_filter([$detailBeasiswa, $detailReguler]);
+            $breakdown = !empty($parts) ? ' (' . implode(', ', $parts) . ')' : '';
+
             return redirect()->route('kemahasiswaan.student-ambassador.index')
-                ->with('success', "Sinkronisasi Siakad berhasil! Total {$result['total']} data diproses ({$result['created']} mahasiswa baru ditambahkan sebagai Student Ambassador, {$result['updated']} data diperbarui). Semester & IPK telah diperbarui dari Siakad.");
+                ->with('success', "Berhasil menarik {$result['created']} mahasiswa baru dari SIAKAD{$breakdown}. Data mahasiswa yang sudah terdaftar tetap aman dan tidak diubah.");
         } catch (\Throwable $e) {
             Log::error('Siakad sync failed: ' . $e->getMessage());
             return redirect()->route('kemahasiswaan.student-ambassador.index')
-                ->with('error', 'Gagal menyinkronkan data dari Siakad: ' . $e->getMessage());
+                ->with('error', 'Gagal menarik data mahasiswa dari Siakad: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Refresh data akademik (Semester & IPK) dari Siakad khusus untuk mahasiswa penerima beasiswa / Student Ambassador
+     * Hanya memperbarui Semester, IPK, dan riwayatnya tanpa menambah mahasiswa baru.
+     */
+    public function refreshAcademicData(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $result = $syncService->refreshScholarshipAcademicData();
+
+            if ($result['total'] === 0) {
+                return redirect()->route('kemahasiswaan.student-ambassador.index')
+                    ->with('error', 'Tidak ada data mahasiswa penerima beasiswa yang terdaftar untuk diperbarui.');
+            }
+
+            return redirect()->route('kemahasiswaan.student-ambassador.index')
+                ->with('success', "Berhasil memperbarui Semester & Nilai IPK untuk {$result['updated']} mahasiswa penerima beasiswa langsung dari SIAKAD!");
+        } catch (\Throwable $e) {
+            Log::error('Siakad refresh academic data failed: ' . $e->getMessage());
+            return redirect()->route('kemahasiswaan.student-ambassador.index')
+                ->with('error', 'Gagal memperbarui Semester & IPK dari Siakad: ' . $e->getMessage());
         }
     }
 
@@ -490,7 +520,7 @@ class StudentAmbassadorController extends Controller
                 $student->refresh();
                 $semInfo = $student->semester ? "Semester {$student->semester}" : "-";
                 $ipkInfo = $student->ipk !== null ? "IPK " . number_format((float)$student->ipk, 2) : "IPK -";
-                return back()->with('success', "Data {$student->nama_lengkap} (NIM: {$student->nim}) berhasil diperbarui langsung dari Siakad! ({$semInfo}, {$ipkInfo}, Beasiswa: {$student->beasiswa}).");
+                return back()->with('success', "Data {$student->nama_lengkap} (NIM: {$student->nim}) berhasil diperbarui langsung dari Siakad! ({$semInfo}, {$ipkInfo}).");
             }
 
             return back()->with('error', "NIM {$student->nim} tidak ditemukan dalam daftar rekomendasi beasiswa termin di Siakad.");

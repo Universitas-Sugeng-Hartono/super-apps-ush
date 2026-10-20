@@ -937,7 +937,12 @@
                     const currentBadge = isCur ? '<span class="ak-badge-current-sem">Semester Aktif</span>' : '';
                     const ipkBadge = sem.ipk 
                         ? `<span style="font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; padding: 3px 8px; border-radius: 6px; border: 1px solid #BFDBFE;">IPK: ${sem.ipk}</span>` 
-                        : '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">Konseling belum tercatat</span>';
+                        : (isCur 
+                            ? '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada nilai IPK</span>' 
+                            : (sem.semester > (evalData.semester || 1) 
+                                ? '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">Semester Belum Berjalan</span>' 
+                                : '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">IPK belum tercatat</span>')
+                          );
                     
                     let milestoneHtml = '';
                     if (sem.is_period_milestone) {

@@ -542,9 +542,12 @@
                     const currentBadge = isCur ? '<span class="badge-current-sem">Semester Aktif</span>' : '';
                     const ipkBadge = sem.ipk 
                         ? `<span class="sem-meta-pill pill-ipk">IPK: <strong>${sem.ipk}</strong></span>` 
-                        : '<span class="sem-meta-pill pill-empty">Belum ada data konseling</span>';
-                    
-                    const ipBadge = sem.ip ? `<span class="sem-meta-pill pill-ip">IP: <strong>${sem.ip}</strong></span>` : '';
+                        : (isCur 
+                            ? '<span class="sem-meta-pill pill-empty">Belum ada nilai IPK</span>' 
+                            : (sem.semester > (evalData.semester || 1) 
+                                ? '<span class="sem-meta-pill pill-empty">Semester Belum Berjalan</span>' 
+                                : '<span class="sem-meta-pill pill-empty">IPK belum tercatat</span>')
+                          );
                     
                     let milestoneHtml = '';
                     if (sem.is_period_milestone) {
@@ -566,7 +569,6 @@
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     ${ipkBadge}
-                                    ${ipBadge}
                                 </div>
                             </div>
                             

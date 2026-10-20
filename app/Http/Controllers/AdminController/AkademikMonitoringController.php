@@ -160,13 +160,8 @@ class AkademikMonitoringController extends Controller
             ->orderByDesc('angkatan')
             ->pluck('angkatan');
 
-        $activePeriod = \App\Services\SiakadAcademicPeriodService::getActivePeriod();
-        $academicPeriods = \App\Services\SiakadAcademicPeriodService::getAllPeriods();
-
         return view('akademik.monitoring-beasiswa.index', compact(
             'students',
-            'activePeriod',
-            'academicPeriods',
             'search',
             'programStudi',
             'statusAmbassador',

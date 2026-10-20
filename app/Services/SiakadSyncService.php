@@ -46,18 +46,7 @@ class SiakadSyncService
             Log::warning("SIAKAD REST API request gagal [{$endpoint}]: {$errMsg}");
             throw new \RuntimeException($errMsg);
         } catch (\Throwable $apiEx) {
-            Log::warning("Koneksi HTTP SIAKAD API bermasalah ({$endpoint}): " . $apiEx->getMessage());
-
-            // Fallback: Jika koneksi langsung DB 'siakad' masih dikonfigurasi di database.php
-            if (config('database.connections.siakad.database')) {
-                try {
-                    Log::info("Mencoba fallback ke direct database connection 'siakad'...");
-                    return $this->fetchCandidatesFromDatabase($nim);
-                } catch (\Throwable $dbEx) {
-                    Log::error("Fallback direct database Siakad juga gagal: " . $dbEx->getMessage());
-                }
-            }
-
+            Log::error("Koneksi HTTP SIAKAD REST API bermasalah ({$endpoint}): " . $apiEx->getMessage());
             throw new \RuntimeException("Gagal mengambil data dari SIAKAD REST API ({$endpoint}): " . $apiEx->getMessage(), 0, $apiEx);
         }
     }
@@ -147,6 +136,143 @@ class SiakadSyncService
     /**
      * Eksekusi sinkronisasi massal seluruh data dari Siakad
      */
+    /**
+     * Sinkronisasi mahasiswa baru dari Siakad (Insert Only)
+     * Hanya memasukkan mahasiswa baru yang belum terdaftar di SuperApps (Beasiswa & Reguler).
+     * Tidak mengubah/menimpa data mahasiswa yang sudah ada di SuperApps.
+     */
+    public function syncNewStudents(): array
+    {
+        $candidates = $this->fetchCandidates();
+
+        if ($candidates->isEmpty()) {
+            return [
+                'total'            => 0,
+                'created'          => 0,
+                'created_beasiswa' => 0,
+                'created_reguler'  => 0,
+                'skipped_existing' => 0,
+            ];
+        }
+
+        $created = 0;
+        $createdBeasiswa = 0;
+        $createdReguler = 0;
+        $skippedExisting = 0;
+
+        DB::beginTransaction();
+        try {
+            $defaultLecturerId = User::whereIn('role', ['admin', 'superadmin', 'masteradmin'])->value('id') ?? 1;
+            $defaultPasswordHash = Hash::make('12345678');
+
+            foreach ($candidates as $row) {
+                $nim = trim((string) $row->nim);
+                if ($nim === '' || $nim === '-') {
+                    continue;
+                }
+
+                $exists = Student::where('nim', $nim)->exists();
+                if ($exists) {
+                    $skippedExisting++;
+                    continue; // PENTING: Tombol ini hanya menarik data baru, tidak menimpa yang sudah ada!
+                }
+
+                $createData = $this->extractCreateData($row, $defaultLecturerId, $defaultPasswordHash);
+                Student::create($createData);
+                $created++;
+
+                if ($createData['status'] === 'studentambassador') {
+                    $createdBeasiswa++;
+                } else {
+                    $createdReguler++;
+                }
+            }
+
+            DB::commit();
+
+            return [
+                'total'            => $candidates->count(),
+                'created'          => $created,
+                'created_beasiswa' => $createdBeasiswa,
+                'created_reguler'  => $createdReguler,
+                'skipped_existing' => $skippedExisting,
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Perbarui (Refresh) Semester & Nilai IPK dari Siakad (bisa seluruh mahasiswa atau khusus beasiswa)
+     * Hanya memperbarui Semester, IPK, tanggal/periode masuk, dan riwayatnya tanpa menambah mahasiswa baru.
+     */
+    public function refreshScholarshipAcademicData(bool $onlyScholarship = true): array
+    {
+        $query = Student::whereNotNull('nim')
+            ->where('nim', '!=', '')
+            ->where('nim', '!=', '-');
+
+        if ($onlyScholarship) {
+            $query->where(function ($q) {
+                $q->where('status', 'studentambassador')
+                  ->orWhere(function ($sub) {
+                      $sub->whereNotNull('beasiswa')
+                          ->where('beasiswa', '!=', '0%')
+                          ->where('beasiswa', '!=', '');
+                  });
+            });
+        }
+
+        $students = $query->get();
+
+        if ($students->isEmpty()) {
+            return [
+                'total'   => 0,
+                'updated' => 0,
+                'skipped' => 0,
+            ];
+        }
+
+        $candidates = $this->fetchCandidates();
+        $candidateMap = $candidates->keyBy('nim');
+
+        $updated = 0;
+        $skipped = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($students as $student) {
+                $row = $candidateMap->get($student->nim);
+
+                if ($row) {
+                    $updateData = $this->extractUpdateData($student, $row);
+                    if (!empty($updateData)) {
+                        $student->update($updateData);
+                        $updated++;
+                        continue;
+                    }
+                }
+                $skipped++;
+            }
+
+            DB::commit();
+
+            return [
+                'total'   => $students->count(),
+                'updated' => $updated,
+                'skipped' => $skipped,
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Eksekusi sinkronisasi massal seluruh data dari Siakad (Insert & Update)
+     * Tetap dipertahankan untuk kompatibilitas fungsi sinkronisasi menyeluruh.
+     */
     public function syncAll(): array
     {
         $candidates = $this->fetchCandidates();
@@ -205,6 +331,7 @@ class SiakadSyncService
 
     /**
      * Preview ringkasan data sebelum sinkronisasi
+     * Hanya menampilkan jumlah data beasiswa, reguler, dan calon mahasiswa baru yang siap ditarik.
      */
     public function preview(): array
     {
@@ -213,80 +340,90 @@ class SiakadSyncService
         $existingNims = Student::whereIn('nim', $nims)->pluck('nim')->toArray();
 
         $total = $candidates->count();
-        $updateCount = count($existingNims);
-        $newCount = $total - $updateCount;
+        $newCandidates = $candidates->filter(fn ($c) => !in_array($c->nim, $existingNims, true));
+        $newCount = $newCandidates->count();
 
-        $sample = $candidates->take(5)->map(function ($c) use ($existingNims) {
-            $beasiswaVal = $c->persentase_final ?: ($c->persentase_rekomendasi ?: $c->beasiswa_sekarang);
-            return [
-                'nim' => $c->nim,
-                'name' => $c->name,
-                'prodi' => $this->formatProdiName((string) $c->prodi),
-                'semester' => $c->semester_mhs ?: $c->fase_terakhir,
-                'ipk' => $c->ipk_acuan ?: $c->ipk_terakhir,
-                'beasiswa' => $beasiswaVal !== null ? (rtrim(rtrim(number_format((float) $beasiswaVal, 2), '0'), '.') . '%') : '-',
-                'is_existing' => in_array($c->nim, $existingNims, true),
-            ];
-        });
+        // Hitung mahasiswa beasiswa dari rekomendasi beasiswa termin di Siakad (114 mahasiswa)
+        $isBeasiswaFn = function ($c) {
+            return !empty($c->fase_terakhir) && ((int) $c->fase_terakhir % 3 === 0) && ($c->beasiswa_sekarang > 0);
+        };
+
+        $beasiswaCandidates = $candidates->filter($isBeasiswaFn);
+        $beasiswaCount = $beasiswaCandidates->count();
+        $regulerCount = max(0, $total - $beasiswaCount);
+
+        $newBeasiswaCandidates = $newCandidates->filter($isBeasiswaFn);
+        $newBeasiswaCount = $newBeasiswaCandidates->count();
+        $newRegulerCount = max(0, $newCount - $newBeasiswaCount);
 
         return [
-            'total'        => $total,
-            'new_count'    => $newCount,
-            'update_count' => $updateCount,
-            'sample'       => $sample,
+            'total'              => $total,
+            'beasiswa_count'     => $beasiswaCount,
+            'reguler_count'      => $regulerCount,
+            'new_count'          => $newCount,
+            'new_beasiswa_count' => $newBeasiswaCount,
+            'new_reguler_count'  => $newRegulerCount,
         ];
     }
 
     /**
      * Ekstraksi data update untuk record Student yang sudah ada
+     * Hanya memperbarui Semester dan IPK resmi dari Siakad agar tidak menimpa
+     * data kontak, status ambassador, maupun evaluasi beasiswa yang sudah ada di SuperApps.
      */
     private function extractUpdateData(Student $student, object $row): array
     {
-        $nama = trim((string) $row->name);
-        $angkatan = (int) ($row->tahun_masuk ?: 2026);
-        $rawProdi = trim((string) $row->prodi);
-        $prodiFormatted = $this->formatProdiName($rawProdi);
-
-        if ($prodiFormatted !== '-') {
-            StudyProgram::firstOrCreate(
-                ['name' => $prodiFormatted],
-                ['is_active' => true, 'order' => 99]
-            );
-        }
-
         $semester = $this->resolveSemester($row);
         $ipk = $this->resolveIpk($row);
-        $beasiswa = $this->resolveBeasiswa($row);
-        $gender = in_array(strtoupper(trim((string) $row->gender)), ['P', 'PEREMPUAN', 'WANITA'], true) ? 'P' : 'L';
 
-        $nikClean = $row->nik ? substr(preg_replace('/\s+/', '', (string) $row->nik), 0, 16) : null;
-        $nisnClean = $row->nisn ? substr(preg_replace('/\s+/', '', (string) $row->nisn), 0, 20) : null;
-        $phoneClean = $row->phone ? substr(trim((string) $row->phone), 0, 15) : null;
-        $addressClean = $row->address ? trim((string) $row->address) : null;
-        $placeBirthClean = $row->place_birth ? substr(trim((string) $row->place_birth), 0, 100) : null;
-        $namaAyahClean = $row->nama_ayah ? substr(trim((string) $row->nama_ayah), 0, 250) : null;
-        $namaIbuClean = $row->nama_ibu ? substr(trim((string) $row->nama_ibu), 0, 200) : null;
+        $updateData = [];
 
-        return [
-            'nama_lengkap'     => $nama ?: $student->nama_lengkap,
-            'angkatan'         => $angkatan ?: $student->angkatan,
-            'program_studi'    => $prodiFormatted !== '-' ? $prodiFormatted : $student->program_studi,
-            'status'           => $student->status ?: 'studentambassador',
-            'semester'         => $semester !== null ? $semester : $student->semester,
-            'ipk'              => $ipk !== null ? $ipk : $student->ipk,
-            'beasiswa'         => $beasiswa ?: $student->beasiswa,
-            'email'            => $row->email ?: $student->email,
-            'no_telepon'       => $phoneClean ?: $student->no_telepon,
-            'alamat'           => $addressClean ?: $student->alamat,
-            'nik'              => $nikClean ?: $student->nik,
-            'nisn'             => $nisnClean ?: $student->nisn,
-            'tempat_lahir'     => $placeBirthClean ?: $student->tempat_lahir,
-            'tanggal_lahir'    => $row->date_birth ?: $student->tanggal_lahir,
-            'nama_orangtua'    => $namaAyahClean ?: $student->nama_orangtua,
-            'nama_ibu_kandung' => $namaIbuClean ?: $student->nama_ibu_kandung,
-            'jenis_kelamin'    => $gender,
-            'is_edited'        => 1,
-        ];
+        if ($semester !== null) {
+            $updateData['semester'] = $semester;
+        }
+
+        if ($ipk !== null) {
+            $updateData['ipk'] = $ipk;
+        }
+
+        // Catat dan akumulasikan riwayat IPK per semester agar semester lama tetap tersimpan
+        $history = $student->semester_ipk_history;
+        if (!is_array($history)) {
+            $history = is_string($history) ? (json_decode($history, true) ?: []) : [];
+        }
+
+        // Amankan nilai IPK semester sebelumnya jika ada
+        if (!empty($student->semester) && $student->ipk !== null) {
+            $history[(string) $student->semester] = (float) $student->ipk;
+        }
+
+        // Catat semester & IPK terbaru hasil refresh SIAKAD
+        $targetSem = $semester !== null ? $semester : $student->semester;
+        $targetIpk = $ipk !== null ? $ipk : $student->ipk;
+        if ($targetSem && $targetIpk !== null) {
+            $history[(string) $targetSem] = (float) $targetIpk;
+        }
+
+        $updateData['semester_ipk_history'] = $history;
+
+        // Lengkapi tanggal_masuk dan periode_masuk jika belum terisi pada data sebelumnya
+        if (empty($student->tanggal_masuk) && !empty($row->tgl_masuk) && $row->tgl_masuk !== '0000-00-00') {
+            $updateData['tanggal_masuk'] = $row->tgl_masuk;
+        }
+
+        if (empty($student->periode_masuk)) {
+            $angkatan = (int) (!empty($row->tahun_masuk) ? $row->tahun_masuk : ($student->angkatan ?: 2026));
+            $academicYear = $angkatan . '/' . ($angkatan + 1);
+            $term = 'Ganjil';
+            $tgl = !empty($row->tgl_masuk) ? $row->tgl_masuk : $student->tanggal_masuk;
+            if (!empty($tgl) && $tgl !== '0000-00-00') {
+                $month = (int) date('m', strtotime($tgl));
+                $term = ($month >= 1 && $month <= 6) ? 'Genap' : 'Ganjil';
+            }
+            $updateData['periode_masuk'] = "{$academicYear} {$term}";
+        }
+
+        return $updateData;
     }
 
     /**
@@ -309,9 +446,19 @@ class SiakadSyncService
 
         $semester = $this->resolveSemester($row);
         $ipk = $this->resolveIpk($row);
-        $beasiswa = $this->resolveBeasiswa($row);
+        $isBeasiswa = !empty($row->fase_terakhir) && ((int) $row->fase_terakhir % 3 === 0) && ($this->resolveBeasiswa($row) !== null);
+        $beasiswa = $isBeasiswa ? $this->resolveBeasiswa($row) : null;
+        $status = $isBeasiswa ? 'studentambassador' : 'mahasiswa';
         $gender = in_array(strtoupper(trim((string) $row->gender)), ['P', 'PEREMPUAN', 'WANITA'], true) ? 'P' : 'L';
         $tanggalMasuk = $row->tgl_masuk ?: "{$angkatan}-09-01";
+
+        $academicYear = $angkatan . '/' . ($angkatan + 1);
+        $term = 'Ganjil';
+        if (!empty($row->tgl_masuk) && $row->tgl_masuk !== '0000-00-00') {
+            $month = (int) date('m', strtotime($row->tgl_masuk));
+            $term = ($month >= 1 && $month <= 6) ? 'Genap' : 'Ganjil';
+        }
+        $periodeMasuk = "{$academicYear} {$term}";
 
         $nikClean = $row->nik ? substr(preg_replace('/\s+/', '', (string) $row->nik), 0, 16) : null;
         $nisnClean = $row->nisn ? substr(preg_replace('/\s+/', '', (string) $row->nisn), 0, 20) : null;
@@ -320,30 +467,37 @@ class SiakadSyncService
         $namaAyahClean = $row->nama_ayah ? substr(trim((string) $row->nama_ayah), 0, 250) : null;
         $namaIbuClean = $row->nama_ibu ? substr(trim((string) $row->nama_ibu), 0, 200) : null;
 
+        $history = [];
+        if ($semester !== null && $ipk !== null) {
+            $history[(string) $semester] = (float) $ipk;
+        }
+
         return [
-            'id_lecturer'      => $defaultLecturerId,
-            'nama_lengkap'     => $nama,
-            'nim'              => $nim,
-            'password'         => $defaultPasswordHash,
-            'angkatan'         => $angkatan,
-            'program_studi'    => $prodiFormatted !== '-' ? $prodiFormatted : 'Bisnis Digital',
-            'status'           => 'studentambassador',
-            'semester'         => $semester,
-            'ipk'              => $ipk,
-            'beasiswa'         => $beasiswa,
-            'status_mahasiswa' => 'Aktif',
-            'email'            => $row->email ?: null,
-            'no_telepon'       => $phoneClean ?: null,
-            'alamat'           => $row->address ?: null,
-            'nik'              => $nikClean ?: null,
-            'nisn'             => $nisnClean ?: null,
-            'tempat_lahir'     => $placeBirthClean ?: null,
-            'tanggal_lahir'    => $row->date_birth ?: null,
-            'nama_orangtua'    => $namaAyahClean ?: null,
-            'nama_ibu_kandung' => $namaIbuClean ?: null,
-            'jenis_kelamin'    => $gender,
-            'is_edited'        => 1,
-            'tanggal_masuk'    => $tanggalMasuk,
+            'id_lecturer'          => $defaultLecturerId,
+            'nama_lengkap'         => $nama,
+            'nim'                  => $nim,
+            'password'             => $defaultPasswordHash,
+            'angkatan'             => $angkatan,
+            'periode_masuk'        => $periodeMasuk,
+            'program_studi'        => $prodiFormatted !== '-' ? $prodiFormatted : 'Bisnis Digital',
+            'status'               => $status,
+            'semester'             => $semester,
+            'ipk'                  => $ipk,
+            'semester_ipk_history' => $history,
+            'beasiswa'             => $beasiswa,
+            'status_mahasiswa'     => 'Aktif',
+            'email'                => $row->email ?: null,
+            'no_telepon'           => $phoneClean ?: null,
+            'alamat'               => $row->address ?: null,
+            'nik'                  => $nikClean ?: null,
+            'nisn'                 => $nisnClean ?: null,
+            'tempat_lahir'         => $placeBirthClean ?: null,
+            'tanggal_lahir'        => $row->date_birth ?: null,
+            'nama_orangtua'        => $namaAyahClean ?: null,
+            'nama_ibu_kandung'     => $namaIbuClean ?: null,
+            'jenis_kelamin'        => $gender,
+            'is_edited'            => 1,
+            'tanggal_masuk'        => $tanggalMasuk,
         ];
     }
 
@@ -383,7 +537,11 @@ class SiakadSyncService
             $pct = (float) $row->beasiswa_sekarang;
         }
 
-        return $pct !== null ? (rtrim(rtrim(number_format($pct, 2), '0'), '.') . '%') : null;
+        if ($pct === null || $pct <= 0) {
+            return null;
+        }
+
+        return rtrim(rtrim(number_format($pct, 2), '0'), '.') . '%';
     }
 
     public function formatProdiName(string $rawProdi): string
@@ -394,78 +552,5 @@ class SiakadSyncService
         }
         $withoutPrefix = preg_replace('/^PROGRAM\s+STUDI\s+/i', '', $clean);
         return ucwords(strtolower($withoutPrefix));
-    }
-
-    private function fetchCandidatesFromDatabase(?string $nim = null): Collection
-    {
-        $db = DB::connection('siakad');
-
-        $semesterTertinggi = $db->table('ips_ipk')
-            ->selectRaw('id_mahasiswa, MAX(CAST(semester AS UNSIGNED)) as smt')
-            ->groupBy('id_mahasiswa');
-
-        $barisTerbaru = $db->table('ips_ipk as i')
-            ->joinSub($semesterTertinggi, 's', function ($join) {
-                $join->on('s.id_mahasiswa', '=', 'i.id_mahasiswa')
-                    ->whereRaw('CAST(i.semester AS UNSIGNED) = s.smt');
-            })
-            ->selectRaw('i.id_mahasiswa, MAX(i.id) as id')
-            ->groupBy('i.id_mahasiswa');
-
-        $ipsSub = $db->table('ips_ipk as ii')
-            ->joinSub($barisTerbaru, 'b', 'b.id', '=', 'ii.id')
-            ->selectRaw('ii.id_mahasiswa, ii.ips, ii.ipk, ii.semester');
-
-        $terminTerakhir = $db->table('tagihan_termin_mahasiswa')
-            ->selectRaw('id_registration, MAX(fase) as fase_terakhir, MAX(termin) as termin_terakhir')
-            ->groupBy('id_registration');
-
-        $query = $db->table('mahasiswa as m')
-            ->join('registration as r', 'r.id_user', '=', 'm.id_user')
-            ->joinSub($terminTerakhir, 't', 't.id_registration', '=', 'r.id')
-            ->leftJoin('prodi as p', 'p.id', '=', 'm.id_prodi')
-            ->leftJoinSub($ipsSub, 'n', 'n.id_mahasiswa', '=', 'm.id')
-            ->leftJoin('rekomendasi_beasiswa_termin as k', function ($join) {
-                $join->on('k.id_registration', '=', 'r.id')
-                    ->on('k.tahun_ke', '=', DB::raw('FLOOR(t.fase_terakhir / 3) + 1'));
-            })
-            ->where('m.tahun_masuk', '>=', 2026)
-            ->whereRaw('t.fase_terakhir % 3 = 0')
-            ->selectRaw('m.id as id_mahasiswa, r.id as id_registration,
-                COALESCE(m.nim, "-") as nim,
-                COALESCE(m.name, r.name, "-") as name,
-                COALESCE(p.name, "-") as prodi,
-                m.tahun_masuk,
-                m.gender,
-                m.email,
-                COALESCE(m.phone, r.phone) as phone,
-                COALESCE(m.address, r.address, m.alamat_mahasiswa) as address,
-                m.nik,
-                m.nisn,
-                m.place_birth,
-                m.date_birth,
-                m.tgl_masuk,
-                m.nama_ayah,
-                m.nama_ibu,
-                COALESCE(m.semester, 0) as semester_mhs,
-                t.fase_terakhir,
-                (t.fase_terakhir + 1) as semester_mulai,
-                (FLOOR(t.fase_terakhir / 3) + 1) as tahun_ke,
-                COALESCE(r.beasiswa, 0) as beasiswa_sekarang,
-                n.ips as ips_terakhir,
-                n.ipk as ipk_terakhir,
-                k.id as id_rekomendasi,
-                k.status as status_rekomendasi,
-                k.persentase_rekomendasi,
-                k.persentase_final,
-                k.ipk_acuan,
-                k.ips_acuan')
-            ->orderBy('m.nim');
-
-        if ($nim !== null && $nim !== '') {
-            $query->where('m.nim', $nim);
-        }
-
-        return $query->get();
     }
 }

@@ -21,6 +21,9 @@ Route::middleware(['auth', 'role:masteradmin,superadmin,akademik'])->prefix('aka
     Route::prefix('direktori-mahasiswa')->name('direktori-mahasiswa.')->controller(AkademikStudentDirectoryController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/export/csv', 'exportCsv')->name('export');
+        Route::get('/preview-siakad', 'previewSiakadData')->name('preview-siakad');
+        Route::post('/sync-siakad', 'syncFromSiakad')->name('sync-siakad');
+        Route::post('/refresh-siakad', 'refreshAcademicData')->name('refresh-siakad');
         Route::get('/{id}', 'show')->name('show');
     });
 
@@ -32,10 +35,5 @@ Route::middleware(['auth', 'role:masteradmin,superadmin,akademik'])->prefix('aka
         Route::get('/{id}', 'show')->name('show');
     });
 
-    // Periode Tahun Akademik & Semester (SIAKAD REST API)
-    Route::prefix('tahun-akademik')->name('tahun-akademik.')->controller(\App\Http\Controllers\AdminController\AkademikAcademicPeriodController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/sync', 'sync')->name('sync');
-    });
 });
 

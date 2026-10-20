@@ -102,6 +102,17 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label for="angkatan">Angkatan</label>
+                <select id="angkatan" name="angkatan" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">Semua Angkatan</option>
+                    @foreach($availableAngkatan as $thn)
+                        <option value="{{ $thn }}" {{ (string)($angkatan ?? '') === (string)$thn ? 'selected' : '' }}>
+                            Angkatan {{ $thn }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="filter-group">
                 <label for="category">Jenis Kegiatan</label>
                 <select id="category" name="category" class="form-control" onchange="document.getElementById('filterForm').submit()">
                     <option value="">Semua Kategori</option>
@@ -111,7 +122,7 @@
                 </select>
             </div>
             <div class="filter-actions">
-                <a href="{{ route('kemahasiswaan.verifikasi-prestasi.index') }}" class="btn-reset" style="margin-top: 22px;">Reset</a>
+                <a href="{{ route('kemahasiswaan.verifikasi-prestasi.index', ['tab' => $tab]) }}" class="btn-reset" style="margin-top: 22px;">Reset</a>
             </div>
             <input type="hidden" name="tab" value="{{ $tab }}">
         </form>
@@ -147,9 +158,29 @@
             </a>
         </div>
 
-        {{-- Controls Kanan: Khusus Tab Penerima Beasiswa & Ambassador (Terapkan Rekomendasi, Kirim Rekomendasi ke Siakad, & Status Portal) --}}
+        {{-- Controls Kanan: Khusus Tab Penerima Beasiswa & Ambassador (Export Laporan, Terapkan Rekomendasi, Kirim Rekomendasi ke Siakad, & Status Portal) --}}
         @if($tab === 'beasiswa')
         <div class="toolbar-controls-right" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            {{-- Tombol Export Laporan Beasiswa (Dropdown Excel & CSV) --}}
+            <div class="dropdown d-inline-block">
+                <button class="btn-export-beasiswa dropdown-toggle" type="button" id="dropdownExportBeasiswa" data-bs-toggle="dropdown" aria-expanded="false" title="Export Laporan Evaluasi Beasiswa & Student Ambassador">
+                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> Export Laporan Beasiswa
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownExportBeasiswa" style="border-radius: 10px; border: 1px solid #E2E8F0; padding: 6px 0;">
+                    <li><h6 class="dropdown-header" style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-download me-1"></i> Format Laporan</h6></li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('kemahasiswaan.verifikasi-prestasi.export-beasiswa', array_merge(request()->query(), ['format' => 'xlsx'])) }}" style="font-size: 13px; padding: 8px 16px; font-weight: 500;">
+                            <i class="bi bi-file-earmark-excel-fill text-success me-2"></i> Unduh File Excel (.xlsx)
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('kemahasiswaan.verifikasi-prestasi.export-beasiswa', array_merge(request()->query(), ['format' => 'csv'])) }}" style="font-size: 13px; padding: 8px 16px; font-weight: 500;">
+                            <i class="bi bi-file-earmark-text-fill text-primary me-2"></i> Unduh File CSV (.csv)
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
             {{-- Tombol aksi massal HANYA MUNCUL KETIKA PORTAL UPLOAD DITUTUP --}}
             @if(empty($isPortalOpen))
             <button type="button" class="btn-apply-all-recommendations-toolbar" id="btn-apply-all-recommendations-toolbar" onclick="handleApplyAllRecommendations()" title="Terapkan seluruh rekomendasi beasiswa hasil evaluasi POKEMA menjadi status beasiswa mahasiswa saat ini di SuperApps">

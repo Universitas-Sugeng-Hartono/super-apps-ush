@@ -5,6 +5,12 @@
         <div class="card-header">
             <h3>Management Mahasiswa</h3>
             <div class="header-actions">
+                <button type="button" class="btn-sync-siakad" id="btn-sync-siakad" onclick="handleSyncSiakad()" title="Tarik data mahasiswa baru dari SIAKAD (Beasiswa & Reguler)">
+                    <i class="bi bi-cloud-arrow-down"></i> Sinkron Siakad
+                </button>
+                <button type="button" class="btn-refresh-all-siakad" id="btn-refresh-all-siakad" onclick="handleRefreshAllSiakad()" title="Perbarui Semester & Nilai IPK mahasiswa penerima beasiswa dari SIAKAD">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh Data SIAKAD
+                </button>
                 <div class="toggle-all-wrapper">
                     <label class="toggle-label">Toggle Semua:</label>
                     <label class="toggle-switch">
@@ -18,6 +24,13 @@
                 </a>
             </div>
         </div>
+
+        <form id="form-sync-siakad" action="{{ route('admin.management.students.sync-siakad') }}" method="POST" style="display: none;">
+            @csrf
+        </form>
+        <form id="form-refresh-siakad" action="{{ route('admin.management.students.refresh-siakad') }}" method="POST" style="display: none;">
+            @csrf
+        </form>
 
         @if(session('success'))
             <div class="alert-success">
@@ -61,7 +74,15 @@
                 <input type="text" name="search" class="search-input" 
                        placeholder="Cari nama, NIM, email, atau periode masuk..." 
                        value="{{ $search }}">
-                <select name="program_studi" class="filter-select">
+                <select name="periode_masuk" class="filter-select" onchange="this.form.submit()">
+                    <option value="">Semua Periode Masuk</option>
+                    @foreach($availablePeriodeMasuk as $p)
+                        <option value="{{ $p }}" {{ ($periodeMasuk ?? '') == $p ? 'selected' : '' }}>
+                            {{ $p }}
+                        </option>
+                    @endforeach
+                </select>
+                <select name="program_studi" class="filter-select" onchange="this.form.submit()">
                     <option value="">Semua Program Studi</option>
                     @foreach($studyPrograms as $prodi)
                         <option value="{{ $prodi->name }}" {{ $programStudi == $prodi->name ? 'selected' : '' }}>
@@ -69,9 +90,14 @@
                         </option>
                     @endforeach
                 </select>
-                <button type="submit" class="search-btn">
+                <button type="submit" class="search-btn" title="Cari / Filter">
                     <i class="bi bi-search"></i>
                 </button>
+                @if(!empty($search) || !empty($programStudi) || !empty($periodeMasuk))
+                <a href="{{ route('admin.management.students.index') }}" class="btn-reset" style="padding: 10px 14px; background: #F1F5F9; color: #475569; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; border: 1px solid #CBD5E1;" title="Reset Filter">
+                    Reset
+                </a>
+                @endif
             </form>
         </div>
 
@@ -84,6 +110,7 @@
                             <th>Nama</th>
                             <th>NIM</th>
                             <th>Periode Masuk</th>
+                            <th>Tanggal Masuk</th>
                             <th>Program Studi</th>
                             <th>Dosen PA</th>
                             <th>Status</th>
@@ -102,7 +129,12 @@
                                 </td>
                                 <td class="font-monospace">{{ $student->nim }}</td>
                                 <td>
-                                    <span class="badge-year">{{ $student->tanggal_masuk ? $student->tanggal_masuk->translatedFormat('M Y') : ($student->angkatan ?? '-') }}</span>
+                                    <span class="badge-periode" style="background: #EFF6FF; color: #1D4ED8; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; border: 1px solid #BFDBFE; white-space: nowrap;">
+                                        {{ $student->periode_masuk ?: ($student->angkatan ? $student->angkatan . '/' . ($student->angkatan + 1) . ' Ganjil' : '-') }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-year">{{ $student->tanggal_masuk ? $student->tanggal_masuk->translatedFormat('M Y') : '-' }}</span>
                                 </td>
                                 <td>
                                     <span class="badge-prodi">{{ $student->program_studi }}</span>
@@ -230,6 +262,59 @@
     .btn-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(255, 112, 67, 0.4);
+    }
+
+    /* Siakad Sync Buttons */
+    .btn-sync-siakad {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #00796B, #004D40);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0, 121, 107, 0.25);
+    }
+    .btn-sync-siakad:hover {
+        background: linear-gradient(135deg, #004D40, #00332C);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0, 121, 107, 0.35);
+        color: white;
+    }
+    .btn-sync-siakad:active {
+        transform: translateY(0);
+    }
+
+    .btn-refresh-all-siakad {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #0284C7, #0369A1);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+    .btn-refresh-all-siakad:hover {
+        background: linear-gradient(135deg, #0369A1, #075985);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
+        color: white;
+    }
+    .btn-refresh-all-siakad:active {
+        transform: translateY(0);
     }
 
     .alert-success {
@@ -960,6 +1045,122 @@
             toast.style.transition = 'opacity 0.3s';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    // SIAKAD Sync Functions
+    function handleSyncSiakad() {
+        Swal.fire({
+            title: 'Memeriksa Data Siakad...',
+            html: 'Menghubungkan ke Siakad Rekomendasi Beasiswa Termin...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+                fetch("{{ route('admin.management.students.preview-siakad') }}")
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data.success) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Koneksi Siakad Gagal',
+                                text: data.message || 'Tidak dapat terhubung ke API Siakad.'
+                            });
+                            return;
+                        }
+
+                        Swal.fire({
+                            title: 'Tarik Data Mahasiswa Baru dari SIAKAD',
+                            html: `
+                                <div style="text-align: left; font-size: 14px;">
+                                    <div style="background: #E0F2FE; border-left: 4px solid #0284C7; padding: 12px; border-radius: 6px; margin-bottom: 12px; color: #0369A1;">
+                                        <strong><i class="bi bi-info-circle-fill" style="color: #0284C7;"></i> Ditemukan ${data.total} mahasiswa</strong> (Angkatan 2026+) di SIAKAD.
+                                    </div>
+                                    <table style="width: 100%; font-size: 13px; margin-bottom: 8px;">
+                                        <tr>
+                                            <td style="padding: 5px 0; color: #64748B;">Mahasiswa Penerima Beasiswa di SIAKAD:</td>
+                                            <td style="padding: 5px 0; font-weight: 700; color: #059669; text-align: right;">${data.beasiswa_count} Mahasiswa</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 5px 0; color: #64748B;">Mahasiswa Reguler (Non-Beasiswa) di SIAKAD:</td>
+                                            <td style="padding: 5px 0; font-weight: 700; color: #0284C7; text-align: right;">${data.reguler_count} Mahasiswa</td>
+                                        </tr>
+                                        <tr style="border-top: 1px dashed #CBD5E1;">
+                                            <td style="padding: 8px 0 4px; color: #1E293B; font-weight: 600;">Mahasiswa Baru Siap Ditarik:</td>
+                                            <td style="padding: 8px 0 4px; font-weight: 800; color: #16A34A; text-align: right; font-size: 15px;">+${data.new_count} Mahasiswa</td>
+                                        </tr>
+                                        ${data.new_count > 0 ? `
+                                        <tr>
+                                            <td colspan="2" style="padding: 0 0 4px; font-size: 12px; color: #64748B; text-align: right;">
+                                                (${data.new_beasiswa_count > 0 ? `Beasiswa: <b>${data.new_beasiswa_count}</b>, ` : ''}Reguler: <b>${data.new_reguler_count}</b>)
+                                            </td>
+                                        </tr>
+                                        ` : ''}
+                                    </table>
+                                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 12px; color: #475569; line-height: 1.45;">
+                                        <i class="bi bi-shield-check" style="color: #059669;"></i> <strong>Catatan:</strong> Tombol ini hanya akan mendaftarkan <b>mahasiswa baru</b> yang belum tercatat di SuperApps (agar tidak perlu input manual). Periode Masuk & Tanggal Masuk otomatis ditentukan dari SIAKAD. Data yang sudah terdaftar <b>tidak akan diubah</b>.
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#00796B',
+                            cancelButtonColor: '#94A3B8',
+                            confirmButtonText: '<i class="bi bi-cloud-arrow-down"></i> Ya, Tarik Mahasiswa Baru',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire({
+                                    title: 'Sedang Menarik Data...',
+                                    html: 'Sistem sedang memproses penarikan mahasiswa baru dari SIAKAD...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                                document.getElementById('form-sync-siakad').submit();
+                            }
+                        });
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Terjadi Kesalahan',
+                            text: err.message || 'Gagal memuat pratinjau data Siakad.'
+                        });
+                    });
+            }
+        });
+    }
+
+    function handleRefreshAllSiakad() {
+        Swal.fire({
+            title: 'Refresh Data SIAKAD',
+            html: `
+                <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.55;">
+                    <p>Sistem akan memperbarui data <strong>Semester, Nilai IPK, dan Periode Masuk</strong> resmi dari SIAKAD untuk <strong>seluruh mahasiswa (Beasiswa & Reguler)</strong> yang sudah terdaftar di SuperApps.</p>
+                    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 12px; margin-top: 10px; color: #166534; font-size: 12.5px;">
+                        <i class="bi bi-shield-check"></i> <strong>Aman:</strong> Hanya menyinkronkan nilai Semester, IPK, dan periode masuk terbaru dari SIAKAD. Tidak menambah mahasiswa baru, serta nomor kontak dan data evaluasi beasiswa SuperApps tetap terjaga.
+                    </div>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0284C7',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: '<i class="bi bi-arrow-clockwise"></i> Ya, Refresh Semester & IPK',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Memperbarui Data...',
+                    text: 'Sedang memperbarui data akademik seluruh mahasiswa dari SIAKAD...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                document.getElementById('form-refresh-siakad').submit();
+            }
+        });
     }
 </script>
 @endpush

@@ -54,13 +54,6 @@ class AppServiceProvider extends ServiceProvider
             $unreadCount = 0;
         }
         $view->with('globalUnreadCount', $unreadCount);
-
-        try {
-            $view->with('activePeriod', \App\Services\SiakadAcademicPeriodService::getActivePeriod());
-        } catch (\Throwable) {
-            $view->with('activePeriod', null);
-        }
-
         });
     }
 }

@@ -135,17 +135,17 @@ class SkpiController extends Controller
             'approved_at'    => now(),
         ]);
 
-        // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI
-        if (filled($registration->ipk) || filled($registration->sks)) {
-            $studentUpdate = [];
-            if (filled($registration->ipk)) {
-                $studentUpdate['ipk'] = $registration->ipk;
-            }
-            if (filled($registration->sks)) {
-                $studentUpdate['sks'] = $registration->sks;
-            }
-            $student->update($studentUpdate);
+        // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI, serta ubah status mahasiswa menjadi Lulus
+        $studentUpdate = [
+            'status_mahasiswa' => 'Lulus',
+        ];
+        if (filled($registration->ipk)) {
+            $studentUpdate['ipk'] = $registration->ipk;
         }
+        if (filled($registration->sks)) {
+            $studentUpdate['sks'] = $registration->sks;
+        }
+        $student->update($studentUpdate);
 
         try {
             NotificationHelper::notifyStudent(
@@ -162,12 +162,13 @@ class SkpiController extends Controller
 
         return redirect()
             ->route('admin.skpi.daftar-skpi.index')
-            ->with('success', 'Pendaftaran SKPI berhasil disetujui. Silakan masuk ke menu Generate SKPI untuk membuat dokumennya agar mahasiswa bisa mengunduh.');
+            ->with('success', 'Pendaftaran SKPI berhasil disetujui dan status mahasiswa diperbarui menjadi Lulus.');
     }
 
     public function revisionDaftarSkpi(Request $request, $id)
     {
         $registration = SkpiRegistration::with('student')->findOrFail($id);
+        $wasApproved = ($registration->status === 'approved');
 
         $request->validate([
             'approval_notes' => 'required|string',
@@ -182,6 +183,17 @@ class SkpiController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        // Jika sebelumnya sempat approved, kembalikan status mahasiswa ke Aktif jika tidak ada SKPI approved lain
+        if ($wasApproved && $registration->student) {
+            $hasOtherApproved = SkpiRegistration::where('student_id', $registration->student_id)
+                ->where('id', '!=', $registration->id)
+                ->where('status', 'approved')
+                ->exists();
+            if (!$hasOtherApproved) {
+                $registration->student->update(['status_mahasiswa' => 'Aktif']);
+            }
+        }
 
         NotificationHelper::notifyStudent(
             $registration->student_id,
@@ -200,6 +212,7 @@ class SkpiController extends Controller
     public function rejectDaftarSkpi(Request $request, $id)
     {
         $registration = SkpiRegistration::with('student')->findOrFail($id);
+        $wasApproved = ($registration->status === 'approved');
 
         $request->validate([
             'approval_notes' => 'required|string',
@@ -214,6 +227,17 @@ class SkpiController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        // Jika sebelumnya sempat approved, kembalikan status mahasiswa ke Aktif jika tidak ada SKPI approved lain
+        if ($wasApproved && $registration->student) {
+            $hasOtherApproved = SkpiRegistration::where('student_id', $registration->student_id)
+                ->where('id', '!=', $registration->id)
+                ->where('status', 'approved')
+                ->exists();
+            if (!$hasOtherApproved) {
+                $registration->student->update(['status_mahasiswa' => 'Aktif']);
+            }
+        }
 
         NotificationHelper::notifyStudent(
             $registration->student_id,
@@ -1151,9 +1175,11 @@ class SkpiController extends Controller
                 'approved_at'    => now(),
             ]);
 
-            // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI
-            if (filled($registration->ipk) || filled($registration->sks)) {
-                $studentUpdate = [];
+            // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI, serta ubah status mahasiswa menjadi Lulus
+            if ($student) {
+                $studentUpdate = [
+                    'status_mahasiswa' => 'Lulus',
+                ];
                 if (filled($registration->ipk)) {
                     $studentUpdate['ipk'] = $registration->ipk;
                 }

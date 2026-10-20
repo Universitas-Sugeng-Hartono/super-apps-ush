@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\CardCounseling;
 use App\Models\Course;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use App\Services\SiakadSyncService;
 
 class StudentsAdminController extends Controller
 {
@@ -98,10 +100,19 @@ class StudentsAdminController extends Controller
     {
         $search = $request->input('search');
         $programStudi = $request->input('program_studi');
+        $periodeMasuk = $request->input('periode_masuk');
         $studyPrograms = StudyProgram::where('is_active', true)->orderBy('order')->get();
 
+        $availablePeriodeMasuk = Student::whereNotNull('periode_masuk')
+            ->where('periode_masuk', '!=', '')
+            ->distinct()
+            ->orderBy('periode_masuk', 'desc')
+            ->pluck('periode_masuk');
+
         // Simpan state filter ke session
-        $request->session()->put('management_students_url', $request->fullUrl());
+        if ($request->hasSession()) {
+            $request->session()->put('management_students_url', $request->fullUrl());
+        }
 
         $students = Student::with(['dosenPA'])
             ->withCount('counselings')
@@ -110,17 +121,21 @@ class StudentsAdminController extends Controller
                     $q->where('nama_lengkap', 'like', "%{$search}%")
                         ->orWhere('nim', 'like', "%{$search}%")
                         ->orWhere('angkatan', 'like', "%{$search}%")
+                        ->orWhere('periode_masuk', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
             ->when($programStudi, function ($query, $programStudi) {
                 $query->where('program_studi', $programStudi);
             })
+            ->when($periodeMasuk, function ($query, $periodeMasuk) {
+                $query->where('periode_masuk', $periodeMasuk);
+            })
             ->latest()
-            ->paginate($programStudi ? 9999 : 15)
-            ->appends(['search' => $search, 'program_studi' => $programStudi]);
+            ->paginate(($programStudi || $periodeMasuk) ? 9999 : 15)
+            ->appends(['search' => $search, 'program_studi' => $programStudi, 'periode_masuk' => $periodeMasuk]);
 
-        return view('admin.management.students.index', compact('students', 'search', 'programStudi', 'studyPrograms'));
+        return view('admin.management.students.index', compact('students', 'search', 'programStudi', 'periodeMasuk', 'studyPrograms', 'availablePeriodeMasuk'));
     }
 
     /**
@@ -420,12 +435,20 @@ class StudentsAdminController extends Controller
         // Default program studi dari master
         $defaultProdi = StudyProgram::where('is_active', true)->orderBy('order')->first();
 
+        $rawMonth = $request->tanggal_masuk ?? $request->periode_masuk;
+        $year = (int) substr($rawMonth, 0, 4);
+        $month = (int) substr($rawMonth, 5, 2);
+        $term = ($month >= 1 && $month <= 6) ? 'Genap' : 'Ganjil';
+        $defaultPeriode = $year ? ($year . '/' . ($year + 1) . ' ' . $term) : (date('Y') . '/' . (date('Y') + 1) . ' Ganjil');
+        $periodeMasuk = $request->periode_masuk_semester ?: ($request->periode_masuk && str_contains($request->periode_masuk, '/') ? $request->periode_masuk : $defaultPeriode);
+
         $studentData = [
             'id_lecturer'      => $lecturerId,
             'nama_lengkap'     => $request->full_name,
             'nim'              => $request->nim,
             'password'         => Hash::make('12345678'),
-            'angkatan'         => substr($request->periode_masuk, 0, 4),
+            'angkatan'         => $year ?: date('Y'),
+            'periode_masuk'    => $periodeMasuk,
             'program_studi'    => $request->program_studi ?? ($defaultProdi ? $defaultProdi->name : 'Bisnis Digital'),
             'email'            => $request->email,
             'no_telepon'       => $request->phone,
@@ -434,7 +457,7 @@ class StudentsAdminController extends Controller
             'alamat'           => $request->address,
             'is_edited'        => 1,
             'status_mahasiswa' => 'Aktif',
-            'tanggal_masuk'    => $request->periode_masuk . '-01',
+            'tanggal_masuk'    => $rawMonth ? $rawMonth . '-01' : null,
         ];
 
         Student::create($studentData);
@@ -507,10 +530,18 @@ class StudentsAdminController extends Controller
         }
 
         $studentData = $validator->validated();
-        $studentData['angkatan'] = substr($request->periode_masuk, 0, 4);
-        $studentData['tanggal_masuk'] = $request->periode_masuk . '-01';
-        unset($studentData['periode_masuk']);
-        $studentData['status_mahasiswa'] = 'Aktif';
+        $rawMonth = $request->tanggal_masuk ?? $request->periode_masuk;
+        if ($rawMonth && strlen($rawMonth) >= 7) {
+            $year = (int) substr($rawMonth, 0, 4);
+            $month = (int) substr($rawMonth, 5, 2);
+            $term = ($month >= 1 && $month <= 6) ? 'Genap' : 'Ganjil';
+            $defaultPeriode = $year ? ($year . '/' . ($year + 1) . ' ' . $term) : (date('Y') . '/' . (date('Y') + 1) . ' Ganjil');
+            $studentData['angkatan'] = $year ?: date('Y');
+            $studentData['tanggal_masuk'] = $rawMonth . '-01';
+            $studentData['periode_masuk'] = $request->periode_masuk_semester ?: ($request->periode_masuk && str_contains($request->periode_masuk, '/') ? $request->periode_masuk : $defaultPeriode);
+        } elseif ($request->filled('periode_masuk')) {
+            $studentData['periode_masuk'] = $request->periode_masuk;
+        }
 
         // Update id_lecturer jika user adalah superadmin/masteradmin dan request memiliki id_lecturer
         if (in_array(auth()->user()->role, ['superadmin', 'masteradmin']) && $request->has('id_lecturer')) {
@@ -739,5 +770,76 @@ class StudentsAdminController extends Controller
 
         return redirect()->back()
             ->with('success', 'Kartu konsultasi berhasil dihapus!');
+    }
+
+    /**
+     * Preview ringkasan data dari Siakad sebelum sinkronisasi
+     */
+    public function previewSiakadData(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $data = $syncService->preview();
+            return response()->json(array_merge(['success' => true], $data));
+        } catch (\Throwable $e) {
+            Log::error('Siakad preview failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal terhubung ke API Siakad: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Sinkronisasi data mahasiswa baru dari Siakad
+     */
+    public function syncFromSiakad(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $result = $syncService->syncNewStudents();
+
+            if ($result['total'] === 0) {
+                return redirect()->route('admin.management.students.index')
+                    ->with('error', 'Tidak ada data mahasiswa di Siakad yang dapat ditarik.');
+            }
+
+            if ($result['created'] === 0) {
+                return redirect()->route('admin.management.students.index')
+                    ->with('success', "Seluruh data mahasiswa dari Siakad ({$result['total']} mahasiswa) sudah terdaftar di SuperApps. Tidak ada data mahasiswa baru yang perlu ditarik.");
+            }
+
+            $detailBeasiswa = $result['created_beasiswa'] > 0 ? "{$result['created_beasiswa']} Beasiswa / Student Ambassador" : null;
+            $detailReguler = $result['created_reguler'] > 0 ? "{$result['created_reguler']} Mahasiswa Reguler" : null;
+            $parts = array_filter([$detailBeasiswa, $detailReguler]);
+            $breakdown = !empty($parts) ? ' (' . implode(', ', $parts) . ')' : '';
+
+            return redirect()->route('admin.management.students.index')
+                ->with('success', "Berhasil menarik {$result['created']} mahasiswa baru dari SIAKAD{$breakdown}. Periode Masuk & Tanggal Masuk otomatis disesuaikan.");
+        } catch (\Throwable $e) {
+            Log::error('Siakad sync failed: ' . $e->getMessage());
+            return redirect()->route('admin.management.students.index')
+                ->with('error', 'Gagal menarik data mahasiswa dari Siakad: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Refresh data akademik (Semester, IPK & Periode Masuk) dari Siakad
+     */
+    public function refreshAcademicData(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $result = $syncService->refreshScholarshipAcademicData(false);
+
+            if ($result['total'] === 0) {
+                return redirect()->route('admin.management.students.index')
+                    ->with('error', 'Tidak ada data mahasiswa yang terdaftar untuk diperbarui.');
+            }
+
+            return redirect()->route('admin.management.students.index')
+                ->with('success', "Berhasil memperbarui data akademik (Semester, Nilai IPK & Periode Masuk) untuk {$result['updated']} mahasiswa (Beasiswa & Reguler) langsung dari SIAKAD!");
+        } catch (\Throwable $e) {
+            Log::error('Siakad refresh academic data failed: ' . $e->getMessage());
+            return redirect()->route('admin.management.students.index')
+                ->with('error', 'Gagal memperbarui Semester & IPK dari Siakad: ' . $e->getMessage());
+        }
     }
 }

@@ -7,6 +7,8 @@ use App\Models\Student;
 use App\Models\StudyProgram;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Services\SiakadSyncService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AkademikStudentDirectoryController extends Controller
@@ -116,13 +118,8 @@ class AkademikStudentDirectoryController extends Controller
             ->orderByDesc('angkatan')
             ->pluck('angkatan');
 
-        $activePeriod = \App\Services\SiakadAcademicPeriodService::getActivePeriod();
-        $academicPeriods = \App\Services\SiakadAcademicPeriodService::getAllPeriods();
-
         return view('akademik.direktori-mahasiswa.index', compact(
             'students',
-            'activePeriod',
-            'academicPeriods',
             'search',
             'statusMahasiswa',
             'statusAmbassador',
@@ -280,5 +277,76 @@ class AkademikStudentDirectoryController extends Controller
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ]);
+    }
+
+    /**
+     * Preview ringkasan data dari Siakad sebelum sinkronisasi
+     */
+    public function previewSiakadData(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $data = $syncService->preview();
+            return response()->json(array_merge(['success' => true], $data));
+        } catch (\Throwable $e) {
+            Log::error('Siakad preview failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal terhubung ke API Siakad: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Sinkronisasi data mahasiswa baru dari Siakad
+     */
+    public function syncFromSiakad(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $result = $syncService->syncNewStudents();
+
+            if ($result['total'] === 0) {
+                return redirect()->route('akademik.direktori-mahasiswa.index')
+                    ->with('error', 'Tidak ada data mahasiswa di Siakad yang dapat ditarik.');
+            }
+
+            if ($result['created'] === 0) {
+                return redirect()->route('akademik.direktori-mahasiswa.index')
+                    ->with('success', "Seluruh data mahasiswa dari Siakad ({$result['total']} mahasiswa) sudah terdaftar di SuperApps. Tidak ada data mahasiswa baru yang perlu ditarik.");
+            }
+
+            $detailBeasiswa = $result['created_beasiswa'] > 0 ? "{$result['created_beasiswa']} Beasiswa / Student Ambassador" : null;
+            $detailReguler = $result['created_reguler'] > 0 ? "{$result['created_reguler']} Mahasiswa Reguler" : null;
+            $parts = array_filter([$detailBeasiswa, $detailReguler]);
+            $breakdown = !empty($parts) ? ' (' . implode(', ', $parts) . ')' : '';
+
+            return redirect()->route('akademik.direktori-mahasiswa.index')
+                ->with('success', "Berhasil menarik {$result['created']} mahasiswa baru dari SIAKAD{$breakdown}. Periode Masuk & Tanggal Masuk otomatis disesuaikan.");
+        } catch (\Throwable $e) {
+            Log::error('Siakad sync failed: ' . $e->getMessage());
+            return redirect()->route('akademik.direktori-mahasiswa.index')
+                ->with('error', 'Gagal menarik data mahasiswa dari Siakad: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Refresh data akademik (Semester, IPK & Periode Masuk) dari Siakad
+     */
+    public function refreshAcademicData(Request $request, SiakadSyncService $syncService)
+    {
+        try {
+            $result = $syncService->refreshScholarshipAcademicData(false);
+
+            if ($result['total'] === 0) {
+                return redirect()->route('akademik.direktori-mahasiswa.index')
+                    ->with('error', 'Tidak ada data mahasiswa yang terdaftar untuk diperbarui.');
+            }
+
+            return redirect()->route('akademik.direktori-mahasiswa.index')
+                ->with('success', "Berhasil memperbarui data akademik (Semester, Nilai IPK & Periode Masuk) untuk {$result['updated']} mahasiswa (Beasiswa & Reguler) langsung dari SIAKAD!");
+        } catch (\Throwable $e) {
+            Log::error('Siakad refresh academic data failed: ' . $e->getMessage());
+            return redirect()->route('akademik.direktori-mahasiswa.index')
+                ->with('error', 'Gagal memperbarui Semester & IPK dari Siakad: ' . $e->getMessage());
+        }
     }
 }

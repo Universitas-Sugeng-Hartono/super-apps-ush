@@ -286,13 +286,8 @@ class DashboardController extends Controller
                 return $menu;
             });
 
-        $activePeriod = \App\Services\SiakadAcademicPeriodService::getActivePeriod();
-        $academicPeriods = \App\Services\SiakadAcademicPeriodService::getAllPeriods();
-
         return view('akademik.dashboard.index', compact(
             'user',
-            'activePeriod',
-            'academicPeriods',
             'studentCount',
             'activeStudentCount',
             'leaveStudentCount',

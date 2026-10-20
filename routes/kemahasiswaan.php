@@ -27,6 +27,7 @@ Route::middleware(['auth', 'role:masteradmin,superadmin,kemahasiswaan'])->prefix
         Route::get('/template', 'downloadImportTemplate')->name('template');
         Route::post('/import', 'import')->name('import');
         Route::post('/sync-siakad', 'syncFromSiakad')->name('sync-siakad');
+        Route::post('/refresh-siakad', 'refreshAcademicData')->name('refresh-siakad');
         Route::get('/preview-siakad', 'previewSiakadData')->name('preview-siakad');
         Route::post('/send-all-siakad', 'sendAllRecommendations')->name('send-all-siakad');
         Route::post('/{id}/sync-siakad', 'syncSingleStudent')->name('sync-single');
@@ -34,8 +35,6 @@ Route::middleware(['auth', 'role:masteradmin,superadmin,kemahasiswaan'])->prefix
         Route::get('/{id}', 'show')->name('show');
         Route::get('/{id}/edit', 'edit')->name('edit');
         Route::put('/{id}', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
-        Route::get('/{id}/reset-password', 'resetPassword')->name('reset-password');
     });
 
     // Verifikasi Data Prestasi Mahasiswa (Khusus Kemahasiswaan: IPK, Total Point, Status Mahasiswa, Beasiswa)
@@ -52,6 +51,7 @@ Route::middleware(['auth', 'role:masteradmin,superadmin,kemahasiswaan'])->prefix
         Route::post('/apply-all-recommendations', 'applyAllRecommendations')->name('apply-all-recommendations');
         Route::get('/students/{id}/evaluation-data', 'getStudentEvaluationData')->name('student-evaluation-data');
         Route::post('/toggle-upload-portal', 'toggleUploadPortal')->name('toggle-upload-portal');
+        Route::get('/export-beasiswa', 'exportScholarshipReport')->name('export-beasiswa');
     });
 
     // Akses Verifikasi Data Prestasi SKPI (Tetap dipertahankan untuk kompatibilitas)

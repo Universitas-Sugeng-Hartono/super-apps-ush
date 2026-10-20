@@ -47,12 +47,6 @@
         <div class="stats-header">
             <h3>Status Akademik</h3>
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                @if(!empty($activePeriod))
-                    <span class="ta-student-pill" title="Tahun Akademik & Semester Aktif (SIAKAD)">
-                        <span class="ta-dot"></span>
-                        TA: {{ $activePeriod['tahun_akademik'] ?? '-' }} {{ !empty($activePeriod['semester']) ? '• ' . $activePeriod['semester'] : '' }}
-                    </span>
-                @endif
                 <span class="semester-badge">{{ $student->angkatan ?? 'N/A' }}</span>
             </div>
         </div>
@@ -352,33 +346,6 @@
         border-radius: 20px;
         font-size: 12px;
         font-weight: 600;
-    }
-
-    .ta-student-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: #EFF6FF;
-        border: 1px solid #BFDBFE;
-        color: #1D4ED8;
-        padding: 5px 14px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
-    }
-    .ta-student-pill .ta-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #10B981;
-        display: inline-block;
-        animation: pulseTaDot 2s infinite;
-    }
-    @keyframes pulseTaDot {
-        0% { transform: scale(0.95); opacity: 0.8; }
-        50% { transform: scale(1.3); opacity: 1; }
-        100% { transform: scale(0.95); opacity: 0.8; }
     }
 
     .stats-content {

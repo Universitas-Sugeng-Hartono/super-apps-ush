@@ -31,6 +31,7 @@ class Student extends Authenticatable
         'password',
         'email',
         'angkatan',
+        'periode_masuk',
         'program_studi',
         'fakultas',
         'jenis_kelamin',
@@ -53,6 +54,7 @@ class Student extends Authenticatable
         'nama_orangtua',
         'nama_ibu_kandung',
         'ipk',
+        'semester_ipk_history',
         'sks',
         'semester',
         'is_edited',
@@ -69,6 +71,7 @@ class Student extends Authenticatable
     ];
 
     protected $casts = [
+        'semester_ipk_history' => 'array',
         'is_edited' => 'boolean',
         'is_counseling' => 'boolean',
         'tanggal_lahir' => 'date',

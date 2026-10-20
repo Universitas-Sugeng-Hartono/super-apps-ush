@@ -4,12 +4,6 @@
 <div class="dashboard-akademik-container">
     {{-- Header Banner --}}
     <div class="welcome-banner">
-        @if(!empty($activePeriod))
-            <a href="{{ route('akademik.tahun-akademik.index') }}" class="banner-top-ta-badge" title="Klik untuk melihat detail Tahun Akademik & Semester">
-                <span class="ta-indicator-dot"></span>
-                TA: {{ $activePeriod['tahun_akademik'] ?? '-' }} {{ !empty($activePeriod['semester']) ? '• ' . $activePeriod['semester'] : '' }}
-            </a>
-        @endif
         <div class="banner-content">
             <div class="text-side">
                 <span class="role-badge-tag"><i class="bi bi-mortarboard-fill"></i> Biro Akademik</span>
@@ -130,17 +124,10 @@
                         @endif
                     </div>
                     <h5>{{ $menu->name }}</h5>
-                    @if(str_contains(strtolower($menu->name), 'tahun akademik'))
-                        <div class="menu-period-chip mt-1 mb-2">
-                            <span class="period-chip-tag">
-                                <i class="bi bi-clock-history me-1 text-primary"></i> {{ $activePeriod['tahun_akademik'] ?? '-' }} &bull; Semester {{ $activePeriod['semester'] ?? '-' }}
-                            </span>
-                        </div>
-                    @endif
                     @if($menu->description)
                         <p>{{ $menu->description }}</p>
                     @endif
-                    <span class="status-badge {{ $badgeClass }}">{{ (str_contains(strtolower($menu->name), 'tahun akademik') && !empty($activePeriod['semester'])) ? ($activePeriod['semester'] . ' (Aktif)') : ($menu->badge_text ?: 'Aktif') }}</span>
+                    <span class="status-badge {{ $badgeClass }}">{{ $menu->badge_text ?: 'Aktif' }}</span>
                 </a>
             @empty
                 <a href="{{ route('akademik.direktori-mahasiswa.index') }}" class="menu-card">
@@ -158,19 +145,6 @@
                     <h5>Monitoring Beasiswa & Ambassador</h5>
                     <p>Monitoring data mahasiswa penerima beasiswa dan status Student Ambassador</p>
                     <span class="status-badge active">Utama</span>
-                </a>
-                <a href="{{ route('akademik.tahun-akademik.index') }}" class="menu-card">
-                    <div class="menu-icon" style="background: linear-gradient(135deg, #0284C7, #38BDF8);">
-                        <i class="bi bi-calendar-check-fill"></i>
-                    </div>
-                    <h5>Tahun Akademik &amp; Semester</h5>
-                    <div class="menu-period-chip mt-1 mb-2">
-                        <span class="period-chip-tag">
-                            <i class="bi bi-clock-history me-1 text-primary"></i> {{ $activePeriod['tahun_akademik'] ?? '-' }} &bull; Semester {{ $activePeriod['semester'] ?? '-' }}
-                        </span>
-                    </div>
-                    <p>Informasi tahun akademik dan semester aktif dari SIAKAD</p>
-                    <span class="status-badge active">{{ $activePeriod['semester'] ?? 'Aktif' }}</span>
                 </a>
                 <a href="{{ route('admin.announcements.index') }}" class="menu-card">
                     <div class="menu-icon" style="background: linear-gradient(135deg, #0284C7, #38BDF8);">
@@ -381,67 +355,6 @@
         overflow: hidden;
         margin-bottom: 25px;
         box-shadow: 0 15px 35px rgba(30, 58, 138, 0.22);
-    }
-
-    /* Header Banner Top-Right Academic Period Badge */
-    .banner-top-ta-badge {
-        position: absolute;
-        top: 24px;
-        right: 32px;
-        z-index: 10;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.38);
-        color: #ffffff;
-        padding: 6px 16px;
-        border-radius: 99px;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 0.3px;
-        backdrop-filter: blur(8px);
-        text-decoration: none;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-    }
-    .banner-top-ta-badge:hover {
-        background: rgba(255, 255, 255, 0.32);
-        border-color: rgba(255, 255, 255, 0.6);
-        color: #ffffff;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
-    }
-    .banner-top-ta-badge .ta-indicator-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #34D399;
-        display: inline-block;
-        animation: pulseLiveDot 2s infinite;
-    }
-    @keyframes pulseLiveDot {
-        0% { transform: scale(0.95); opacity: 0.8; }
-        50% { transform: scale(1.3); opacity: 1; }
-        100% { transform: scale(0.95); opacity: 0.8; }
-    }
-    .period-chip-tag {
-        display: inline-flex;
-        align-items: center;
-        background: #EFF6FF;
-        border: 1px solid #BFDBFE;
-        color: #1D4ED8;
-        font-size: 11.5px;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 6px;
-    }
-    @media (max-width: 768px) {
-        .banner-top-ta-badge {
-            position: static;
-            display: inline-flex;
-            margin-bottom: 14px;
-        }
     }
 
     .dashboard-akademik-container .role-badge-tag {

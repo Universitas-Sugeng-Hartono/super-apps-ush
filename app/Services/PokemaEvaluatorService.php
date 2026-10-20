@@ -759,14 +759,33 @@ class PokemaEvaluatorService
             $yearTargetMet = $runningYearPoints >= $yearTarget;
             $progressPercent = $yearTarget > 0 ? min(100, round(($runningYearPoints / $yearTarget) * 100)) : ($runningYearPoints > 0 ? 100 : 0);
 
+            // Dapatkan IPK semester ini: prioritas riwayat sinkronisasi SIAKAD -> konseling PA -> fallback semester aktif
+            $historyIpk = null;
+            if (!empty($student->semester_ipk_history)) {
+                $histArr = is_array($student->semester_ipk_history)
+                    ? $student->semester_ipk_history
+                    : (json_decode($student->semester_ipk_history, true) ?: []);
+                $historyIpk = $histArr[(string) $sem] ?? $histArr[$sem] ?? null;
+            }
+
+            $semIpk = null;
+            if ($historyIpk !== null && is_numeric($historyIpk)) {
+                $semIpk = number_format((float) $historyIpk, 2);
+            } elseif ($counseling && $counseling->ipk !== null && is_numeric($counseling->ipk)) {
+                $semIpk = number_format((float) $counseling->ipk, 2);
+            } elseif ($sem === (int) $semester && $student->ipk !== null && is_numeric($student->ipk)) {
+                // Fallback semester aktif langsung dari data resmi profil mahasiswa
+                $semIpk = number_format((float) $student->ipk, 2);
+            }
+
             $semesterBreakdown[] = [
                 'semester' => $sem,
                 'semester_label' => "Semester {$sem}",
                 'study_year' => $semYear,
                 'study_year_label' => $semYearLabel,
                 'is_current' => $sem === (int) $semester,
-                'ipk' => ($counseling && $counseling->ipk !== null) ? number_format((float) $counseling->ipk, 2) : null,
-                'ip' => ($counseling && $counseling->ip !== null) ? number_format((float) $counseling->ip, 2) : null,
+                'ipk' => $semIpk,
+                'ip' => null,
                 'has_counseling' => $counseling !== null,
                 'achievements_count' => $semAchs->count(),
                 'semester_points' => $semPts,

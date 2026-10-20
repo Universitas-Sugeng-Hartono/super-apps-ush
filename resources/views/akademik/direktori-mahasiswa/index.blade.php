@@ -6,11 +6,6 @@
         <div>
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                 <h3 class="mb-0"><i class="bi bi-people-fill text-primary me-2"></i> Direktori Mahasiswa & Monitoring Akademik</h3>
-                @if(!empty($activePeriod))
-                    <span class="badge" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 12.5px; font-weight: 700; border-radius: 20px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="bi bi-calendar-check-fill text-primary"></i> Periode Aktif: {{ $activePeriod['tahun_akademik'] ?? '-' }} (Semester {{ $activePeriod['semester'] ?? '-' }})
-                    </span>
-                @endif
             </div>
             <p class="text-muted mb-0" style="font-size: 13px;">Direktori lengkap mahasiswa Universitas Sugeng Hartono, filter berdasarkan program studi, angkatan, status akademik, dan capaian IPK KHS.</p>
         </div>
@@ -18,6 +13,12 @@
             <a href="{{ route('akademik.dashboard') }}" class="btn-secondary">
                 <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
             </a>
+            <button type="button" class="btn-sync-siakad" id="btn-sync-siakad" onclick="handleSyncSiakad()" title="Tarik data mahasiswa baru dari SIAKAD (Beasiswa & Reguler)">
+                <i class="bi bi-cloud-arrow-down"></i> Sinkron Siakad
+            </button>
+            <button type="button" class="btn-refresh-all-siakad" id="btn-refresh-all-siakad" onclick="handleRefreshAllSiakad()" title="Perbarui Semester & Nilai IPK mahasiswa penerima beasiswa dari SIAKAD">
+                <i class="bi bi-arrow-clockwise"></i> Refresh Data SIAKAD
+            </button>
             <a href="{{ route('akademik.monitoring-beasiswa.index') }}" class="btn-outline-beasiswa">
                 <i class="bi bi-award-fill"></i> Monitoring Beasiswa
             </a>
@@ -26,6 +27,27 @@
             </a>
         </div>
     </div>
+
+    <form id="form-sync-siakad" action="{{ route('akademik.direktori-mahasiswa.sync-siakad') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+    <form id="form-refresh-siakad" action="{{ route('akademik.direktori-mahasiswa.refresh-siakad') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+
+    @if(session('success'))
+        <div class="alert alert-success d-flex align-items-center gap-2 mb-3" style="border-radius: 12px; font-size: 13.5px; font-weight: 500;">
+            <i class="bi bi-check-circle-fill"></i>
+            <div>{{ session('success') }}</div>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" style="border-radius: 12px; font-size: 13.5px; font-weight: 500;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>{{ session('error') }}</div>
+        </div>
+    @endif
 
     <!-- Quick Summary KPI Stats -->
     <div class="stats-row">
@@ -63,25 +85,15 @@
         </div>
     </div>
 
-    <!-- Filter Card -->
+    <!-- Search & Filter Card (Clean & Ringkas: Pencarian, Penetapan Ambassador, Kategori Beasiswa) -->
     <div class="filter-card shadow-sm mb-4">
         <form method="GET" action="{{ route('akademik.direktori-mahasiswa.index') }}" class="filter-grid-direktori">
             <div class="filter-item search-item">
                 <label>Pencarian</label>
                 <div class="input-with-icon">
                     <i class="bi bi-search"></i>
-                    <input type="text" name="search" class="form-control-modern" value="{{ $search }}" placeholder="Nama, NIM, atau email...">
+                    <input type="text" name="search" class="form-control-modern" value="{{ $search }}" placeholder="Ketik Nama, NIM, atau email...">
                 </div>
-            </div>
-
-            <div class="filter-item">
-                <label>Status Mahasiswa</label>
-                <select name="status_mahasiswa" class="form-select-modern" onchange="this.form.submit()">
-                    <option value="">Semua Status</option>
-                    <option value="Aktif" {{ $statusMahasiswa === 'Aktif' ? 'selected' : '' }}>Aktif</option>
-                    <option value="Cuti" {{ $statusMahasiswa === 'Cuti' ? 'selected' : '' }}>Cuti</option>
-                    <option value="Tidak Aktif" {{ $statusMahasiswa === 'Tidak Aktif' ? 'selected' : '' }}>Tidak Aktif</option>
-                </select>
             </div>
 
             <div class="filter-item">
@@ -106,28 +118,8 @@
                 </select>
             </div>
 
-            <div class="filter-item">
-                <label>Program Studi</label>
-                <select name="program_studi" class="form-select-modern" onchange="this.form.submit()">
-                    <option value="">Semua Program Studi</option>
-                    @foreach($programOptions as $prodi)
-                        <option value="{{ $prodi }}" {{ $programStudi === $prodi ? 'selected' : '' }}>{{ $prodi }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="filter-item">
-                <label>Angkatan</label>
-                <select name="angkatan" class="form-select-modern" onchange="this.form.submit()">
-                    <option value="">Semua Angkatan</option>
-                    @foreach($angkatanOptions as $year)
-                        <option value="{{ $year }}" {{ (string) $angkatan === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
-                    @endforeach
-                </select>
-            </div>
-
             <div class="filter-actions-direktori">
-                @if($search || $statusMahasiswa || $statusAmbassador || $beasiswa || $programStudi || $angkatan)
+                @if($search || $statusAmbassador || $beasiswa)
                     <a href="{{ route('akademik.direktori-mahasiswa.index') }}" class="btn-reset-modern" title="Reset Semua Filter">
                         <i class="bi bi-x-circle"></i> Reset
                     </a>
@@ -428,74 +420,131 @@
     }
     .filter-grid-direktori {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto;
-        gap: 12px;
+        grid-template-columns: minmax(240px, 2.2fr) minmax(200px, 1.2fr) minmax(200px, 1.2fr) auto;
+        gap: 14px;
         align-items: flex-end;
+    }
+    @media (max-width: 992px) {
+        .filter-grid-direktori {
+            grid-template-columns: 1fr 1fr;
+        }
+        .filter-actions-direktori {
+            grid-column: 1 / -1;
+            justify-content: flex-end;
+        }
+    }
+    @media (max-width: 600px) {
+        .filter-grid-direktori {
+            grid-template-columns: 1fr;
+        }
+        .filter-actions-direktori {
+            justify-content: stretch;
+        }
+        .btn-search-modern, .btn-reset-modern {
+            flex: 1;
+            justify-content: center;
+        }
     }
     .filter-item {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 6px;
     }
     .filter-item label {
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         color: #475569;
+        letter-spacing: 0.3px;
     }
     .input-with-icon {
         position: relative;
     }
     .input-with-icon i {
         position: absolute;
-        left: 12px;
+        left: 14px;
         top: 50%;
         transform: translateY(-50%);
         color: #94A3B8;
+        font-size: 14px;
+        pointer-events: none;
     }
     .form-control-modern {
         width: 100%;
-        padding: 9px 12px 9px 34px;
+        height: 42px;
+        padding: 0 14px 0 38px;
         border: 1px solid #CBD5E1;
-        border-radius: 9px;
-        font-size: 13px;
+        border-radius: 10px;
+        font-size: 13.5px;
         background: white;
+        color: #1E293B;
+        transition: all 0.2s ease;
+    }
+    .form-control-modern:focus {
+        outline: none;
+        border-color: #2563EB;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
     .form-select-modern {
         width: 100%;
-        padding: 9px 12px;
+        height: 42px;
+        padding: 0 14px;
         border: 1px solid #CBD5E1;
-        border-radius: 9px;
-        font-size: 13px;
+        border-radius: 10px;
+        font-size: 13.5px;
         background: white;
+        color: #1E293B;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .form-select-modern:focus {
+        outline: none;
+        border-color: #2563EB;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
     .filter-actions-direktori {
         display: flex;
         gap: 8px;
     }
     .btn-search-modern {
-        padding: 9px 16px;
-        background: #2563EB;
+        height: 42px;
+        padding: 0 18px;
+        background: #1E3A8A;
         color: white;
         border: none;
-        border-radius: 9px;
+        border-radius: 10px;
         font-weight: 600;
         font-size: 13px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-search-modern:hover {
+        background: #1D4ED8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
     }
     .btn-reset-modern {
-        padding: 9px 14px;
-        background: #E2E8F0;
+        height: 42px;
+        padding: 0 14px;
+        background: #F1F5F9;
         color: #475569;
-        border-radius: 9px;
+        border: 1px solid #CBD5E1;
+        border-radius: 10px;
         font-weight: 600;
         font-size: 13px;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-reset-modern:hover {
+        background: #E2E8F0;
+        color: #1E293B;
     }
 
     /* Table */
@@ -652,6 +701,59 @@
         color: #CBD5E1;
     }
 
+    /* Siakad Sync Buttons */
+    .btn-sync-siakad {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        background: linear-gradient(135deg, #00796B, #004D40);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0, 121, 107, 0.25);
+    }
+    .btn-sync-siakad:hover {
+        background: linear-gradient(135deg, #004D40, #00332C);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0, 121, 107, 0.35);
+        color: white;
+    }
+    .btn-sync-siakad:active {
+        transform: translateY(0);
+    }
+
+    .btn-refresh-all-siakad {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        background: linear-gradient(135deg, #0284C7, #0369A1);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+    .btn-refresh-all-siakad:hover {
+        background: linear-gradient(135deg, #0369A1, #075985);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
+        color: white;
+    }
+    .btn-refresh-all-siakad:active {
+        transform: translateY(0);
+    }
+
     @media (max-width: 992px) {
         .stats-row { grid-template-columns: repeat(2, 1fr); }
     }
@@ -659,4 +761,123 @@
         .stats-row { grid-template-columns: 1fr; }
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+function handleSyncSiakad() {
+    Swal.fire({
+        title: 'Memeriksa Data Siakad...',
+        html: 'Menghubungkan ke Siakad Rekomendasi Beasiswa Termin...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+            fetch("{{ route('akademik.direktori-mahasiswa.preview-siakad') }}")
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Koneksi Siakad Gagal',
+                            text: data.message || 'Tidak dapat terhubung ke API Siakad.'
+                        });
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Tarik Data Mahasiswa Baru dari SIAKAD',
+                        html: `
+                            <div style="text-align: left; font-size: 14px;">
+                                <div style="background: #E0F2FE; border-left: 4px solid #0284C7; padding: 12px; border-radius: 6px; margin-bottom: 12px; color: #0369A1;">
+                                    <strong><i class="bi bi-info-circle-fill" style="color: #0284C7;"></i> Ditemukan ${data.total} mahasiswa</strong> (Angkatan 2026+) di SIAKAD.
+                                </div>
+                                <table style="width: 100%; font-size: 13px; margin-bottom: 8px;">
+                                    <tr>
+                                        <td style="padding: 5px 0; color: #64748B;">Mahasiswa Penerima Beasiswa di SIAKAD:</td>
+                                        <td style="padding: 5px 0; font-weight: 700; color: #059669; text-align: right;">${data.beasiswa_count} Mahasiswa</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 5px 0; color: #64748B;">Mahasiswa Reguler (Non-Beasiswa) di SIAKAD:</td>
+                                        <td style="padding: 5px 0; font-weight: 700; color: #0284C7; text-align: right;">${data.reguler_count} Mahasiswa</td>
+                                    </tr>
+                                    <tr style="border-top: 1px dashed #CBD5E1;">
+                                        <td style="padding: 8px 0 4px; color: #1E293B; font-weight: 600;">Mahasiswa Baru Siap Ditarik:</td>
+                                        <td style="padding: 8px 0 4px; font-weight: 800; color: #16A34A; text-align: right; font-size: 15px;">+${data.new_count} Mahasiswa</td>
+                                    </tr>
+                                    ${data.new_count > 0 ? `
+                                    <tr>
+                                        <td colspan="2" style="padding: 0 0 4px; font-size: 12px; color: #64748B; text-align: right;">
+                                            (${data.new_beasiswa_count > 0 ? `Beasiswa: <b>${data.new_beasiswa_count}</b>, ` : ''}Reguler: <b>${data.new_reguler_count}</b>)
+                                        </td>
+                                    </tr>
+                                    ` : ''}
+                                </table>
+                                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 12px; color: #475569; line-height: 1.45;">
+                                    <i class="bi bi-shield-check" style="color: #059669;"></i> <strong>Catatan:</strong> Tombol ini hanya akan mendaftarkan <b>mahasiswa baru</b> yang belum tercatat di SuperApps (agar tidak perlu input manual). Periode Masuk & Tanggal Masuk otomatis ditentukan dari SIAKAD. Data yang sudah terdaftar <b>tidak akan diubah</b>.
+                                </div>
+                            </div>
+                        `,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#00796B',
+                        cancelButtonColor: '#94A3B8',
+                        confirmButtonText: '<i class="bi bi-cloud-arrow-down"></i> Ya, Tarik Mahasiswa Baru',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({
+                                title: 'Sedang Menarik Data...',
+                                html: 'Sistem sedang memproses penarikan mahasiswa baru dari SIAKAD...',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+                            document.getElementById('form-sync-siakad').submit();
+                        }
+                    });
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Terjadi Kesalahan',
+                        text: err.message || 'Gagal memuat pratinjau data Siakad.'
+                    });
+                });
+        }
+    });
+}
+
+function handleRefreshAllSiakad() {
+    Swal.fire({
+        title: 'Refresh Data SIAKAD',
+        html: `
+            <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.55;">
+                <p>Sistem akan memperbarui data <strong>Semester, Nilai IPK, dan Periode Masuk</strong> resmi dari SIAKAD untuk <strong>seluruh mahasiswa (Beasiswa & Reguler)</strong> yang sudah terdaftar di SuperApps.</p>
+                <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 12px; margin-top: 10px; color: #166534; font-size: 12.5px;">
+                    <i class="bi bi-shield-check"></i> <strong>Aman:</strong> Hanya menyinkronkan nilai Semester, IPK, dan periode masuk terbaru dari SIAKAD. Tidak menambah mahasiswa baru, serta nomor kontak dan data evaluasi beasiswa SuperApps tetap terjaga.
+                </div>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0284C7',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: '<i class="bi bi-arrow-clockwise"></i> Ya, Refresh Semester & IPK',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Memperbarui Data...',
+                text: 'Sedang memperbarui data akademik seluruh mahasiswa dari SIAKAD...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            document.getElementById('form-refresh-siakad').submit();
+        }
+    });
+}
+</script>
 @endpush

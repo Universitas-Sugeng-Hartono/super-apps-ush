@@ -6,11 +6,6 @@
         <div>
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                 <h3 class="mb-0"><i class="bi bi-award-fill text-warning me-2"></i> Monitoring Mahasiswa Beasiswa & Student Ambassador</h3>
-                @if(!empty($activePeriod))
-                    <span class="badge" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 12.5px; font-weight: 700; border-radius: 20px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="bi bi-calendar-check-fill text-primary"></i> Periode Aktif: {{ $activePeriod['tahun_akademik'] ?? '-' }} (Semester {{ $activePeriod['semester'] ?? '-' }})
-                    </span>
-                @endif
             </div>
             <p class="text-muted mb-0" style="font-size: 13px;">Pemantauan komprehensif data akademik, capaian IPK KHS, persentase beasiswa, dan status penetapan Student Ambassador.</p>
         </div>

@@ -100,16 +100,6 @@ class MenuItemSeeder extends Seeder
                 'badge_text' => 'Baru',
                 'badge_color' => 'active',
             ],
-            [
-                'name' => 'Tahun Akademik & Semester',
-                'icon' => 'bi bi-calendar-check-fill',
-                'route_name' => 'akademik.tahun-akademik.index',
-                'roles' => 'akademik,masteradmin',
-                'order' => 25,
-                'description' => 'Informasi tahun akademik & semester aktif sinkronisasi SIAKAD',
-                'badge_text' => 'SIAKAD',
-                'badge_color' => 'active',
-            ],
         ];
 
         foreach ($items as $item) {

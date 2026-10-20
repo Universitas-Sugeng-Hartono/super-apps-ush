@@ -11,10 +11,10 @@
                 <a href="{{ route('kemahasiswaan.dashboard') }}" class="btn-secondary">
                     <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
                 </a>
-                <button type="button" class="btn-sync-siakad" id="btn-sync-siakad" onclick="handleSyncSiakad()" title="Tarik data mahasiswa & IPK terbaru dari SIAKAD">
-                    <i class="bi bi-arrow-repeat"></i> Sinkron Siakad
+                <button type="button" class="btn-sync-siakad" id="btn-sync-siakad" onclick="handleSyncSiakad()" title="Tarik data mahasiswa baru dari SIAKAD (Beasiswa & Reguler)">
+                    <i class="bi bi-cloud-arrow-down"></i> Sinkron Siakad
                 </button>
-                <button type="button" class="btn-refresh-all-siakad" id="btn-refresh-all-siakad" onclick="handleRefreshAllSiakad()" title="Perbarui seluruh data IPK, Semester, Beasiswa, No. Telepon, dan Alamat dari SIAKAD">
+                <button type="button" class="btn-refresh-all-siakad" id="btn-refresh-all-siakad" onclick="handleRefreshAllSiakad()" title="Perbarui Semester & Nilai IPK mahasiswa penerima beasiswa dari SIAKAD">
                     <i class="bi bi-arrow-clockwise"></i> Refresh Data SIAKAD
                 </button>
                 <a href="{{ route('kemahasiswaan.student-ambassador.create') }}" class="btn-outline-manual" title="Tambah data secara manual">
@@ -24,6 +24,9 @@
         </div>
 
         <form id="form-sync-siakad" action="{{ route('kemahasiswaan.student-ambassador.sync-siakad') }}" method="POST" style="display: none;">
+            @csrf
+        </form>
+        <form id="form-refresh-siakad" action="{{ route('kemahasiswaan.student-ambassador.refresh-siakad') }}" method="POST" style="display: none;">
             @csrf
         </form>
 
@@ -111,6 +114,15 @@
                        placeholder="Cari nama, NIM, email, atau periode masuk..." 
                        value="{{ $search }}">
                 
+                <select name="angkatan" class="filter-select">
+                    <option value="">Semua Angkatan / Tahun</option>
+                    @foreach($availableAngkatan as $thn)
+                        <option value="{{ $thn }}" {{ (string)($angkatanFilter ?? '') === (string)$thn ? 'selected' : '' }}>
+                            Angkatan {{ $thn }}
+                        </option>
+                    @endforeach
+                </select>
+
                 <select name="status" class="filter-select">
                     <option value="">Semua Status</option>
                     <option value="studentambassador" {{ $statusFilter == 'studentambassador' ? 'selected' : '' }}>Student Ambassador</option>
@@ -128,7 +140,7 @@
                 <button type="submit" class="search-btn">
                     <i class="bi bi-search"></i> Filter
                 </button>
-                @if($search || $programStudi || $statusFilter)
+                @if($search || $programStudi || $statusFilter || $angkatanFilter)
                     <a href="{{ route('kemahasiswaan.student-ambassador.index') }}" class="btn-reset-filter">
                         <i class="bi bi-x-circle"></i> Reset
                     </a>
@@ -204,7 +216,7 @@
                                 <td>
                                     @if($student->status === 'studentambassador')
                                         <span class="status-badge-ambassador">
-                                            <i class="bi bi-star-fill"></i> Student Ambassador
+                                             Student Ambassador
                                         </span>
                                     @else
                                         <span class="status-badge-mahasiswa">
@@ -220,19 +232,6 @@
                                         <a href="{{ route('kemahasiswaan.student-ambassador.edit', $student->id) }}" class="btn-edit" title="Edit">
                                             <i class="bi bi-pencil"></i> Edit
                                         </a>
-                                        <a href="{{ route('kemahasiswaan.student-ambassador.reset-password', $student->id) }}"
-                                           class="btn-reset"
-                                           onclick="return confirm('Yakin ingin mereset password mahasiswa ini ke 12345678?')"
-                                           title="Reset Password">
-                                            <i class="bi bi-arrow-counterclockwise"></i>
-                                        </a>
-                                        <form action="{{ route('kemahasiswaan.student-ambassador.destroy', $student->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn-delete" title="Hapus">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -783,7 +782,7 @@
         align-items: center;
     }
 
-    .btn-view, .btn-edit, .btn-reset, .btn-delete {
+    .btn-view, .btn-edit {
         padding: 7px 12px;
         border-radius: 8px;
         font-size: 12px;
@@ -808,18 +807,6 @@
         color: #E65100;
     }
     .btn-edit:hover { background: #FFE0B2; color: #BF360C; }
-
-    .btn-reset {
-        background: #ECEFF1;
-        color: #455A64;
-    }
-    .btn-reset:hover { background: #CFD8DC; color: #263238; }
-
-    .btn-delete {
-        background: #FFEBEE;
-        color: #C62828;
-    }
-    .btn-delete:hover { background: #FFCDD2; color: #B71C1C; }
 
     .empty-state {
         text-align: center;
@@ -907,54 +894,50 @@ function handleSyncSiakad() {
                         return;
                     }
 
-                    let sampleHtml = '';
-                    if (data.sample && data.sample.length > 0) {
-                        sampleHtml = '<div style="margin-top: 10px; max-height: 140px; overflow-y: auto; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px; background: white;">' +
-                            '<table style="width: 100%; font-size: 11px; text-align: left;">' +
-                            '<thead style="color: #64748B; border-bottom: 1px solid #CBD5E1;"><tr><th style="padding: 2px 4px;">NIM</th><th style="padding: 2px 4px;">Nama</th><th style="padding: 2px 4px;">Sem</th><th style="padding: 2px 4px;">IPK</th><th style="padding: 2px 4px;">Beasiswa</th></tr></thead>' +
-                            '<tbody>';
-                        data.sample.forEach(s => {
-                            sampleHtml += `<tr><td style="padding: 3px 4px; font-weight: 600;">${s.nim}</td><td style="padding: 3px 4px;">${s.name}</td><td style="padding: 3px 4px;">Sem ${s.semester || '-'}</td><td style="padding: 3px 4px;">${s.ipk ? Number(s.ipk).toFixed(2) : '-'}</td><td style="padding: 3px 4px; color: #00796B; font-weight: 600;">${s.beasiswa}</td></tr>`;
-                        });
-                        sampleHtml += '</tbody></table></div>';
-                    }
-
                     Swal.fire({
-                        title: 'Sinkronisasi Data Siakad',
+                        title: 'Tarik Data Mahasiswa Baru dari SIAKAD',
                         html: `
                             <div style="text-align: left; font-size: 14px;">
-                                <div style="background: #E0F2F1; border-left: 4px solid #00796B; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
-                                    <strong><i class="bi bi-info-circle-fill" style="color: #00796B;"></i> Ditemukan ${data.total} mahasiswa</strong> pada menu <em>Rekomendasi Beasiswa Termin</em> Siakad.
+                                <div style="background: #E0F2FE; border-left: 4px solid #0284C7; padding: 12px; border-radius: 6px; margin-bottom: 12px; color: #0369A1;">
+                                    <strong><i class="bi bi-info-circle-fill" style="color: #0284C7;"></i> Ditemukan ${data.total} mahasiswa</strong> (Angkatan 2026+) di SIAKAD.
                                 </div>
                                 <table style="width: 100%; font-size: 13px; margin-bottom: 8px;">
                                     <tr>
-                                        <td style="padding: 4px 0; color: #64748B;">Mahasiswa Baru (Ditambahkan):</td>
-                                        <td style="padding: 4px 0; font-weight: 700; color: #2E7D32; text-align: right;">+${data.new_count} Mahasiswa</td>
+                                        <td style="padding: 5px 0; color: #64748B;">Mahasiswa Penerima Beasiswa di SIAKAD:</td>
+                                        <td style="padding: 5px 0; font-weight: 700; color: #059669; text-align: right;">${data.beasiswa_count} Mahasiswa</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 4px 0; color: #64748B;">Mahasiswa Terdaftar (Diperbarui):</td>
-                                        <td style="padding: 4px 0; font-weight: 700; color: #0288D1; text-align: right;">${data.update_count} Mahasiswa</td>
+                                        <td style="padding: 5px 0; color: #64748B;">Mahasiswa Reguler (Non-Beasiswa) di SIAKAD:</td>
+                                        <td style="padding: 5px 0; font-weight: 700; color: #0284C7; text-align: right;">${data.reguler_count} Mahasiswa</td>
                                     </tr>
+                                    <tr style="border-top: 1px dashed #CBD5E1;">
+                                        <td style="padding: 8px 0 4px; color: #1E293B; font-weight: 600;">Mahasiswa Baru Siap Ditarik:</td>
+                                        <td style="padding: 8px 0 4px; font-weight: 800; color: #16A34A; text-align: right; font-size: 15px;">+${data.new_count} Mahasiswa</td>
+                                    </tr>
+                                    ${data.new_count > 0 ? `
                                     <tr>
-                                        <td style="padding: 4px 0; color: #64748B;">Sumber Acuan Nilai:</td>
-                                        <td style="padding: 4px 0; font-weight: 600; text-align: right; color: #004D40;">Semester & IPK Siakad</td>
+                                        <td colspan="2" style="padding: 0 0 4px; font-size: 12px; color: #64748B; text-align: right;">
+                                            (${data.new_beasiswa_count > 0 ? `Beasiswa: <b>${data.new_beasiswa_count}</b>, ` : ''}Reguler: <b>${data.new_reguler_count}</b>)
+                                        </td>
                                     </tr>
+                                    ` : ''}
                                 </table>
-                                ${sampleHtml}
-                                <p style="font-size: 12px; color: #64748B; margin-top: 10px; margin-bottom: 0;">Seluruh mahasiswa yang ditarik akan ditetapkan statusnya sebagai <b>Student Ambassador</b> dengan semester, IPK, dan persentase beasiswa sesuai data resmi Siakad.</p>
+                                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 12px; color: #475569; line-height: 1.45;">
+                                    <i class="bi bi-shield-check" style="color: #059669;"></i> <strong>Catatan:</strong> Tombol ini hanya akan mendaftarkan <b>mahasiswa baru</b> yang belum tercatat di SuperApps (agar Anda tidak perlu input manual). Data mahasiswa yang sudah terdaftar <b>tidak akan diubah atau ditimpa</b>.
+                                </div>
                             </div>
                         `,
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonColor: '#00796B',
                         cancelButtonColor: '#94A3B8',
-                        confirmButtonText: '<i class="bi bi-arrow-repeat"></i> Ya, Sinkronkan Sekarang',
+                        confirmButtonText: '<i class="bi bi-cloud-arrow-down"></i> Ya, Tarik Mahasiswa Baru',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
                             Swal.fire({
-                                title: 'Sedang Menyinkronkan...',
-                                html: 'Sistem sedang memproses sinkronisasi data dari Siakad...',
+                                title: 'Sedang Menarik Data...',
+                                html: 'Sistem sedang memproses penarikan mahasiswa baru dari SIAKAD...',
                                 allowOutsideClick: false,
                                 didOpen: () => {
                                     Swal.showLoading();
@@ -977,12 +960,12 @@ function handleSyncSiakad() {
 
 function handleRefreshAllSiakad() {
     Swal.fire({
-        title: 'Refresh Data dari SIAKAD?',
+        title: 'Refresh Data SIAKAD',
         html: `
             <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.55;">
-                <p>Sistem akan memperbarui data seluruh mahasiswa (<strong>Nilai IPK, Semester, Beasiswa, No. Telepon, dan Alamat</strong>) sekaligus dari data terkini di SIAKAD.</p>
-                <div style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 10px 12px; margin-top: 10px; color: #0369A1; font-size: 12.5px;">
-                    <i class="bi bi-info-circle-fill"></i> Data status penetapan dan catatan internal kemahasiswaan yang tersimpan di SuperApps akan tetap dipertahankan.
+                <p>Sistem akan memperbarui data <strong>Semester dan Nilai IPK</strong> resmi dari SIAKAD khusus untuk <strong>mahasiswa penerima beasiswa (Student Ambassador)</strong> yang sudah terdaftar di SuperApps.</p>
+                <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 12px; margin-top: 10px; color: #166534; font-size: 12.5px;">
+                    <i class="bi bi-shield-check"></i> <strong>Aman:</strong> Hanya menyinkronkan nilai Semester & IPK terbaru dari SIAKAD. Tidak menambah mahasiswa baru, serta nomor kontak dan data evaluasi beasiswa SuperApps tetap terjaga.
                 </div>
             </div>
         `,
@@ -990,19 +973,19 @@ function handleRefreshAllSiakad() {
         showCancelButton: true,
         confirmButtonColor: '#0284C7',
         cancelButtonColor: '#6B7280',
-        confirmButtonText: '<i class="bi bi-arrow-clockwise"></i> Ya, Refresh Semua Data',
+        confirmButtonText: '<i class="bi bi-arrow-clockwise"></i> Ya, Refresh Semester & IPK',
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
             Swal.fire({
                 title: 'Memperbarui Data...',
-                text: 'Sedang memproses dan memperbarui data mahasiswa dari SIAKAD...',
+                text: 'Sedang memperbarui Semester dan Nilai IPK mahasiswa beasiswa dari SIAKAD...',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
                 }
             });
-            document.getElementById('form-sync-siakad').submit();
+            document.getElementById('form-refresh-siakad').submit();
         }
     });
 }

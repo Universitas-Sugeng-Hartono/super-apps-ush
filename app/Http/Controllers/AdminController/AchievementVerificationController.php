@@ -29,6 +29,17 @@ class AchievementVerificationController extends Controller
         $category = $request->input('category');
         $statusMahasiswa = $request->input('status_mahasiswa');
         $beasiswaFilter = $request->input('beasiswa');
+        $angkatan = $request->input('angkatan');
+
+        $availableAngkatan = Student::whereNotNull('angkatan')
+            ->where('angkatan', '>', 0)
+            ->distinct()
+            ->orderBy('angkatan', 'desc')
+            ->pluck('angkatan');
+
+        if ($availableAngkatan->isEmpty()) {
+            $availableAngkatan = collect([2026, 2025, 2024, 2023]);
+        }
 
         $achievementsFilter = function ($query) use ($status, $category) {
             $validCategories = array_keys(StudentAchievement::manualCategoryOptions());
@@ -62,6 +73,9 @@ class AchievementVerificationController extends Controller
             })
             ->when(filled($programStudi), function ($query) use ($programStudi) {
                 $query->where('program_studi', $programStudi);
+            })
+            ->when(filled($angkatan), function ($query) use ($angkatan) {
+                $query->where('angkatan', $angkatan);
             });
 
         $tabCounts = [
@@ -135,6 +149,9 @@ class AchievementVerificationController extends Controller
                     $query->where('beasiswa', $beasiswaFilter);
                 }
             })
+            ->when(filled($angkatan), function ($query) use ($angkatan) {
+                $query->where('angkatan', $angkatan);
+            })
             ->orderBy('nama_lengkap')
             ->paginate(12)
             ->appends($request->query());
@@ -186,6 +203,8 @@ class AchievementVerificationController extends Controller
             'statusMahasiswa',
             'beasiswaFilter',
             'availableBeasiswa',
+            'angkatan',
+            'availableAngkatan',
             'studyPrograms',
             'skpDictionary',
             'tab',
@@ -679,6 +698,24 @@ class AchievementVerificationController extends Controller
             'status_text' => $statusText,
             'message' => $message,
         ]);
+    }
+
+    /**
+     * Export Laporan Evaluasi Capaian Beasiswa & Student Ambassador (Excel / CSV)
+     */
+    public function exportScholarshipReport(Request $request)
+    {
+        $format = strtolower($request->input('format', 'xlsx'));
+        $extension = in_array($format, ['csv', 'txt'], true) ? 'csv' : 'xlsx';
+        $writerType = ($extension === 'csv') ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
+
+        $filename = 'Laporan_Evaluasi_Beasiswa_Ambassador_' . date('Ymd_His') . '.' . $extension;
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ScholarshipEvaluationExport($request),
+            $filename,
+            $writerType
+        );
     }
 
     /**
