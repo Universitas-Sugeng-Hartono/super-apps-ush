@@ -704,6 +704,7 @@ class SkpiController extends Controller
             'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5048',
             'status'             => 'required|string|in:pending,approved,rejected',
             'approval_notes'     => 'nullable|string',
+            'skp_points'         => 'nullable|integer|min:15|max:75',
         ], [
             'category.required'           => 'Kategori wajib dipilih.',
             'activity_type.required'      => 'Jenis kegiatan wajib dipilih.',
@@ -715,13 +716,18 @@ class SkpiController extends Controller
             'certificate.mimes'           => 'File sertifikat harus berupa PDF, JPG, JPEG, atau PNG.',
             'certificate.max'             => 'Ukuran file sertifikat maksimal 5 MB.',
             'status.required'             => 'Status wajib dipilih.',
+            'skp_points.min'              => 'Nilai poin POKEMA minimal 15 poin.',
+            'skp_points.max'              => 'Nilai poin POKEMA maksimal 75 poin.',
         ]);
 
+        $isPmb = \App\Services\SkpPointCalculator::isRangeType($request->activity_type);
+        $customPoints = ($isPmb && $request->filled('skp_points')) ? (int) $request->skp_points : null;
         $skpPoints = \App\Services\SkpPointCalculator::calculate(
             $request->category,
             $request->activity_type,
             $request->level,
-            $request->participation_role
+            $request->participation_role,
+            $customPoints
         );
 
         $updateData = [

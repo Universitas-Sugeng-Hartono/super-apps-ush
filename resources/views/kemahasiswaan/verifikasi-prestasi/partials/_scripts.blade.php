@@ -1220,9 +1220,27 @@
         const actType = document.getElementById('edit_activity_type').value;
         const $level = document.getElementById('edit_level');
         const $role = document.getElementById('edit_participation_role');
+        const $customPointContainer = document.getElementById('edit_custom_point_container');
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
 
         $level.innerHTML = '';
         $role.innerHTML = '';
+
+        const isPmb = (actType === 'pmb');
+        if ($customPointContainer && $customPointInput) {
+            if (isPmb) {
+                $customPointContainer.style.display = 'block';
+                $customPointInput.disabled = false;
+                $customPointInput.required = true;
+                if (!$customPointInput.value) {
+                    $customPointInput.value = 75;
+                }
+            } else {
+                $customPointContainer.style.display = 'none';
+                $customPointInput.disabled = true;
+                $customPointInput.required = false;
+            }
+        }
 
         if (SKP_DICTIONARY[cat] && SKP_DICTIONARY[cat].types && SKP_DICTIONARY[cat].types[actType]) {
             const typeData = SKP_DICTIONARY[cat].types[actType];
@@ -1255,12 +1273,29 @@
         onEditLevelOrRoleChange();
     }
 
+    function onEditCustomPointChange() {
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+        const $badge = document.getElementById('edit_skp_badge');
+        if ($customPointInput && $badge) {
+            const pts = parseInt($customPointInput.value, 10);
+            $badge.textContent = (!isNaN(pts) ? pts : 0) + ' SKP';
+        }
+    }
+
     function onEditLevelOrRoleChange() {
         const cat = document.getElementById('edit_category').value;
         const actType = document.getElementById('edit_activity_type').value;
         const level = document.getElementById('edit_level').value;
         const role = document.getElementById('edit_participation_role').value;
         const $badge = document.getElementById('edit_skp_badge');
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+
+        if (actType === 'pmb') {
+            let pts = $customPointInput ? parseInt($customPointInput.value, 10) : 75;
+            if (isNaN(pts)) pts = 75;
+            $badge.textContent = pts + ' SKP';
+            return;
+        }
 
         let points = 0;
         try {
@@ -1296,6 +1331,12 @@
 
         onEditCategoryChange(data.activity_type_raw);
         onEditActivityTypeChange(data.tingkat, data.peran);
+
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+        if ($customPointInput && data.activity_type_raw === 'pmb') {
+            $customPointInput.value = data.skp || 75;
+            document.getElementById('edit_skp_badge').textContent = (data.skp || 75) + ' SKP';
+        }
 
         document.getElementById('edit_event').value = (data.event && data.event !== '-') ? data.event : '';
         document.getElementById('edit_organizer').value = (data.organizer && data.organizer !== '-') ? data.organizer : '';

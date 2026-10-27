@@ -441,6 +441,14 @@
                 </div>
             </div>
 
+            <div id="edit_custom_point_container" class="form-group" style="display: none; margin-top: 14px; margin-bottom: 0;">
+                <label for="edit_custom_skp_points" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                    Nilai Poin POKEMA (Range 15 - 75) *
+                </label>
+                <input type="number" id="edit_custom_skp_points" name="skp_points" class="form-control" min="15" max="75" placeholder="Contoh: 75" oninput="onEditCustomPointChange()">
+                <small style="color: #64748B; font-size: 12px;">Khusus kegiatan Penerimaan Mahasiswa Baru, masukkan nilai antara 15 hingga 75 poin.</small>
+            </div>
+
             <div style="margin-top: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 13px; color: #475569; font-weight: 600;">Kalkulasi Poin SKP:</span>
                 <span id="edit_skp_badge" style="background: #2563EB; color: white; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 13px;">0 SKP</span>
@@ -738,9 +746,27 @@
         const actType = document.getElementById('edit_activity_type').value;
         const $level = document.getElementById('edit_level');
         const $role = document.getElementById('edit_participation_role');
+        const $customPointContainer = document.getElementById('edit_custom_point_container');
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
 
         $level.innerHTML = '';
         $role.innerHTML = '';
+
+        const isPmb = (actType === 'pmb');
+        if ($customPointContainer && $customPointInput) {
+            if (isPmb) {
+                $customPointContainer.style.display = 'block';
+                $customPointInput.disabled = false;
+                $customPointInput.required = true;
+                if (!$customPointInput.value) {
+                    $customPointInput.value = 75;
+                }
+            } else {
+                $customPointContainer.style.display = 'none';
+                $customPointInput.disabled = true;
+                $customPointInput.required = false;
+            }
+        }
 
         if (SKP_DICTIONARY[cat] && SKP_DICTIONARY[cat].types && SKP_DICTIONARY[cat].types[actType]) {
             const typeData = SKP_DICTIONARY[cat].types[actType];
@@ -773,12 +799,29 @@
         onEditLevelOrRoleChange();
     }
 
+    function onEditCustomPointChange() {
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+        const $badge = document.getElementById('edit_skp_badge');
+        if ($customPointInput && $badge) {
+            const pts = parseInt($customPointInput.value, 10);
+            $badge.textContent = (!isNaN(pts) ? pts : 0) + ' SKP';
+        }
+    }
+
     function onEditLevelOrRoleChange() {
         const cat = document.getElementById('edit_category').value;
         const actType = document.getElementById('edit_activity_type').value;
         const level = document.getElementById('edit_level').value;
         const role = document.getElementById('edit_participation_role').value;
         const $badge = document.getElementById('edit_skp_badge');
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+
+        if (actType === 'pmb') {
+            let pts = $customPointInput ? parseInt($customPointInput.value, 10) : 75;
+            if (isNaN(pts)) pts = 75;
+            $badge.textContent = pts + ' SKP';
+            return;
+        }
 
         let points = 0;
         try {
@@ -820,6 +863,12 @@
 
         onEditCategoryChange(data.activity_type_raw);
         onEditActivityTypeChange(data.tingkat, data.peran);
+
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+        if ($customPointInput && data.activity_type_raw === 'pmb') {
+            $customPointInput.value = data.skp || 75;
+            document.getElementById('edit_skp_badge').textContent = (data.skp || 75) + ' SKP';
+        }
 
         document.getElementById('edit_event').value = (data.event && data.event !== '-') ? data.event : '';
         document.getElementById('edit_organizer').value = (data.organizer && data.organizer !== '-') ? data.organizer : '';

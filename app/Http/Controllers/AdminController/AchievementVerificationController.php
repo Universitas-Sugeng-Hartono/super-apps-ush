@@ -302,7 +302,8 @@ class AchievementVerificationController extends Controller
         $achievement = StudentAchievement::with('student')->findOrFail($id);
         $categoryKeys = implode(',', array_keys(StudentAchievement::manualCategoryOptions()));
 
-        $request->validate([
+        $isPmb = SkpPointCalculator::isRangeType($request->activity_type);
+        $rules = [
             'category'           => "required|string|in:{$categoryKeys}",
             'semester'           => 'nullable|integer|min:1|max:14',
             'activity_type'      => 'required|string|max:100',
@@ -314,13 +315,26 @@ class AchievementVerificationController extends Controller
             'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5048',
             'status'             => 'required|string|in:pending,approved,rejected',
             'approval_notes'     => 'nullable|string',
+        ];
+
+        if ($isPmb) {
+            $rules['skp_points'] = 'required|integer|min:15|max:75';
+        }
+
+        $request->validate($rules, [
+            'skp_points.required' => 'Nilai poin POKEMA untuk Penerimaan Mahasiswa Baru wajib diisi.',
+            'skp_points.integer'  => 'Nilai poin POKEMA harus berupa angka bilangan bulat.',
+            'skp_points.min'      => 'Nilai poin POKEMA minimal 15 poin.',
+            'skp_points.max'      => 'Nilai poin POKEMA maksimal 75 poin.',
         ]);
 
+        $customPoints = ($isPmb && $request->filled('skp_points')) ? (int) $request->skp_points : null;
         $skpPoints = SkpPointCalculator::calculate(
             $request->category,
             $request->activity_type,
             $request->level,
-            $request->participation_role
+            $request->participation_role,
+            $customPoints
         );
 
         $updateData = [
