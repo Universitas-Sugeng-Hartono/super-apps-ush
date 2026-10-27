@@ -73,6 +73,14 @@
                 </div>
             </div>
 
+            <div id="edit_custom_point_container" class="form-group" style="display: none; margin-top: 14px; margin-bottom: 0;">
+                <label for="edit_custom_skp_points" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                    Nilai Poin POKEMA (Range 15 - 75) *
+                </label>
+                <input type="number" id="edit_custom_skp_points" name="skp_points" class="form-control" min="15" max="75" placeholder="Contoh: 75" oninput="onEditCustomPointChange()">
+                <small style="color: #64748B; font-size: 12px;">Khusus kegiatan Penerimaan Mahasiswa Baru, masukkan nilai antara 15 hingga 75 poin.</small>
+            </div>
+
             <div style="margin-top: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 13px; color: #475569; font-weight: 600;">Kalkulasi Poin SKP:</span>
                 <span id="edit_skp_badge" style="background: #2563EB; color: white; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 13px;">0 SKP</span>

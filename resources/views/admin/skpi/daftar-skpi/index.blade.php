@@ -148,7 +148,12 @@
                             <div class="student-profile">
                                 <div class="student-meta">
                                     <span class="student-name">{{ $reg->nama_lengkap }}</span>
-                                    <span class="student-nim">{{ $reg->nim }} <span class="divider"></span> Angkatan {{ $reg->angkatan }}</span>
+                                    <span class="student-nim">
+                                        {{ $reg->nim }} <span class="divider"></span> Angkatan {{ $reg->angkatan }}
+                                        @if(($s?->status_mahasiswa ?? '') === 'Lulus')
+                                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px;" title="Status Mahasiswa: Lulus">Lulus</span>
+                                        @endif
+                                    </span>
                                 </div>
                             </div>
                         </td>

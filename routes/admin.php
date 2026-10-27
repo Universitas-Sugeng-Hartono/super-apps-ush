@@ -40,6 +40,9 @@ Route::middleware(['auth', 'role:superadmin,masteradmin'])->group(function () {
         Route::post('/', 'store')->name('store');
         Route::get('/template', 'downloadImportTemplate')->name('template');
         Route::post('/import', 'import')->name('import');
+        Route::get('/preview-siakad', 'previewSiakadData')->name('preview-siakad');
+        Route::post('/sync-siakad', 'syncFromSiakad')->name('sync-siakad');
+        Route::post('/refresh-siakad', 'refreshAcademicData')->name('refresh-siakad');
         Route::get('/{id}', 'show')->name('show');
         Route::get('/{id}/edit', 'edit')->name('edit');
         Route::put('/{id}', 'update')->name('update');

@@ -3,9 +3,15 @@
     /* Styling khusus kolom baru Kemahasiswaan */
     .filter-form {
         display: grid;
-        grid-template-columns: 2fr 1fr 1.2fr 1.2fr 1.3fr 1.2fr auto;
+        grid-template-columns: 2fr 1fr 1.1fr 1.1fr 1.2fr 1fr 1.2fr auto;
         gap: 12px;
         align-items: flex-end;
+    }
+
+    @media (max-width: 1400px) {
+        .filter-form {
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+        }
     }
 
     @media (max-width: 1200px) {
@@ -18,6 +24,43 @@
         .filter-form {
             grid-template-columns: 1fr;
         }
+    }
+
+    /* Button Export Laporan Beasiswa */
+    .btn-export-beasiswa {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #107C41, #0E5E31);
+        color: #FFFFFF !important;
+        border: none;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 6px rgba(16, 124, 65, 0.25);
+    }
+    .btn-export-beasiswa:hover {
+        background: linear-gradient(135deg, #0E5E31, #0A4323);
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 124, 65, 0.35);
+    }
+    .btn-export-beasiswa:active {
+        transform: translateY(0);
+    }
+    .dropdown-menu .dropdown-item {
+        font-size: 13px;
+        padding: 8px 16px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.15s ease;
+    }
+    .dropdown-menu .dropdown-item:hover {
+        background-color: #F1F5F9;
     }
 
     /* Badge IPK */

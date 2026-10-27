@@ -7,15 +7,7 @@
                 <h3>Detail Mahasiswa / Ambassador - {{ $student->nama_lengkap }}</h3>
                 <p class="text-muted mb-0" style="font-size: 13px;">Informasi profil lengkap dan status penetapan Student Ambassador.</p>
             </div>
-            <div class="header-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                @if($student->nim && $student->nim !== '-')
-                    <form action="{{ route('kemahasiswaan.student-ambassador.send-single-siakad', $student->id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Kirim rekomendasi beasiswa mahasiswa ini ({{ $student->beasiswa ?: '0%' }}) ke kolom Rekomendasi di SIAKAD?')">
-                        @csrf
-                        <button type="submit" class="btn-secondary" style="border: 1px solid #10b981; color: #047857; background: #ecfdf5;" title="Kirim rekomendasi beasiswa mahasiswa ini ke menu Rekomendasi Beasiswa Termin di SIAKAD">
-                            <i class="bi bi-send-check"></i> Kirim Rekomendasi ke Siakad
-                        </button>
-                    </form>
-                @endif
+            <div class="header-actions">
                 <a href="{{ route('kemahasiswaan.student-ambassador.edit', $student->id) }}" class="btn-primary">
                     <i class="bi bi-pencil"></i> Edit Data
                 </a>
@@ -26,97 +18,114 @@
         </div>
 
         <div class="form-card">
-            <h4>Informasi Utama & Status</h4>
+            <h4>Informasi Utama</h4>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->nama_lengkap ?? '-' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>NIM</label>
+                    <input type="text" class="form-control readonly-input font-monospace" value="{{ $student->nim ?? '-' }}" readonly>
+                </div>
+            </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Status Penetapan</label>
-                    <div style="margin-top: 4px;">
-                        @if($student->status === 'studentambassador')
-                            <span class="status-badge-ambassador">
-                                <i class="bi bi-star-fill"></i> Student Ambassador (Duta Kampus)
-                            </span>
-                        @else
-                            <span class="status-badge-mahasiswa">
-                                <i class="bi bi-person"></i> Mahasiswa Reguler
-                            </span>
-                        @endif
-                    </div>
+                    <label>Periode Masuk (Bulan & Tahun)</label>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->translatedFormat('F Y') : ($student->angkatan ? 'Angkatan ' . $student->angkatan : '-') }}" readonly>
                 </div>
 
                 <div class="form-group">
                     <label>Program Studi</label>
-                    <input type="text" class="form-control" value="{{ $student->program_studi }}" disabled>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->program_studi ?? '-' }}" readonly>
+                </div>
+            </div>
+
+            <!-- Status Penetapan & Beasiswa -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Status Penetapan</label>
+                    <div class="readonly-input status-display-wrap">
+                        @if($student->status === 'studentambassador')
+                            <span >
+                                Student Ambassador
+                            </span>
+                        @else
+                            <span class="status-badge-mahasiswa">
+                                <i class="bi bi-person-fill"></i> Mahasiswa Reguler
+                            </span>
+                        @endif
+                    </div>
+                    <small class="text-muted">Status mahasiswa di Bagian Kemahasiswaan.</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Beasiswa (%)</label>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->beasiswa ?: '0%' }}" readonly>
+                    <small class="text-muted">Persentase beasiswa diambil langsung dari SIAKAD.</small>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label>Semester</label>
-                    <input type="text" class="form-control" value="{{ $student->semester ? 'Semester ' . $student->semester : 'Belum diisi / -' }}" disabled>
-                </div>
-
-                <div class="form-group">
-                    <label>Beasiswa (%)</label>
-                    <input type="text" class="form-control" value="{{ $student->beasiswa ?: '0%' }}" disabled>
-                </div>
-
-                <div class="form-group">
-                    <label>Nilai IPK</label>
-                    <input type="text" class="form-control" value="{{ filled($student->ipk) ? number_format((float)$student->ipk, 2) : 'Belum ada IPK (Mahasiswa Baru)' }}" disabled>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Nama Lengkap</label>
-                    <input type="text" class="form-control" value="{{ $student->nama_lengkap }}" disabled>
-                </div>
-
-                <div class="form-group">
-                    <label>NIM</label>
-                    <input type="text" class="form-control" value="{{ $student->nim }}" disabled>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Periode Masuk</label>
-                    <input type="text" class="form-control" value="{{ $student->tanggal_masuk ? \Carbon\Carbon::parse($student->tanggal_masuk)->translatedFormat('F Y') : ($student->angkatan ?? '-') }}" disabled>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->semester ? 'Semester ' . $student->semester : '-' }}" readonly>
+                    <small class="text-muted">Semester aktif mahasiswa dari SIAKAD.</small>
                 </div>
 
                 <div class="form-group">
                     <label>Dosen PA</label>
-                    <input type="text" class="form-control" value="{{ $student->dosenPA->name ?? '-' }}" disabled>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->dosenPA->name ?? ($student->id_lecturer ? 'ID: ' . $student->id_lecturer : '-') }}" readonly>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Jenis Kelamin</label>
-                    <input type="text" class="form-control" value="{{ $student->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}" disabled>
+                    <label>Nilai IPK</label>
+                    <input type="text" class="form-control readonly-input" value="{{ filled($student->ipk) ? number_format((float)$student->ipk, 2) : 'Belum ada IPK (Mahasiswa Baru)' }}" readonly>
+                    <small class="text-muted">IPK kumulatif terakhir dari KHS SIAKAD.</small>
                 </div>
 
                 <div class="form-group">
+                    <label>Jenis Kelamin</label>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki' }}" readonly>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
                     <label>No. Telepon / WhatsApp</label>
-                    <input type="text" class="form-control" value="{{ $student->no_telepon ?? '-' }}" disabled>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->no_telepon ?: '-' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="text" class="form-control readonly-input" value="{{ $student->email ?: '-' }}" readonly>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Email</label>
-                <input type="text" class="form-control" value="{{ $student->email ?? '-' }}" disabled>
-            </div>
-
-            <div class="form-group">
-                <label>Alamat</label>
-                <textarea class="form-control" rows="2" disabled>{{ $student->alamat ?? '-' }}</textarea>
+                <label>Alamat Domisili</label>
+                <textarea class="form-control readonly-input" rows="3" readonly>{{ $student->alamat ?: '-' }}</textarea>
             </div>
 
             <div class="form-group">
                 <label>Catatan / Rekam Prestasi Ambassador</label>
-                <textarea class="form-control" rows="3" disabled>{{ $student->notes ?? 'Belum ada catatan.' }}</textarea>
+                <textarea class="form-control readonly-input" rows="3" readonly>{{ $student->notes ?: 'Belum ada catatan.' }}</textarea>
+                <small class="text-muted">Catatan internal Bagian Kemahasiswaan terkait aktivitas atau penugasan mahasiswa.</small>
             </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ route('kemahasiswaan.student-ambassador.index') }}" class="btn-secondary">
+                <i class="bi bi-arrow-left"></i> Kembali
+            </a>
+            <a href="{{ route('kemahasiswaan.student-ambassador.edit', $student->id) }}" class="btn-primary">
+                <i class="bi bi-pencil"></i> Edit Data
+            </a>
         </div>
     </div>
 
@@ -147,6 +156,8 @@
     .header-actions {
         display: flex;
         gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
     .form-card {
@@ -193,22 +204,30 @@
         background: white;
     }
 
-    .form-control:disabled {
-        background: #ECEFF1;
-        color: #37474F;
-        cursor: not-allowed;
+    .readonly-input {
+        background-color: #F1F5F9 !important;
+        color: #334155 !important;
+        border-color: #CBD5E1 !important;
+        cursor: default !important;
+    }
+
+    .status-display-wrap {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 6px 14px !important;
     }
 
     .status-badge-ambassador {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 14px;
+        padding: 4px 12px;
         background: linear-gradient(135deg, #FFF8E1, #FFECB3);
         color: #B78103;
         border: 1px solid #FFE082;
         border-radius: 20px;
-        font-size: 13px;
+        font-size: 12.5px;
         font-weight: 700;
     }
 
@@ -216,12 +235,19 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 14px;
-        background: #ECEFF1;
-        color: #455A64;
+        padding: 4px 12px;
+        background: #E2E8F0;
+        color: #475569;
         border-radius: 20px;
-        font-size: 13px;
+        font-size: 12.5px;
         font-weight: 600;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 24px;
     }
 
     .btn-secondary {
@@ -231,21 +257,36 @@
         border-radius: 10px;
         font-weight: 600;
         text-decoration: none;
+        border: none;
+        cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background: #CFD8DC;
+        color: #263238;
     }
 
     .btn-primary {
-        padding: 10px 18px;
+        padding: 10px 22px;
         background: var(--primary-orange);
         color: white;
         border-radius: 10px;
         font-weight: 600;
         text-decoration: none;
+        border: none;
+        cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.9;
     }
 </style>
 @endsection

@@ -797,11 +797,13 @@
         $dashRoute = match ($userRole) {
             'kemahasiswaan' => route('kemahasiswaan.dashboard'),
             'akademik' => route('akademik.dashboard'),
+            'keuangan' => route('keuangan.dashboard'),
             default => route('admin.dashboard'),
         };
         $dashActive = request()->routeIs('admin.dashboard')
             || request()->routeIs('kemahasiswaan.dashboard')
-            || request()->routeIs('akademik.dashboard');
+            || request()->routeIs('akademik.dashboard')
+            || request()->routeIs('keuangan.dashboard');
     @endphp
     <!-- Header -->
     <div class="header-section">

@@ -418,7 +418,10 @@ class SkpPointCalculator
                         'bukti' => 'Sertifikat',
                         'levels' => ['Universitas'=>'Universitas'],
                         'roles' => ['Volunteer'=>'Volunteer'],
-                        'points' => ['Universitas' => ['Volunteer'=>75]]
+                        'points' => ['Universitas' => ['Volunteer'=>75]],
+                        'is_range' => true,
+                        'min_points' => 15,
+                        'max_points' => 75,
                     ],
                     'dies_natalis' => [
                         'label' => 'Dies Natalis',
@@ -476,8 +479,33 @@ class SkpPointCalculator
         return $opts;
     }
 
-    public static function calculate(?string $category, ?string $activityType, ?string $level, ?string $role): int
+    public static function isRangeType(?string $activityType): bool
     {
+        if (empty($activityType)) {
+            return false;
+        }
+
+        $norm = strtolower(trim($activityType));
+        return in_array($norm, ['pmb', 'penerimaan mahasiswa baru', 'penerimaan_mahasiswa_baru'], true);
+    }
+
+    public static function getRangeConfig(?string $activityType): ?array
+    {
+        if ($activityType === 'pmb') {
+            return ['min' => 15, 'max' => 75];
+        }
+        return null;
+    }
+
+    public static function calculate(?string $category, ?string $activityType, ?string $level, ?string $role, ?int $customPoints = null): int
+    {
+        if (self::isRangeType($activityType) && $customPoints !== null) {
+            $range = self::getRangeConfig($activityType);
+            if ($customPoints >= $range['min'] && $customPoints <= $range['max']) {
+                return (int) $customPoints;
+            }
+        }
+
         if (!$category || !$activityType || !$level || !$role) {
             return 0;
         }

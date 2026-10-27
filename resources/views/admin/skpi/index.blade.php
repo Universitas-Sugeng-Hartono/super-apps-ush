@@ -34,7 +34,7 @@ $menus = [
         'badge' => 'Approval Pembayaran',
         'color' => '#1f5301ff',
         'gradient' => 'linear-gradient(135deg, #276a04ff, #57a33dff)',
-        'roles' => ['masteradmin', 'keuangan'],
+        'roles' => ['masteradmin'],
     ],
     [
         'step' => '04',

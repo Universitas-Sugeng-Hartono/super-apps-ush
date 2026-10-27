@@ -399,7 +399,7 @@
             badgeLabel = 'EVALUASI AKHIR PERIODE';
         } else if (recType === 'reguler') {
             iconClass = 'bi-mortarboard-fill';
-            badgeLabel = 'KETENTUAN SKPI REGULER';
+            badgeLabel = 'STANDAR BEASISWA BELUM TERCAPAI';
         } else if (recType === 'future') {
             iconClass = 'bi-calendar-range-fill';
             badgeLabel = 'TARGET PERIODE MENDATANG';
@@ -542,9 +542,12 @@
                     const currentBadge = isCur ? '<span class="badge-current-sem">Semester Aktif</span>' : '';
                     const ipkBadge = sem.ipk 
                         ? `<span class="sem-meta-pill pill-ipk">IPK: <strong>${sem.ipk}</strong></span>` 
-                        : '<span class="sem-meta-pill pill-empty">Belum ada data konseling</span>';
-                    
-                    const ipBadge = sem.ip ? `<span class="sem-meta-pill pill-ip">IP: <strong>${sem.ip}</strong></span>` : '';
+                        : (isCur 
+                            ? '<span class="sem-meta-pill pill-empty">Belum ada nilai IPK</span>' 
+                            : (sem.semester > (evalData.semester || 1) 
+                                ? '<span class="sem-meta-pill pill-empty">Semester Belum Berjalan</span>' 
+                                : '<span class="sem-meta-pill pill-empty">IPK belum tercatat</span>')
+                          );
                     
                     let milestoneHtml = '';
                     if (sem.is_period_milestone) {
@@ -566,7 +569,6 @@
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     ${ipkBadge}
-                                    ${ipBadge}
                                 </div>
                             </div>
                             
@@ -636,11 +638,12 @@
         const progressList = Object.values(evalData.fields_progress || {});
 
         progressList.forEach(f => {
-            const isOk = f.current >= f.target;
+            const isOk = f.is_fulfilled !== undefined ? !!f.is_fulfilled : (f.target > 0 && f.current >= f.target);
             const fillClass = isOk ? 'fill-green' : 'fill-blue';
+            const deficit = Math.max(0, (f.target || 0) - (f.current || 0));
             const badgeHtml = isOk
-                ? `<span class="badge-field-status status-ok">Terpenuhi (${f.real_percent}%)</span>`
-                : `<span class="badge-field-status status-kurang">Kurang ${f.target - f.current} Poin (${f.real_percent}%)</span>`;
+                ? `<span class="badge-field-status status-ok">Terpenuhi</span>`
+                : `<span class="badge-field-status status-kurang">Kurang ${deficit} Poin</span>`;
 
             barsHtml += `
                 <div class="pokema-field-row">
@@ -1217,9 +1220,27 @@
         const actType = document.getElementById('edit_activity_type').value;
         const $level = document.getElementById('edit_level');
         const $role = document.getElementById('edit_participation_role');
+        const $customPointContainer = document.getElementById('edit_custom_point_container');
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
 
         $level.innerHTML = '';
         $role.innerHTML = '';
+
+        const isPmb = (actType === 'pmb');
+        if ($customPointContainer && $customPointInput) {
+            if (isPmb) {
+                $customPointContainer.style.display = 'block';
+                $customPointInput.disabled = false;
+                $customPointInput.required = true;
+                if (!$customPointInput.value) {
+                    $customPointInput.value = 75;
+                }
+            } else {
+                $customPointContainer.style.display = 'none';
+                $customPointInput.disabled = true;
+                $customPointInput.required = false;
+            }
+        }
 
         if (SKP_DICTIONARY[cat] && SKP_DICTIONARY[cat].types && SKP_DICTIONARY[cat].types[actType]) {
             const typeData = SKP_DICTIONARY[cat].types[actType];
@@ -1252,12 +1273,29 @@
         onEditLevelOrRoleChange();
     }
 
+    function onEditCustomPointChange() {
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+        const $badge = document.getElementById('edit_skp_badge');
+        if ($customPointInput && $badge) {
+            const pts = parseInt($customPointInput.value, 10);
+            $badge.textContent = (!isNaN(pts) ? pts : 0) + ' SKP';
+        }
+    }
+
     function onEditLevelOrRoleChange() {
         const cat = document.getElementById('edit_category').value;
         const actType = document.getElementById('edit_activity_type').value;
         const level = document.getElementById('edit_level').value;
         const role = document.getElementById('edit_participation_role').value;
         const $badge = document.getElementById('edit_skp_badge');
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+
+        if (actType === 'pmb') {
+            let pts = $customPointInput ? parseInt($customPointInput.value, 10) : 75;
+            if (isNaN(pts)) pts = 75;
+            $badge.textContent = pts + ' SKP';
+            return;
+        }
 
         let points = 0;
         try {
@@ -1293,6 +1331,12 @@
 
         onEditCategoryChange(data.activity_type_raw);
         onEditActivityTypeChange(data.tingkat, data.peran);
+
+        const $customPointInput = document.getElementById('edit_custom_skp_points');
+        if ($customPointInput && data.activity_type_raw === 'pmb') {
+            $customPointInput.value = data.skp || 75;
+            document.getElementById('edit_skp_badge').textContent = (data.skp || 75) + ' SKP';
+        }
 
         document.getElementById('edit_event').value = (data.event && data.event !== '-') ? data.event : '';
         document.getElementById('edit_organizer').value = (data.organizer && data.organizer !== '-') ? data.organizer : '';

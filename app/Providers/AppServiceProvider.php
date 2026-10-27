@@ -54,7 +54,6 @@ class AppServiceProvider extends ServiceProvider
             $unreadCount = 0;
         }
         $view->with('globalUnreadCount', $unreadCount);
-
         });
     }
 }

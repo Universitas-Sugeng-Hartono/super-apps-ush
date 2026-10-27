@@ -21,9 +21,11 @@ class SkpiController extends Controller
 {
     public function index()
     {
+        if (auth()->user()?->role === 'keuangan') {
+            return redirect()->route('keuangan.dashboard');
+        }
 
-
-        return view('admin.skpi.index',);
+        return view('admin.skpi.index');
     }
 
     public function daftarSkpi(Request $request)
@@ -133,17 +135,17 @@ class SkpiController extends Controller
             'approved_at'    => now(),
         ]);
 
-        // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI
-        if (filled($registration->ipk) || filled($registration->sks)) {
-            $studentUpdate = [];
-            if (filled($registration->ipk)) {
-                $studentUpdate['ipk'] = $registration->ipk;
-            }
-            if (filled($registration->sks)) {
-                $studentUpdate['sks'] = $registration->sks;
-            }
-            $student->update($studentUpdate);
+        // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI, serta ubah status mahasiswa menjadi Lulus
+        $studentUpdate = [
+            'status_mahasiswa' => 'Lulus',
+        ];
+        if (filled($registration->ipk)) {
+            $studentUpdate['ipk'] = $registration->ipk;
         }
+        if (filled($registration->sks)) {
+            $studentUpdate['sks'] = $registration->sks;
+        }
+        $student->update($studentUpdate);
 
         try {
             NotificationHelper::notifyStudent(
@@ -160,12 +162,13 @@ class SkpiController extends Controller
 
         return redirect()
             ->route('admin.skpi.daftar-skpi.index')
-            ->with('success', 'Pendaftaran SKPI berhasil disetujui. Silakan masuk ke menu Generate SKPI untuk membuat dokumennya agar mahasiswa bisa mengunduh.');
+            ->with('success', 'Pendaftaran SKPI berhasil disetujui dan status mahasiswa diperbarui menjadi Lulus.');
     }
 
     public function revisionDaftarSkpi(Request $request, $id)
     {
         $registration = SkpiRegistration::with('student')->findOrFail($id);
+        $wasApproved = ($registration->status === 'approved');
 
         $request->validate([
             'approval_notes' => 'required|string',
@@ -180,6 +183,17 @@ class SkpiController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        // Jika sebelumnya sempat approved, kembalikan status mahasiswa ke Aktif jika tidak ada SKPI approved lain
+        if ($wasApproved && $registration->student) {
+            $hasOtherApproved = SkpiRegistration::where('student_id', $registration->student_id)
+                ->where('id', '!=', $registration->id)
+                ->where('status', 'approved')
+                ->exists();
+            if (!$hasOtherApproved) {
+                $registration->student->update(['status_mahasiswa' => 'Aktif']);
+            }
+        }
 
         NotificationHelper::notifyStudent(
             $registration->student_id,
@@ -198,6 +212,7 @@ class SkpiController extends Controller
     public function rejectDaftarSkpi(Request $request, $id)
     {
         $registration = SkpiRegistration::with('student')->findOrFail($id);
+        $wasApproved = ($registration->status === 'approved');
 
         $request->validate([
             'approval_notes' => 'required|string',
@@ -212,6 +227,17 @@ class SkpiController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        // Jika sebelumnya sempat approved, kembalikan status mahasiswa ke Aktif jika tidak ada SKPI approved lain
+        if ($wasApproved && $registration->student) {
+            $hasOtherApproved = SkpiRegistration::where('student_id', $registration->student_id)
+                ->where('id', '!=', $registration->id)
+                ->where('status', 'approved')
+                ->exists();
+            if (!$hasOtherApproved) {
+                $registration->student->update(['status_mahasiswa' => 'Aktif']);
+            }
+        }
 
         NotificationHelper::notifyStudent(
             $registration->student_id,
@@ -282,28 +308,36 @@ class SkpiController extends Controller
             'payment_approval_notes' => $request->payment_approval_notes,
         ]);
 
+        $fallback = auth()->user()?->role === 'keuangan'
+            ? route('keuangan.dashboard')
+            : route('admin.skpi.verifikasi-pembayaran.index');
+
         return redirect()
-            ->route('admin.skpi.verifikasi-pembayaran.index')
+            ->back(fallback: $fallback)
             ->with('success', 'Pembayaran mahasiswa berhasil disetujui.');
     }
 
     public function revisionPembayaran(Request $request, $id)
-{
-    $registration = \App\Models\SkpiRegistration::findOrFail($id);
+    {
+        $registration = \App\Models\SkpiRegistration::findOrFail($id);
 
-    $request->validate([
-        'payment_approval_notes' => 'nullable|string',
-    ]);
+        $request->validate([
+            'payment_approval_notes' => 'nullable|string',
+        ]);
 
-    $registration->update([
-        'payment_status' => 'revision',
-        'payment_approval_notes' => $request->payment_approval_notes,
-    ]);
+        $registration->update([
+            'payment_status' => 'revision',
+            'payment_approval_notes' => $request->payment_approval_notes,
+        ]);
 
-    return redirect()
-        ->route('admin.skpi.verifikasi-pembayaran.index')
-        ->with('success', 'Status verifikasi berhasil diubah menjadi Revisi.');
-}
+        $fallback = auth()->user()?->role === 'keuangan'
+            ? route('keuangan.dashboard')
+            : route('admin.skpi.verifikasi-pembayaran.index');
+
+        return redirect()
+            ->back(fallback: $fallback)
+            ->with('success', 'Status verifikasi berhasil diubah menjadi Revisi.');
+    }
 
     public function rejectPembayaran(Request $request, $id)
     {
@@ -320,8 +354,12 @@ class SkpiController extends Controller
             'payment_approval_notes' => $request->payment_approval_notes,
         ]);
 
+        $fallback = auth()->user()?->role === 'keuangan'
+            ? route('keuangan.dashboard')
+            : route('admin.skpi.verifikasi-pembayaran.index');
+
         return redirect()
-            ->route('admin.skpi.verifikasi-pembayaran.index')
+            ->back(fallback: $fallback)
             ->with('success', 'Pembayaran mahasiswa berhasil ditolak.');
     }
 
@@ -666,6 +704,7 @@ class SkpiController extends Controller
             'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5048',
             'status'             => 'required|string|in:pending,approved,rejected',
             'approval_notes'     => 'nullable|string',
+            'skp_points'         => 'nullable|integer|min:15|max:75',
         ], [
             'category.required'           => 'Kategori wajib dipilih.',
             'activity_type.required'      => 'Jenis kegiatan wajib dipilih.',
@@ -677,13 +716,18 @@ class SkpiController extends Controller
             'certificate.mimes'           => 'File sertifikat harus berupa PDF, JPG, JPEG, atau PNG.',
             'certificate.max'             => 'Ukuran file sertifikat maksimal 5 MB.',
             'status.required'             => 'Status wajib dipilih.',
+            'skp_points.min'              => 'Nilai poin POKEMA minimal 15 poin.',
+            'skp_points.max'              => 'Nilai poin POKEMA maksimal 75 poin.',
         ]);
 
+        $isPmb = \App\Services\SkpPointCalculator::isRangeType($request->activity_type);
+        $customPoints = ($isPmb && $request->filled('skp_points')) ? (int) $request->skp_points : null;
         $skpPoints = \App\Services\SkpPointCalculator::calculate(
             $request->category,
             $request->activity_type,
             $request->level,
-            $request->participation_role
+            $request->participation_role,
+            $customPoints
         );
 
         $updateData = [
@@ -1137,9 +1181,11 @@ class SkpiController extends Controller
                 'approved_at'    => now(),
             ]);
 
-            // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI
-            if (filled($registration->ipk) || filled($registration->sks)) {
-                $studentUpdate = [];
+            // Sinkronisasi data ke tabel students jika ada nilainya di form SKPI, serta ubah status mahasiswa menjadi Lulus
+            if ($student) {
+                $studentUpdate = [
+                    'status_mahasiswa' => 'Lulus',
+                ];
                 if (filled($registration->ipk)) {
                     $studentUpdate['ipk'] = $registration->ipk;
                 }

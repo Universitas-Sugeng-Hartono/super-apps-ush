@@ -46,7 +46,9 @@
     <div class="stats-card">
         <div class="stats-header">
             <h3>Status Akademik</h3>
-            <span class="semester-badge">{{ $student->angkatan ?? 'N/A' }}</span>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="semester-badge">{{ $student->angkatan ?? 'N/A' }}</span>
+            </div>
         </div>
         <div class="stats-content">
             <div class="stat-item">

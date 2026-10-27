@@ -91,13 +91,9 @@
                                         </button>
                                     @endif
                                     @if($reg->payment_status !== 'revision')
-                                        <form action="{{ route('admin.skpi.verifikasi-pembayaran.revision', $reg->id) }}" method="POST" class="d-inline m-0 p-0">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn-action btn-warning text-white" title="Minta Revisi">
-                                                <i class="bi bi-arrow-repeat"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="btn-table btn-table-warning text-white" style="background-color: #f59e0b; border-color: #f59e0b;" onclick="showRevisionModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Minta Revisi">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
                                     @endif
                                     <button type="button" class="btn-table btn-table-danger" onclick="showRejectModal({{ $reg->id }}, '{{ addslashes($reg->nama_lengkap) }}')" title="Tolak">
                                         <i class="bi bi-trash3"></i>
@@ -140,6 +136,32 @@
             <div class="modal-footer-modern">
                 <button type="button" class="btn-cancel-modern" onclick="closeApproveModal()">Batal</button>
                 <button type="submit" class="btn-submit-modern bg-success">Ya, Setujui</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="revisionModal" class="modal-backdrop-modern" style="display: none;">
+    <div class="modal-dialog-modern">
+        <div class="modal-header-modern bg-warning text-dark">
+            <div class="modal-title-wrap">
+                <h4 style="color: #212529;">Minta Revisi Dokumen</h4>
+                <p id="revision_target_name" style="color: #495057; margin-bottom: 0;"></p>
+            </div>
+        </div>
+        <form id="revisionForm" method="POST">
+            @csrf
+            @method('PATCH')
+            <div class="modal-body-modern">
+                <p style="margin-bottom: 12px; font-size: 14px; color: #4b5563;">Status verifikasi akan diubah menjadi <strong>Revisi</strong> agar mahasiswa dapat memperbaiki atau mengunggah ulang dokumen.</p>
+                <div class="form-group-modern">
+                    <label style="font-weight: 600; font-size: 13px; color: #374151;">Catatan Revisi / Instruksi Perbaikan (Opsional)</label>
+                    <textarea name="payment_approval_notes" class="form-control-modern" rows="3" placeholder="Tulis instruksi revisi untuk mahasiswa..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modern" onclick="closeRevisionModal()">Batal</button>
+                <button type="submit" class="btn-submit-modern bg-warning text-dark" style="font-weight: 600;">Kirim Revisi</button>
             </div>
         </form>
     </div>
@@ -190,19 +212,34 @@
     </div>
 </div>
 
+@push('css')
+<style>
+    .btn-table-warning { background: #f59e0b; color: #fff; }
+    .btn-table-warning:hover { background: #d97706; color: #fff; }
+</style>
+@endpush
+
 @push('scripts')
 <script>
     function showApproveModal(id, name) {
         document.getElementById('approve_target_name').innerText = name;
-        document.getElementById('approveForm').action = `/admin/skpi/verifikasi-pembayaran/${id}/approve`;
+        document.getElementById('approveForm').action = `/keuangan/verifikasi-pembayaran/${id}/approve`;
         document.getElementById('approveModal').style.display = 'flex';
     }
     function closeApproveModal() {
         document.getElementById('approveModal').style.display = 'none';
     }
+    function showRevisionModal(id, name) {
+        document.getElementById('revision_target_name').innerText = name;
+        document.getElementById('revisionForm').action = `/keuangan/verifikasi-pembayaran/${id}/revision`;
+        document.getElementById('revisionModal').style.display = 'flex';
+    }
+    function closeRevisionModal() {
+        document.getElementById('revisionModal').style.display = 'none';
+    }
     function showRejectModal(id, name) {
         document.getElementById('reject_target_name').innerText = name;
-        document.getElementById('rejectForm').action = `/admin/skpi/verifikasi-pembayaran/${id}/reject`;
+        document.getElementById('rejectForm').action = `/keuangan/verifikasi-pembayaran/${id}/reject`;
         document.getElementById('rejectModal').style.display = 'flex';
     }
     function closeRejectModal() {
@@ -225,5 +262,11 @@
     function closeDetailDokumenModal() {
         document.getElementById('detailDokumenModal').style.display = 'none';
     }
+
+    window.addEventListener('click', function(event) {
+        if (event.target && event.target.classList && event.target.classList.contains('modal-backdrop-modern')) {
+            event.target.style.display = 'none';
+        }
+    });
 </script>
 @endpush

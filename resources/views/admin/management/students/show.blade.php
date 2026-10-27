@@ -26,21 +26,27 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Periode Masuk</label>
-                    <input type="text" class="form-control" value="{{ $student->tanggal_masuk ? $student->tanggal_masuk->translatedFormat('F Y') : ($student->angkatan ?? '-') }}" disabled>
+                    <label>Periode Masuk (Semester)</label>
+                    <input type="text" class="form-control" value="{{ $student->periode_masuk ?: ($student->angkatan ? $student->angkatan . '/' . ($student->angkatan + 1) . ' Ganjil' : '-') }}" disabled>
                 </div>
 
                 <div class="form-group">
-                    <label>Dosen PA</label>
-                    <input type="text" class="form-control" value="{{ $student->dosenPA->name ?? '-' }}" disabled>
+                    <label>Tanggal / Bulan Masuk</label>
+                    <input type="text" class="form-control" value="{{ $student->tanggal_masuk ? $student->tanggal_masuk->translatedFormat('F Y') : '-' }}" disabled>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
+                    <label>Dosen PA</label>
+                    <input type="text" class="form-control" value="{{ $student->dosenPA->name ?? '-' }}" disabled>
+                </div>
+
+                <div class="form-group">
                     <label>Program Studi</label>
                     <input type="text" class="form-control" value="{{ $student->program_studi }}" disabled>
                 </div>
+            </div>
 
                 <div class="form-group">
                     <label>Jenis Kelamin</label>

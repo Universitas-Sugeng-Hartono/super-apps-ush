@@ -9,6 +9,7 @@ $levelOptions = [];
 $roleOptions = [];
 $typeCategoryMap = [];
 $pointsTable = [];
+$buktiTable = [];
 
 foreach ($dict as $catKey => $catData) {
 foreach ($catData['types'] as $typeKey => $typeData) {
@@ -17,9 +18,10 @@ $levelOptions[$typeKey] = $typeData['levels'];
 $roleOptions[$typeKey] = $typeData['roles'];
 $typeCategoryMap[$typeKey] = $catKey;
 $pointsTable[$typeKey] = $typeData['points'];
+$buktiTable[$typeKey] = $typeData['bukti'] ?? 'Sertifikat';
 }
 }
-return compact('activityTypes', 'levelOptions', 'roleOptions', 'typeCategoryMap', 'pointsTable');
+return compact('activityTypes', 'levelOptions', 'roleOptions', 'typeCategoryMap', 'pointsTable', 'buktiTable');
 }
 extract(prepareJsOptions());
 $selectedActivityType = old('activity_type');
@@ -246,6 +248,26 @@ break;
                             <select id="participation_role" name="participation_role" class="custom-select" required>
                                 <option value="">— Pilih —</option>
                             </select>
+                        </div>
+                    </div>
+
+                    {{-- KHUSUS VOLUNTEER PENERIMAAN MAHASISWA BARU: FORM INPUT POIN POKEMA RANGE 15 - 75 --}}
+                    <div class="col-md-12" id="rowCustomPoint" style="{{ old('activity_type') === 'pmb' ? 'display: block;' : 'display: none;' }}">
+                        <div class="form-floating-custom">
+                            <label class="custom-label">Nilai Poin POKEMA (Range 15 - 75) <span class="text-danger">*</span></label>
+                            <input type="number"
+                                   name="skp_points"
+                                   id="custom_skp_points"
+                                   class="custom-input"
+                                   min="15"
+                                   max="75"
+                                   value="{{ old('skp_points', 75) }}"
+                                   placeholder="Contoh: 75"
+                                   {{ old('activity_type') === 'pmb' ? '' : 'disabled' }}>
+                            <small class="combobox-hint">Khusus kegiatan Penerimaan Mahasiswa Baru, masukkan nilai poin yang diperoleh antara 15 hingga 75 poin.</small>
+                            @error('skp_points')
+                            <div class="text-danger mt-1" style="font-size: 12px; font-weight: 600;">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
@@ -516,6 +538,21 @@ break;
                                 @else
                                 <input type="text" name="participation_role" class="form-control" value="{{ $achievement->participation_role }}" required>
                                 @endif
+                            </div>
+
+                            <div class="col-md-12 edit-row-custom-point" id="editRowCustomPoint-{{ $achievement->id }}" style="{{ $achievement->activity_type === 'pmb' ? '' : 'display: none;' }}">
+                                <label class="form-label fw-bold">Nilai Poin POKEMA (Range 15 - 75) <span class="text-danger">*</span></label>
+                                <input type="number" 
+                                       name="skp_points" 
+                                       class="form-control edit-custom-skp-points" 
+                                       min="15" 
+                                       max="75" 
+                                       value="{{ old('skp_points', $achievement->skp_points ?: 75) }}" 
+                                       placeholder="Contoh: 75"
+                                       {{ $achievement->activity_type === 'pmb' ? '' : 'disabled' }}>
+                                <small class="text-muted d-block mt-1" style="font-size: 12px;">
+                                    Khusus Penerimaan Mahasiswa Baru, masukkan nilai poin yang didapatkan (antara 15 hingga 75).
+                                </small>
                             </div>
 
                             <div class="col-md-12">
@@ -1796,15 +1833,49 @@ break;
             }
         }
 
+        const $customRow = document.getElementById('rowCustomPoint');
+        const $customInput = document.getElementById('custom_skp_points');
+
         function updateSkp() {
-            const pts = calcSkp($actType.value, $level.value, $role.value);
-            if (pts > 0) {
-                $skpValue.textContent = pts;
-                $skpBox.style.display = 'inline-flex';
+            const type = $actType ? $actType.value : '';
+            const isRange = (type === 'pmb');
+
+            if (isRange) {
+                if ($customRow) $customRow.style.display = 'block';
+                if ($customInput) {
+                    $customInput.disabled = false;
+                    $customInput.required = true;
+                    let val = parseInt($customInput.value, 10);
+                    if (!isNaN(val) && val >= 15 && val <= 75) {
+                        $skpValue.textContent = val;
+                        $skpBox.style.display = 'inline-flex';
+                    } else if (!isNaN(val)) {
+                        $skpValue.textContent = val;
+                        $skpBox.style.display = 'inline-flex';
+                    } else {
+                        $skpValue.textContent = '15 - 75';
+                        $skpBox.style.display = 'inline-flex';
+                    }
+                }
             } else {
-                $skpBox.style.display = 'none';
+                if ($customRow) $customRow.style.display = 'none';
+                if ($customInput) {
+                    $customInput.disabled = true;
+                    $customInput.required = false;
+                }
+                const pts = calcSkp(type, $level ? $level.value : '', $role ? $role.value : '');
+                if (pts > 0) {
+                    $skpValue.textContent = pts;
+                    $skpBox.style.display = 'inline-flex';
+                } else {
+                    $skpBox.style.display = 'none';
+                }
             }
             updateStep3Done();
+        }
+
+        if ($customInput) {
+            $customInput.addEventListener('input', updateSkp);
         }
 
         if ($actSearch && $actType) {
@@ -1816,6 +1887,12 @@ break;
                 const $buktiHintText = document.getElementById('buktiHintText');
                 if ($buktiHintText) {
                     $buktiHintText.textContent = 'Pilih Jenis Kegiatan untuk melihat jenis bukti';
+                }
+
+                if ($customRow) $customRow.style.display = 'none';
+                if ($customInput) {
+                    $customInput.disabled = true;
+                    $customInput.required = false;
                 }
 
                 $level.innerHTML = '<option value="">— Pilih Tingkat —</option>';
@@ -1937,6 +2014,8 @@ break;
                     const catInput = modal.querySelector('input[name="category"]');
                     const levelSelect = modal.querySelector('select[name="level"]');
                     const roleSelect = modal.querySelector('select[name="participation_role"]');
+                    const customPointRow = modal.querySelector('.edit-row-custom-point');
+                    const customPointInput = modal.querySelector('.edit-custom-skp-points');
 
                     if (TYPE_CATEGORY[type] && catInput) {
                         catInput.value = TYPE_CATEGORY[type];
@@ -1948,8 +2027,28 @@ break;
                     if (roleSelect && ROLE_OPTIONS[type]) {
                         fillSelect(roleSelect, ROLE_OPTIONS[type], '— Pilih —');
                     }
+
+                    if (customPointRow && customPointInput) {
+                        if (type === 'pmb') {
+                            customPointRow.style.display = 'block';
+                            customPointInput.disabled = false;
+                            customPointInput.required = true;
+                            if (!customPointInput.value) {
+                                customPointInput.value = 75;
+                            }
+                        } else {
+                            customPointRow.style.display = 'none';
+                            customPointInput.disabled = true;
+                            customPointInput.required = false;
+                        }
+                    }
                 });
             });
+
+            // Inisialisasi awal jika form utama sudah terisi (misal setelah redirect error validasi)
+            if ($actType && $actType.value === 'pmb') {
+                updateSkp();
+            }
         }
     });
 

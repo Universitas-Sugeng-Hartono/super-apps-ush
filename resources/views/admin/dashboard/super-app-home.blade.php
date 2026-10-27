@@ -4,7 +4,9 @@
     <!-- Page Header -->
     <div class="page-header mb-4">
         <h2 class="page-title">Dashboard Dosen PA</h2>
-        <span class="semester-badge">{{ session('user_prodi') ?? 'Bisnis Digital' }}</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="semester-badge">{{ session('user_prodi') ?? 'Bisnis Digital' }}</span>
+        </div>
     </div>
 
     <!-- Charts Section -->

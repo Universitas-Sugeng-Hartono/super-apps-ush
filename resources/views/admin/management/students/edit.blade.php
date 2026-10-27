@@ -32,11 +32,19 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Periode Masuk (Bulan & Tahun) *</label>
+                        <label>Periode Masuk (Semester Akademik)</label>
+                        <input type="text" name="periode_masuk_semester" class="form-control" value="{{ old('periode_masuk_semester', $student->periode_masuk ?: ($student->angkatan ? $student->angkatan . '/' . ($student->angkatan + 1) . ' Ganjil' : '')) }}" placeholder="Contoh: 2026/2027 Ganjil">
+                        @error('periode_masuk_semester')<span class="error">{{ $message }}</span>@enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bulan Masuk (Bulan & Tahun) *</label>
                         <input type="month" name="periode_masuk" class="form-control" value="{{ old('periode_masuk', $student->tanggal_masuk ? $student->tanggal_masuk->format('Y-m') : '') }}" required>
                         @error('periode_masuk')<span class="error">{{ $message }}</span>@enderror
                     </div>
+                </div>
 
+                <div class="form-row">
                     <div class="form-group">
                         <label>Dosen PA *</label>
                         <select name="id_lecturer" class="form-control" required>
@@ -49,9 +57,7 @@
                         </select>
                         @error('id_lecturer')<span class="error">{{ $message }}</span>@enderror
                     </div>
-                </div>
 
-                <div class="form-row">
                     <div class="form-group">
                         <label>Program Studi *</label>
                         <select name="program_studi" class="form-control" required>
@@ -64,7 +70,9 @@
                         </select>
                         @error('program_studi')<span class="error">{{ $message }}</span>@enderror
                     </div>
+                </div>
 
+                <div class="form-row">
                     <div class="form-group">
                         <label>Jenis Kelamin *</label>
                         <select name="jenis_kelamin" class="form-control" required>
@@ -73,15 +81,15 @@
                         </select>
                         @error('jenis_kelamin')<span class="error">{{ $message }}</span>@enderror
                     </div>
-                </div>
 
-                <div class="form-row">
                     <div class="form-group">
                         <label>Email</label>
                         <input type="email" name="email" class="form-control" value="{{ old('email', $student->email) }}">
                         @error('email')<span class="error">{{ $message }}</span>@enderror
                     </div>
+                </div>
 
+                <div class="form-row">
                     <div class="form-group">
                         <label>No. Telepon</label>
                         <input type="text" name="no_telepon" class="form-control" value="{{ old('no_telepon', $student->no_telepon) }}">

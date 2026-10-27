@@ -368,13 +368,13 @@ class PokemaEvaluatorService
             $ipk = (float) $latestCounseling->ipk;
         }
 
-        // Petakan Semester ke Tahun Studi POKEMA (Berdasarkan SK Rektor Lampiran II)
-        // Tahun I: Semester 1–2 (Bobot 40%)
-        // Tahun II: Semester 3–5 (Bobot 40%)
-        // Tahun III: Semester 5–8+ (Bobot 20%)
-        if ($semester <= 2) {
+        // Petakan Semester ke Tahun Studi POKEMA (Mengikuti setting SIAKAD: 3 semester per tahun)
+        // Tahun I : Semester 1–3 (Bobot 40%)
+        // Tahun II : Semester 4–6 (Bobot 40%)
+        // Tahun III: Semester 7–9+ (Bobot 20%)
+        if ($semester <= 3) {
             $studyYear = 1;
-        } elseif ($semester <= 5) {
+        } elseif ($semester <= 6) {
             $studyYear = 2;
         } else {
             $studyYear = 3;
@@ -456,27 +456,28 @@ class PokemaEvaluatorService
         }
 
         $studyYearLabel = match ((string) $studyYear) {
-            '1' => 'Tahun I (Semester 1–2, Bobot 40%)',
-            '2' => 'Tahun II (Semester 3–5, Bobot 40%)',
-            '3' => 'Tahun III (Semester 5–8, Bobot 20%)',
-            'total', '4' => 'Total Keseluruhan (Semester 1–8, Bobot 100%)',
-            default => 'Tahun I (Semester 1–2, Bobot 40%)',
+            '1' => 'Tahun I (Semester 1–3, Bobot 40%)',
+            '2' => 'Tahun II (Semester 4–6, Bobot 40%)',
+            '3' => 'Tahun III (Semester 7–9, Bobot 20%)',
+            'total', '4' => 'Total Keseluruhan (Semester 1–9, Bobot 100%)',
+            default => 'Tahun I (Semester 1–3, Bobot 40%)',
         };
 
         $currentTierKey = self::normalizeTierKey($student->beasiswa);
         $currentTier = self::TIERS[$currentTierKey];
+        $currentLevel = $currentTier['level'] ?? 0;
         $ipk = $resolved['ipk'];
 
         // Tentukan semester yang termasuk dalam periode studi ini
-        // Berdasarkan SK Rektor No: 2638/SK/01/2026:
-        // - Tahun I : Semester 1 & 2
-        // - Tahun II : Semester 3, 4, 5
-        // - Tahun III: Semester 6, 7, 8+
+        // Sesuai dengan pembagian 3 semester per tahun di SIAKAD:
+        // - Tahun I  : Semester 1, 2, 3
+        // - Tahun II : Semester 4, 5, 6
+        // - Tahun III: Semester 7, 8, 9, 10, 11, 12, 13, 14
         // - Total    : Seluruh semester
         $periodSemesters = match ((string) $studyYear) {
-            '1' => [1, 2],
-            '2' => [3, 4, 5],
-            '3' => [6, 7, 8, 9, 10, 11, 12, 13, 14],
+            '1' => [1, 2, 3],
+            '2' => [4, 5, 6],
+            '3' => [7, 8, 9, 10, 11, 12, 13, 14],
             default => null, // null berarti seluruh semester ('total')
         };
 
@@ -507,18 +508,25 @@ class PokemaEvaluatorService
         }
 
         // Target 7 bidang untuk tier saat ini
-        $currentTargetFields = $currentTier['targets'][$studyYear]['fields'] ?? [];
+        // Jika mahasiswa saat ini berada di tier 0% (misal Student Ambassador tanpa beasiswa awal),
+        // gunakan target tier minimal (25%) sebagai tolok ukur (benchmark) pemenuhan 7 bidang beasiswa
+        $benchmarkTierForFields = ($currentLevel > 0) ? $currentTierKey : '25%';
+        $currentTargetFields = self::TIERS[$benchmarkTierForFields]['targets'][$studyYear]['fields']
+            ?? self::TIERS[$benchmarkTierForFields]['targets'][1]['fields']
+            ?? [];
         $currentTierFulfilledCount = 0;
         $currentTierUnfulfilledList = [];
 
         foreach (self::FIELD_LABELS as $fKey => $fLabel) {
             $fActual = $actualFields[$fKey] ?? 0;
             $fTarget = $currentTargetFields[$fKey] ?? 0;
-            if ($fActual >= $fTarget) {
+            if ($fTarget > 0 && $fActual >= $fTarget) {
                 $currentTierFulfilledCount++;
             } else {
-                $deficit = $fTarget - $fActual;
-                $currentTierUnfulfilledList[] = "{$fLabel} (kurang {$deficit} Poin)";
+                $deficit = max(0, $fTarget - $fActual);
+                if ($fTarget > 0) {
+                    $currentTierUnfulfilledList[] = "{$fLabel} (kurang {$deficit} Poin)";
+                }
             }
         }
         $currentTierAllFieldsMet = ($currentTierFulfilledCount === count(self::FIELD_LABELS));
@@ -561,22 +569,24 @@ class PokemaEvaluatorService
         $progressPct = $targetCurrent > 0 ? round(($totalApprovedPoints / $targetCurrent) * 100, 1) : 100;
 
         // Tentukan jenis aksi rekomendasi
-        if ($currentLevel === 0) {
-            // 1. Mahasiswa Reguler (Non-Beasiswa)
-            $actionType = 'reguler';
-            $actionLabel = "Mahasiswa Reguler (0%)";
-            $actionClass = 'btn-maintain';
-            $badgeClass = 'badge-reguler';
-            $targetReguler = self::TIERS['0%']['targets']['total']['total'] ?? 250;
-            $reason = "Mahasiswa Reguler. Perolehan saat ini {$totalApprovedPoints}/{$targetReguler} Poin menuju syarat kelulusan SKPI.";
-        } elseif ($qualifiedLevel > $currentLevel) {
-            // 2. Kualifikasi melampaui tier saat ini (Promosi / Upgrade)
+        if ($qualifiedLevel > $currentLevel) {
+            // 1. Kualifikasi melampaui tier saat ini (Promosi / Upgrade)
             $actionType = 'upgrade';
             $actionLabel = "Rekomendasi Promosi ke Beasiswa {$qualifiedTierKey}";
             $actionClass = 'btn-upgrade';
             $badgeClass = 'badge-upgrade';
             $targetPoinNeeded = $qualifiedTier['targets'][$studyYear]['total'] ?? $qualifiedTier['targets'][1]['total'];
             $reason = "Prestasi IPK ({$ipk} ≥ {$qualifiedTier['min_ipk']}), Total POKEMA ({$totalApprovedPoints} ≥ {$targetPoinNeeded} Poin), dan seluruh 7 bidang kegiatan memenuhi kualifikasi kenaikan ke Beasiswa {$qualifiedTierKey}.";
+        } elseif ($currentLevel === 0) {
+            // 2. Mahasiswa Reguler / Student Ambassador (Belum memenuhi kualifikasi beasiswa minimal)
+            $actionType = 'reguler';
+            $actionLabel = "Belum Memenuhi Standar Beasiswa (0%)";
+            $actionClass = 'btn-maintain';
+            $badgeClass = 'badge-reguler';
+            $minEntryIpk = self::TIERS['25%']['min_ipk'] ?? 3.00;
+            $minEntryPoin = self::TIERS['25%']['targets'][$studyYear]['total'] ?? 120;
+            $unfulfilledNote = !empty($currentTierUnfulfilledList) ? 'Belum memenuhi ' . count($currentTierUnfulfilledList) . ' bidang. ' : '';
+            $reason = "Mahasiswa saat ini belum memenuhi standar minimal Beasiswa 25% (Min. IPK {$minEntryIpk}, Target {$minEntryPoin} Poin, & 7 bidang POKEMA). {$unfulfilledNote}Capaian saat ini: IPK {$ipk}, {$totalApprovedPoints} Poin, {$currentTierFulfilledCount}/7 bidang.";
         } elseif ($totalApprovedPoints >= $targetCurrent && $ipk >= $minIpkCurrent && $currentTierAllFieldsMet) {
             // 3. Target periode telah terpenuhi penuh (IPK + Poin + Seluruh 7 Bidang Lengkap)
             $actionType = 'maintain';
@@ -674,9 +684,13 @@ class PokemaEvaluatorService
         }
 
         // Tentukan target per bidang yang diacu (gunakan target dari tier yang relevan atau target saat ini)
-        $benchmarkTierKey = ($currentLevel > 0) ? (($qualifiedLevel > $currentLevel) ? $qualifiedTierKey : $currentTierKey) : '0%';
-        $targetFields = self::TIERS[$benchmarkTierKey]['targets'][$studyYear]['fields'] ?? [];
-        $totalTargetPoin = self::TIERS[$benchmarkTierKey]['targets'][$studyYear]['total'] ?? 250;
+        $benchmarkTierKey = ($currentLevel > 0) ? (($qualifiedLevel > $currentLevel) ? $qualifiedTierKey : $currentTierKey) : (($qualifiedLevel > 0) ? $qualifiedTierKey : '25%');
+        $targetFields = self::TIERS[$benchmarkTierKey]['targets'][$studyYear]['fields'] 
+            ?? self::TIERS[$benchmarkTierKey]['targets'][1]['fields'] 
+            ?? [];
+        $totalTargetPoin = self::TIERS[$benchmarkTierKey]['targets'][$studyYear]['total'] 
+            ?? self::TIERS[$benchmarkTierKey]['targets'][1]['total'] 
+            ?? 120;
 
         $fieldsProgress = [];
         foreach (self::FIELD_LABELS as $key => $label) {
@@ -692,7 +706,7 @@ class PokemaEvaluatorService
                 'target' => $tgt,
                 'percent' => $pct,
                 'real_percent' => $realPct,
-                'is_fulfilled' => $cur >= $tgt,
+                'is_fulfilled' => ($tgt > 0 && $cur >= $tgt),
             ];
         }
 
@@ -712,7 +726,7 @@ class PokemaEvaluatorService
         $prevSemYear = null;
 
         for ($sem = 1; $sem <= $maxSem; $sem++) {
-            $semYear = ($sem <= 2) ? 1 : (($sem <= 5) ? 2 : 3);
+            $semYear = ($sem <= 3) ? 1 : (($sem <= 6) ? 2 : 3);
             if ($prevSemYear !== null && $semYear !== $prevSemYear) {
                 $runningYearPoints = 0; // Reset akumulasi per periode tahun studi
             }
@@ -736,11 +750,7 @@ class PokemaEvaluatorService
             $runningCumulativePoints += $semPts;
             $runningYearPoints += $semPts;
 
-            $semCountInYear = match($semYear) {
-                1 => 2, // Sem 1 - 2
-                2 => 3, // Sem 3 - 5
-                default => 3, // Sem 6 - 8
-            };
+            $semCountInYear = 3; // 3 semester per tahun studi (sesuai setting SIAKAD)
             $yearTarget = self::TIERS[$benchmarkTierKey]['targets'][$semYear]['total'] ?? 0;
             $semTarget = $yearTarget > 0 ? (int) round($yearTarget / $semCountInYear) : 0;
             $semProgressPercent = $semTarget > 0 ? min(100, round(($semPts / $semTarget) * 100)) : ($semPts > 0 ? 100 : 0);
@@ -749,14 +759,33 @@ class PokemaEvaluatorService
             $yearTargetMet = $runningYearPoints >= $yearTarget;
             $progressPercent = $yearTarget > 0 ? min(100, round(($runningYearPoints / $yearTarget) * 100)) : ($runningYearPoints > 0 ? 100 : 0);
 
+            // Dapatkan IPK semester ini: prioritas riwayat sinkronisasi SIAKAD -> konseling PA -> fallback semester aktif
+            $historyIpk = null;
+            if (!empty($student->semester_ipk_history)) {
+                $histArr = is_array($student->semester_ipk_history)
+                    ? $student->semester_ipk_history
+                    : (json_decode($student->semester_ipk_history, true) ?: []);
+                $historyIpk = $histArr[(string) $sem] ?? $histArr[$sem] ?? null;
+            }
+
+            $semIpk = null;
+            if ($historyIpk !== null && is_numeric($historyIpk)) {
+                $semIpk = number_format((float) $historyIpk, 2);
+            } elseif ($counseling && $counseling->ipk !== null && is_numeric($counseling->ipk)) {
+                $semIpk = number_format((float) $counseling->ipk, 2);
+            } elseif ($sem === (int) $semester && $student->ipk !== null && is_numeric($student->ipk)) {
+                // Fallback semester aktif langsung dari data resmi profil mahasiswa
+                $semIpk = number_format((float) $student->ipk, 2);
+            }
+
             $semesterBreakdown[] = [
                 'semester' => $sem,
                 'semester_label' => "Semester {$sem}",
                 'study_year' => $semYear,
                 'study_year_label' => $semYearLabel,
                 'is_current' => $sem === (int) $semester,
-                'ipk' => ($counseling && $counseling->ipk !== null) ? number_format((float) $counseling->ipk, 2) : null,
-                'ip' => ($counseling && $counseling->ip !== null) ? number_format((float) $counseling->ip, 2) : null,
+                'ipk' => $semIpk,
+                'ip' => null,
                 'has_counseling' => $counseling !== null,
                 'achievements_count' => $semAchs->count(),
                 'semester_points' => $semPts,
@@ -768,7 +797,7 @@ class PokemaEvaluatorService
                 'year_target' => $yearTarget,
                 'progress_percent' => $progressPercent,
                 'is_year_target_met' => $yearTargetMet,
-                'is_period_milestone' => ($sem === 2 || $sem === 5 || $sem === 8),
+                'is_period_milestone' => ($sem === 3 || $sem === 6 || $sem === 9),
             ];
         }
 

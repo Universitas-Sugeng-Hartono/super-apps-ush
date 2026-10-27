@@ -7,7 +7,7 @@
         <div class="banner-content">
             <div class="text-side">
                 <span class="role-badge-tag"><i class="bi bi-award-fill"></i> Biro Kemahasiswaan</span>
-                <h1>Selamat Datang, {{ explode(' ', auth()->user()->name ?? 'Staf')[0] }}! 👋</h1>
+                <h1>Selamat Datang, {{ explode(' ', auth()->user()->name ?? 'Staf')[0] }}!</h1>
                 <p>Pusat verifikasi prestasi, pembinaan aktivitas mahasiswa, dan validasi data kelulusan SKPI Universitas Sugeng Hartono.</p>
                 <div class="banner-badges">
                     <span class="b-badge"><i class="bi bi-shield-check"></i> Portal Institusi</span>
@@ -15,7 +15,7 @@
                 </div>
             </div>
             <div class="icon-side">
-                <i class="bi bi-patch-check"></i>
+                
             </div>
         </div>
         <div class="banner-pattern"></div>

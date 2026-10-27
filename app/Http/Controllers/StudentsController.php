@@ -443,7 +443,9 @@ class StudentsController extends Controller
 
         $maxAllowedSemester = max(1, (int) ($student->semester ?: $student->getCurrentSemester()));
 
-        $request->validate([
+        $isPmb = SkpPointCalculator::isRangeType($request->activity_type);
+
+        $rules = [
             'category'           => "required|string|in:{$categoryKeys}",
             'semester'           => "required|integer|min:1|max:{$maxAllowedSemester}",
             'activity_type'      => 'required|string|max:100',
@@ -453,32 +455,44 @@ class StudentsController extends Controller
             'level'              => 'required|string|max:100',
             'participation_role' => 'required|string|max:100',
             'certificate'        => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ], [
-            'category.required'      => 'Kategori SKPI harus dipilih.',
-            'semester.required'      => 'Semester saat kegiatan wajib dipilih.',
-            'semester.integer'       => 'Semester harus berupa angka.',
-            'semester.min'           => 'Semester minimal 1.',
-            'semester.max'           => "Semester kegiatan tidak boleh melebihi semester aktif Anda (Maksimal Semester {$maxAllowedSemester}).",
-            'activity_type.required' => 'Jenis kegiatan harus dipilih.',
-            'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
-            'organizer.required'     => 'Penyelenggara acara wajib diisi.',
-            'event_year.required'    => 'Tahun kegiatan wajib diisi.',
-            'level.required'         => 'Tingkat kegiatan harus dipilih.',
+        ];
+
+        if ($isPmb) {
+            $rules['skp_points'] = 'required|integer|min:15|max:75';
+        }
+
+        $request->validate($rules, [
+            'category.required'           => 'Kategori SKPI harus dipilih.',
+            'semester.required'           => 'Semester saat kegiatan wajib dipilih.',
+            'semester.integer'            => 'Semester harus berupa angka.',
+            'semester.min'                => 'Semester minimal 1.',
+            'semester.max'                => "Semester kegiatan tidak boleh melebihi semester aktif Anda (Maksimal Semester {$maxAllowedSemester}).",
+            'activity_type.required'      => 'Jenis kegiatan harus dipilih.',
+            'event.required'              => 'Nama Acara / Kegiatan wajib diisi.',
+            'organizer.required'          => 'Penyelenggara acara wajib diisi.',
+            'event_year.required'         => 'Tahun kegiatan wajib diisi.',
+            'level.required'              => 'Tingkat kegiatan harus dipilih.',
             'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
-            'certificate.required'   => 'Bukti fisik wajib diunggah.',
-            'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
-            'certificate.max'        => 'Ukuran file maksimal 2 MB.',
+            'skp_points.required'         => 'Nilai poin POKEMA untuk Penerimaan Mahasiswa Baru wajib diisi.',
+            'skp_points.integer'          => 'Nilai poin POKEMA harus berupa angka bilangan bulat.',
+            'skp_points.min'              => 'Nilai poin POKEMA untuk Penerimaan Mahasiswa Baru minimal 15 poin.',
+            'skp_points.max'              => 'Nilai poin POKEMA untuk Penerimaan Mahasiswa Baru maksimal 75 poin.',
+            'certificate.required'        => 'Bukti fisik wajib diunggah.',
+            'certificate.mimes'           => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
+            'certificate.max'             => 'Ukuran file maksimal 2 MB.',
         ]);
 
         // Cek duplikasi input prestasi dihapus karena mahasiswa bisa mengikuti
         // kegiatan yang sama berkali-kali (contoh: 2x juara Lomba yang berbeda)
 
         try {
+            $customPoints = ($isPmb && $request->filled('skp_points')) ? (int) $request->skp_points : null;
             $skpPoints = SkpPointCalculator::calculate(
                 $request->category,
                 $request->activity_type,
                 $request->level,
-                $request->participation_role
+                $request->participation_role,
+                $customPoints
             );
 
             $data = [
@@ -555,7 +569,9 @@ class StudentsController extends Controller
             $maxAllowedSemester = (int) $achievement->semester;
         }
 
-        $request->validate([
+        $isPmb = SkpPointCalculator::isRangeType($request->activity_type);
+
+        $rules = [
             'category'           => "required|string|in:{$categoryKeys}",
             'semester'           => "required|integer|min:1|max:{$maxAllowedSemester}",
             'activity_type'      => 'required|string|max:100',
@@ -565,30 +581,42 @@ class StudentsController extends Controller
             'level'              => 'required|string|max:100',
             'participation_role' => 'required|string|max:100',
             'certificate'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ], [
-            'category.required'      => 'Kategori SKPI harus dipilih.',
-            'semester.required'      => 'Semester saat kegiatan wajib dipilih.',
-            'semester.integer'       => 'Semester harus berupa angka.',
-            'semester.min'           => 'Semester minimal 1.',
-            'semester.max'           => "Semester kegiatan tidak boleh melebihi semester aktif Anda (Maksimal Semester {$maxAllowedSemester}).",
-            'activity_type.required' => 'Jenis kegiatan harus dipilih.',
-            'event.required'         => 'Nama Acara / Kegiatan wajib diisi.',
-            'organizer.required'     => 'Penyelenggara acara wajib diisi.',
-            'event_year.required'    => 'Tahun kegiatan wajib diisi.',
-            'level.required'         => 'Tingkat kegiatan harus dipilih.',
+        ];
+
+        if ($isPmb) {
+            $rules['skp_points'] = 'required|integer|min:15|max:75';
+        }
+
+        $request->validate($rules, [
+            'category.required'           => 'Kategori SKPI harus dipilih.',
+            'semester.required'           => 'Semester saat kegiatan wajib dipilih.',
+            'semester.integer'            => 'Semester harus berupa angka.',
+            'semester.min'                => 'Semester minimal 1.',
+            'semester.max'                => "Semester kegiatan tidak boleh melebihi semester aktif Anda (Maksimal Semester {$maxAllowedSemester}).",
+            'activity_type.required'      => 'Jenis kegiatan harus dipilih.',
+            'event.required'              => 'Nama Acara / Kegiatan wajib diisi.',
+            'organizer.required'          => 'Penyelenggara acara wajib diisi.',
+            'event_year.required'         => 'Tahun kegiatan wajib diisi.',
+            'level.required'              => 'Tingkat kegiatan harus dipilih.',
             'participation_role.required' => 'Jabatan / Peran / Prestasi harus dipilih.',
-            'certificate.mimes'      => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
-            'certificate.max'        => 'Ukuran file maksimal 2 MB.',
+            'skp_points.required'         => 'Nilai poin POKEMA untuk Penerimaan Mahasiswa Baru wajib diisi.',
+            'skp_points.integer'          => 'Nilai poin POKEMA harus berupa angka bilangan bulat.',
+            'skp_points.min'              => 'Nilai poin POKEMA untuk Penerimaan Mahasiswa Baru minimal 15 poin.',
+            'skp_points.max'              => 'Nilai poin POKEMA untuk Penerimaan Mahasiswa Baru maksimal 75 poin.',
+            'certificate.mimes'           => 'Bukti harus berupa PDF, JPG, JPEG, atau PNG.',
+            'certificate.max'             => 'Ukuran file maksimal 2 MB.',
         ]);
 
         // Cek duplikasi dihapus
 
         try {
+            $customPoints = ($isPmb && $request->filled('skp_points')) ? (int) $request->skp_points : null;
             $skpPoints = SkpPointCalculator::calculate(
                 $request->category,
                 $request->activity_type,
                 $request->level,
-                $request->participation_role
+                $request->participation_role,
+                $customPoints
             );
 
             $achievement->fill([
