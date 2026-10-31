@@ -515,11 +515,15 @@ class PokemaEvaluatorService
             ?? self::TIERS[$benchmarkTierForFields]['targets'][1]['fields']
             ?? [];
         $currentTierFulfilledCount = 0;
+        $currentTierActiveCount = 0;
         $currentTierUnfulfilledList = [];
 
         foreach (self::FIELD_LABELS as $fKey => $fLabel) {
             $fActual = $actualFields[$fKey] ?? 0;
             $fTarget = $currentTargetFields[$fKey] ?? 0;
+            if ($fActual > 0) {
+                $currentTierActiveCount++;
+            }
             if ($fTarget > 0 && $fActual >= $fTarget) {
                 $currentTierFulfilledCount++;
             } else {
@@ -711,14 +715,15 @@ class PokemaEvaluatorService
         }
 
         // Hitung Breakdown Rincian & Akumulasi Per Semester
-        $maxSem = max(2, (int) $semester);
+        // Selalu tampilkan semester secara utuh hingga akhir periode tahun studi berjalan (3 semester per tahun di USH)
+        $highestSem = max(1, (int) $semester);
         if ($student->relationLoaded('counselings') && $student->counselings && $student->counselings->isNotEmpty()) {
-            $maxSem = max($maxSem, (int) $student->counselings->max('semester'));
+            $highestSem = max($highestSem, (int) $student->counselings->max('semester'));
         }
         if ($allApprovedAchievements->isNotEmpty()) {
-            $maxSem = max($maxSem, (int) $allApprovedAchievements->max('semester'));
+            $highestSem = max($highestSem, (int) $allApprovedAchievements->max('semester'));
         }
-        $maxSem = min(14, $maxSem);
+        $maxSem = min(14, (int) (ceil($highestSem / 3) * 3));
 
         $semesterBreakdown = [];
         $runningCumulativePoints = 0;
@@ -801,6 +806,43 @@ class PokemaEvaluatorService
             ];
         }
 
+        // Kelompokkan semester per Tahun Studi (Tahun I = Sem 1-3, dst)
+        $yearGroups = [];
+        foreach ($semesterBreakdown as $semItem) {
+            $y = $semItem['study_year'];
+            if (!isset($yearGroups[$y])) {
+                $semRange = match($y) {
+                    1 => 'Semester 1–3',
+                    2 => 'Semester 4–6',
+                    default => 'Semester 7–9',
+                };
+                $yearGroups[$y] = [
+                    'study_year' => $y,
+                    'study_year_label' => $semItem['study_year_label'],
+                    'semesters_range' => $semRange,
+                    'year_target' => $semItem['year_target'],
+                    'total_points' => 0,
+                    'is_current_year' => false,
+                    'semesters' => [],
+                ];
+            }
+            $yearGroups[$y]['total_points'] += $semItem['semester_points'];
+            if ($semItem['is_current']) {
+                $yearGroups[$y]['is_current_year'] = true;
+            }
+            $yearGroups[$y]['semesters'][] = $semItem;
+        }
+
+        foreach ($yearGroups as &$yGroup) {
+            $yTarget = $yGroup['year_target'];
+            $yPts = $yGroup['total_points'];
+            $yGroup['progress_percent'] = $yTarget > 0 ? min(100, round(($yPts / $yTarget) * 100)) : ($yPts > 0 ? 100 : 0);
+            $yGroup['real_percent'] = $yTarget > 0 ? round(($yPts / $yTarget) * 100, 1) : ($yPts > 0 ? 100 : 0);
+            $yGroup['is_target_met'] = $yTarget > 0 ? ($yPts >= $yTarget) : ($yPts > 0);
+            $yGroup['points_remaining'] = max(0, $yTarget - $yPts);
+        }
+        unset($yGroup);
+
         return [
             'student_id' => $student->id,
             'student_name' => $student->nama_lengkap,
@@ -830,7 +872,9 @@ class PokemaEvaluatorService
             'is_current_year' => $isCurrentYear,
             'fields_progress' => $fieldsProgress,
             'semester_breakdown' => $semesterBreakdown,
+            'year_groups' => array_values($yearGroups),
             'fulfilled_fields_count' => $currentTierFulfilledCount,
+            'active_fields_count' => $currentTierActiveCount,
             'unfulfilled_fields_count' => count($currentTierUnfulfilledList),
             'unfulfilled_fields_list' => $currentTierUnfulfilledList,
             'all_fields_met' => $currentTierAllFieldsMet,

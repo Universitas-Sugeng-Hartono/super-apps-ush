@@ -577,7 +577,13 @@ class StudentAmbassadorController extends Controller
         $items = [];
         foreach ($students as $stu) {
             $eval = PokemaEvaluatorService::evaluate($stu);
-            $recPct = $eval['recommended_beasiswa'] ?? ($stu->beasiswa ?: '0%');
+
+            // Prioritaskan rekomendasi manual yang diinput Admin jika ada.
+            // Jika tidak ada, gunakan rekomendasi otomatis POKEMA.
+            $recPct = !empty($stu->rekomendasi_manual)
+                ? $stu->rekomendasi_manual
+                : ($eval['recommended_beasiswa'] ?? ($stu->beasiswa ?: '0%'));
+
             $catatan = "Rekomendasi POKEMA SuperApps: " . ($eval['reason'] ?? "Beasiswa {$recPct}");
 
             $items[] = [

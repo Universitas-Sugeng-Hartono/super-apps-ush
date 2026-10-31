@@ -458,13 +458,29 @@ class AchievementVerificationController extends Controller
 
         $oldBeasiswa = $student->beasiswa ?: '0%';
         $newBeasiswa = trim($request->beasiswa);
+
+        // Jika Admin memilih reset ke otomatis, kosongkan rekomendasi manual
+        if (strtolower($newBeasiswa) === 'auto' || $newBeasiswa === 'reset') {
+            $student->rekomendasi_manual = null;
+            $logEntry = now()->format('d/m/Y H:i') . " - Reset rekomendasi manual ke rekomendasi otomatis sistem POKEMA.";
+            if ($request->filled('notes')) {
+                $logEntry .= ". Catatan: {$request->notes}";
+            }
+            $student->notes = ($student->notes ? $student->notes . "\n" : '') . $logEntry;
+            $student->save();
+
+            return redirect()->back()->with('success', "Rekomendasi manual untuk {$student->nama_lengkap} berhasil di-reset. Evaluasi beasiswa kembali mengacu pada sistem dinamis POKEMA.");
+        }
+
         if (is_numeric($newBeasiswa)) {
             $newBeasiswa .= '%';
         }
 
-        $student->beasiswa = $newBeasiswa;
+        // SIMPAN KE REKOMENDASI MANUAL, JANGAN UBAH beasiswa SAAT INI!
+        // Kolom beasiswa saat ini tetap utuh dan baru berubah ketika Keuangan meng-ACC dan tombol Update Data Beasiswa diklik.
+        $student->rekomendasi_manual = $newBeasiswa;
 
-        $logEntry = now()->format('d/m/Y H:i') . " - Penyesuaian Beasiswa dari {$oldBeasiswa} ke {$newBeasiswa}";
+        $logEntry = now()->format('d/m/Y H:i') . " - Input Rekomendasi Manual Beasiswa menjadi {$newBeasiswa}";
         if ($request->filled('sk_number')) {
             $logEntry .= " (Dasar SK: {$request->sk_number})";
         }
@@ -475,49 +491,7 @@ class AchievementVerificationController extends Controller
         $student->notes = ($student->notes ? $student->notes . "\n" : '') . $logEntry;
         $student->save();
 
-        // Kirim rekomendasi ke SIAKAD jika diminta eksplisit dan mahasiswa punya NIM
-        $siakadFeedback = '';
-        if ($request->boolean('send_to_siakad', false) && !empty($student->nim) && $student->nim !== '-') {
-            try {
-                $syncService = app(SiakadSyncService::class);
-                $res = $syncService->sendRecommendation($student, $newBeasiswa, $request->notes);
-                if (!empty($res['success'])) {
-                    $siakadFeedback = ' dan rekomendasi resmi telah dikirim ke SIAKAD (Menu Rekomendasi Beasiswa Termin).';
-                }
-            } catch (\Throwable $e) {
-                Log::warning("Gagal mengirim rekomendasi ke SIAKAD untuk NIM {$student->nim}: " . $e->getMessage());
-                $siakadFeedback = " (Catatan: Pengiriman rekomendasi ke SIAKAD tertunda: {$e->getMessage()}).";
-            }
-        }
-
-        // Notifikasi ke mahasiswa
-        try {
-            $newTierKey = PokemaEvaluatorService::normalizeTierKey($newBeasiswa);
-            $oldTierKey = PokemaEvaluatorService::normalizeTierKey($oldBeasiswa);
-            $newLevel = PokemaEvaluatorService::TIERS[$newTierKey]['level'] ?? 0;
-            $oldLevel = PokemaEvaluatorService::TIERS[$oldTierKey]['level'] ?? 0;
-
-            $isUpgrade = $newLevel > $oldLevel;
-            $title = $isUpgrade ? 'Selamat! Kenaikan Beasiswa Disetujui' : 'Pembaruan Status Beasiswa';
-            $body = "Status beasiswa Anda telah disesuaikan menjadi {$newBeasiswa}. " . ($request->notes ?: 'Berdasarkan hasil evaluasi capaian POKEMA & IPK.');
-
-            NotificationHelper::notifyStudent(
-                $student->id,
-                'beasiswa.updated',
-                $title,
-                $body,
-                route('student.personal.achievements.index'),
-                [
-                    'old_beasiswa' => $oldBeasiswa,
-                    'new_beasiswa' => $newBeasiswa,
-                    'sk_number' => $request->sk_number,
-                ]
-            );
-        } catch (\Exception $e) {
-            Log::warning('Gagal kirim notifikasi beasiswa: ' . $e->getMessage());
-        }
-
-        return redirect()->back()->with('success', "Status beasiswa {$student->nama_lengkap} berhasil diperbarui menjadi {$newBeasiswa}{$siakadFeedback}");
+        return redirect()->back()->with('success', "Rekomendasi beasiswa untuk {$student->nama_lengkap} berhasil disesuaikan secara manual menjadi {$newBeasiswa}. Silakan kirim rekomendasi ke SIAKAD.");
     }
 
     /**
@@ -527,11 +501,20 @@ class AchievementVerificationController extends Controller
     {
         $student = Student::findOrFail($id);
         $eval = PokemaEvaluatorService::evaluate($student);
-        $recBeasiswa = $eval['recommended_beasiswa'] ?? ($student->beasiswa ?: '0%');
+
+        // Prioritaskan rekomendasi manual yang diinput Admin jika ada.
+        // Jika tidak ada rekomendasi manual, gunakan rekomendasi otomatis POKEMA.
+        $recBeasiswa = !empty($student->rekomendasi_manual)
+            ? $student->rekomendasi_manual
+            : ($eval['recommended_beasiswa'] ?? ($student->beasiswa ?: '0%'));
+
         $catatan = $request->input('notes') ?: "Rekomendasi POKEMA: " . ($eval['reason'] ?? "Hasil evaluasi capaian beasiswa {$recBeasiswa}");
 
         try {
             $res = $syncService->sendRecommendation($student, $recBeasiswa, $catatan, 'draft');
+            // Tandai status rekomendasi di database SuperApps bahwa usulan telah terkirim ke SIAKAD
+            $student->update(['status_rekomendasi_siakad' => 'draft']);
+
             return redirect()->back()->with('success', "Rekomendasi beasiswa ({$recBeasiswa}) untuk {$student->nama_lengkap} (NIM: {$student->nim}) berhasil dikirim ke kolom Rekomendasi di SIAKAD!");
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', "Gagal mengirim rekomendasi ke SIAKAD: " . $e->getMessage());
@@ -565,7 +548,13 @@ class AchievementVerificationController extends Controller
         $items = [];
         foreach ($students as $stu) {
             $eval = PokemaEvaluatorService::evaluate($stu);
-            $recPct = $eval['recommended_beasiswa'] ?? ($stu->beasiswa ?: '0%');
+
+            // Prioritaskan rekomendasi manual yang diinput Admin jika ada.
+            // Jika tidak ada, gunakan rekomendasi otomatis POKEMA.
+            $recPct = !empty($stu->rekomendasi_manual)
+                ? $stu->rekomendasi_manual
+                : ($eval['recommended_beasiswa'] ?? ($stu->beasiswa ?: '0%'));
+
             $catatan = "Rekomendasi POKEMA SuperApps: " . ($eval['reason'] ?? "Beasiswa {$recPct}");
 
             $items[] = [
@@ -579,6 +568,13 @@ class AchievementVerificationController extends Controller
         try {
             $res = $syncService->sendBulkRecommendations($items);
             $successCount = $res['success_count'] ?? count($items);
+
+            // Tandai status bahwa rekomendasi massal telah berhasil dikirim ke SIAKAD
+            $sentNims = collect($items)->pluck('nim')->filter()->values();
+            if ($sentNims->isNotEmpty()) {
+                Student::whereIn('nim', $sentNims)->update(['status_rekomendasi_siakad' => 'draft']);
+            }
+
             return back()->with('success', "Berhasil mengirim {$successCount} rekomendasi beasiswa hasil evaluasi POKEMA ke SIAKAD (Menu Rekomendasi Beasiswa Termin). Data kini dapat ditinjau oleh Bagian Akademik & Keuangan di Siakad.");
         } catch (\Throwable $e) {
             return back()->with('error', "Gagal mengirim rekomendasi massal ke SIAKAD: " . $e->getMessage());
@@ -586,10 +582,18 @@ class AchievementVerificationController extends Controller
     }
 
     /**
-     * Terapkan seluruh rekomendasi beasiswa hasil evaluasi POKEMA secara massal di SuperApps
+     * Update data beasiswa di SuperApps berdasarkan hasil ACC & penetapan termin resmi dari Keuangan di SIAKAD
+     * Nilai beasiswa resmi ini menjadi acuan basis evaluasi mahasiswa untuk periode berikutnya.
      */
-    public function applyAllRecommendations(Request $request)
+    public function applyAllRecommendations(Request $request, SiakadSyncService $syncService)
     {
+        // 1. Tarik data terbaru dari SIAKAD terlebih dahulu agar status ACC & termin dari Keuangan termutakhir
+        try {
+            $syncService->refreshScholarshipAcademicData();
+        } catch (\Throwable $e) {
+            Log::warning("Sinkronisasi SIAKAD sebelum update beasiswa gagal: " . $e->getMessage());
+        }
+
         $students = Student::where('angkatan', '>=', 2026)
             ->where(function ($q) {
                 $q->where('status', 'studentambassador')
@@ -614,18 +618,35 @@ class AchievementVerificationController extends Controller
         $skNumber = '2638/SK/01/2026';
 
         foreach ($students as $student) {
-            $eval = PokemaEvaluatorService::evaluate($student);
-            $recBeasiswa = $eval['recommended_beasiswa'] ?? ($student->beasiswa ?: '0%');
             $oldBeasiswa = $student->beasiswa ?: '0%';
 
-            $oldTier = PokemaEvaluatorService::normalizeTierKey($oldBeasiswa);
-            $newTier = PokemaEvaluatorService::normalizeTierKey($recBeasiswa);
+            // Prioritaskan nilai yang sudah resmi di-ACC / digenerate Keuangan di SIAKAD.
+            // Jika belum ada di SIAKAD, gunakan rekomendasi manual atau rekomendasi otomatis POKEMA
+            if (!empty($student->beasiswa_acc_keuangan)) {
+                $targetBeasiswa = $student->beasiswa_acc_keuangan;
+                $reasonText = "Penyesuaian resmi berdasarkan penetapan termin Keuangan di SIAKAD ({$student->beasiswa_acc_keuangan}).";
+            } elseif (!empty($student->rekomendasi_manual)) {
+                $targetBeasiswa = $student->rekomendasi_manual;
+                $reasonText = "Penetapan status beasiswa berdasarkan penyesuaian manual Admin ({$student->rekomendasi_manual}).";
+            } else {
+                $eval = PokemaEvaluatorService::evaluate($student);
+                $targetBeasiswa = $eval['recommended_beasiswa'] ?? '0%';
+                $reasonText = $eval['reason'] ?? "Berdasarkan hasil evaluasi capaian POKEMA & IPK.";
+            }
 
-            // Terapkan jika terdapat perbedaan antara beasiswa saat ini dengan hasil rekomendasi
+            $oldTier = PokemaEvaluatorService::normalizeTierKey($oldBeasiswa);
+            $newTier = PokemaEvaluatorService::normalizeTierKey($targetBeasiswa);
+
+            // Reset rekomendasi manual dan status SIAKAD karena termin & evaluasi periode ini telah resmi diselesaikan
+            $student->rekomendasi_manual = null;
+            $student->status_rekomendasi_siakad = null;
+            $student->beasiswa_acc_keuangan = null;
+
+            // Update jika terdapat perbedaan atau untuk meresmikan status evaluasi
             if ($oldTier !== $newTier) {
                 $student->beasiswa = $newTier;
 
-                $logEntry = now()->format('d/m/Y H:i') . " - Penyesuaian Massal Beasiswa dari {$oldBeasiswa} ke {$newTier} (Dasar SK: {$skNumber}). " . ($eval['reason'] ?? 'Berdasarkan evaluasi capaian POKEMA & IPK akhir periode.');
+                $logEntry = now()->format('d/m/Y H:i') . " - Update Data Beasiswa dari {$oldBeasiswa} ke {$newTier} (Dasar SK: {$skNumber}). {$reasonText}";
                 $student->notes = ($student->notes ? $student->notes . "\n" : '') . $logEntry;
                 $student->save();
 
@@ -635,7 +656,7 @@ class AchievementVerificationController extends Controller
                     $oldLevel = PokemaEvaluatorService::TIERS[$oldTier]['level'] ?? 0;
                     $isUpgrade = $newLevel > $oldLevel;
                     $title = $isUpgrade ? 'Selamat! Kenaikan Beasiswa Disetujui' : 'Pembaruan Status Beasiswa';
-                    $body = "Status beasiswa Anda telah disesuaikan menjadi {$newTier}. Berdasarkan evaluasi capaian POKEMA & IPK.";
+                    $body = "Status beasiswa Anda telah resmi diperbarui menjadi {$newTier}. Siap digunakan sebagai acuan evaluasi periode berikutnya.";
 
                     NotificationHelper::notifyStudent(
                         $student->id,
@@ -654,14 +675,16 @@ class AchievementVerificationController extends Controller
                 }
 
                 $appliedCount++;
+            } else {
+                $student->save();
             }
         }
 
-        if ($appliedCount > 0) {
-            return back()->with('success', "Berhasil menerapkan rekomendasi beasiswa untuk {$appliedCount} mahasiswa! Seluruh status beasiswa mahasiswa kini telah diselaraskan.");
+        if ($appliedCount === 0) {
+            return back()->with('success', 'Seluruh data beasiswa mahasiswa di SuperApps sudah selaras dengan hasil penetapan Keuangan SIAKAD!');
         }
 
-        return back()->with('info', 'Semua status beasiswa mahasiswa saat ini sudah selaras dengan rekomendasi evaluasi.');
+        return back()->with('success', "Berhasil memperbarui data beasiswa untuk {$appliedCount} mahasiswa berdasarkan penetapan resmi Keuangan di SIAKAD. Status beasiswa kini siap untuk evaluasi periode selanjutnya.");
     }
 
     /**
@@ -700,6 +723,20 @@ class AchievementVerificationController extends Controller
 
         $isOpen = $request->boolean('is_open') ? '1' : '0';
         AppSetting::set('portal_upload_beasiswa_open', $isOpen);
+
+        // Jika portal dibuka untuk siklus perkuliahan baru, bersihkan usulan rekomendasi manual lama
+        // dan status pelacakan SIAKAD periode sebelumnya sehingga tabel kembali bersih
+        if ($isOpen === '1') {
+            Student::where(function ($q) {
+                $q->whereNotNull('rekomendasi_manual')
+                  ->orWhereNotNull('status_rekomendasi_siakad')
+                  ->orWhereNotNull('beasiswa_acc_keuangan');
+            })->update([
+                'rekomendasi_manual' => null,
+                'status_rekomendasi_siakad' => null,
+                'beasiswa_acc_keuangan' => null,
+            ]);
+        }
 
         $statusText = $isOpen === '1' ? 'DIBUKA' : 'DITUTUP';
         $message = $isOpen === '1'

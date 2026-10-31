@@ -406,6 +406,22 @@ class SiakadSyncService
 
         $updateData['semester_ipk_history'] = $history;
 
+        // Catat status ACC & persentase beasiswa resmi dari Keuangan di SIAKAD
+        // Di SIAKAD: ketika Keuangan menekan ACC dan generate termin, record rekomendasi termin ditutup
+        // dan beasiswa aktif termin mahasiswa resmi terupdate di kolom `beasiswa_sekarang`.
+        if ($row->persentase_final !== null && is_numeric($row->persentase_final)) {
+            $finalPct = (float) $row->persentase_final;
+            $updateData['beasiswa_acc_keuangan'] = rtrim(rtrim(number_format($finalPct, 2), '0'), '.') . '%';
+            $updateData['status_rekomendasi_siakad'] = 'approved';
+        } elseif (empty($row->id_rekomendasi) && !empty($row->beasiswa_sekarang) && is_numeric($row->beasiswa_sekarang)) {
+            // Termin sudah resmi digenerate Keuangan di SIAKAD (rekomendasi termin sudah selesai/diproses)
+            $bsNow = (float) $row->beasiswa_sekarang;
+            $updateData['beasiswa_acc_keuangan'] = rtrim(rtrim(number_format($bsNow, 2), '0'), '.') . '%';
+            $updateData['status_rekomendasi_siakad'] = 'approved';
+        } elseif (!empty($row->status_rekomendasi)) {
+            $updateData['status_rekomendasi_siakad'] = $row->status_rekomendasi;
+        }
+
         // Lengkapi tanggal_masuk dan periode_masuk jika belum terisi pada data sebelumnya
         if (empty($student->tanggal_masuk) && !empty($row->tgl_masuk) && $row->tgl_masuk !== '0000-00-00') {
             $updateData['tanggal_masuk'] = $row->tgl_masuk;

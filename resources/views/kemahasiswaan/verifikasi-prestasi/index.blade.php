@@ -183,11 +183,11 @@
 
             {{-- Tombol aksi massal HANYA MUNCUL KETIKA PORTAL UPLOAD DITUTUP --}}
             @if(empty($isPortalOpen))
-            <button type="button" class="btn-apply-all-recommendations-toolbar" id="btn-apply-all-recommendations-toolbar" onclick="handleApplyAllRecommendations()" title="Terapkan seluruh rekomendasi beasiswa hasil evaluasi POKEMA menjadi status beasiswa mahasiswa saat ini di SuperApps">
-                <i class="bi bi-check2-all"></i> Terapkan Semua Rekomendasi
-            </button>
-            <button type="button" class="btn-send-all-siakad-toolbar" id="btn-send-all-siakad-toolbar" onclick="handleSendAllSiakadVerifikasi()" title="Kirim seluruh rekomendasi beasiswa hasil evaluasi POKEMA ke kolom Rekomendasi di SIAKAD">
+            <button type="button" class="btn-send-all-siakad-toolbar" id="btn-send-all-siakad-toolbar" onclick="handleSendAllSiakadVerifikasi()" title="Kirim seluruh rekomendasi beasiswa (otomatis & manual) ke kolom Rekomendasi di SIAKAD untuk diproses Keuangan">
                 <i class="bi bi-send-check-fill"></i> Kirim Semua Rekomendasi ke SIAKAD
+            </button>
+            <button type="button" class="btn-apply-all-recommendations-toolbar" id="btn-apply-all-recommendations-toolbar" onclick="handleApplyAllRecommendations()" title="Perbarui kolom beasiswa mahasiswa di SuperApps berdasarkan hasil penetapan termin resmi dari Keuangan di SIAKAD untuk evaluasi periode selanjutnya">
+                <i class="bi bi-cloud-arrow-down-fill"></i> Update Data Beasiswa
             </button>
             @endif
             <div class="portal-lock-inline" id="portalLockInline" title="{{ !empty($isPortalOpen) ? 'Status: DIBUKA. Mahasiswa dapat mengunggah dan memperbarui prestasi secara normal.' : 'Status: DITUTUP. Akses upload mahasiswa dikunci sementara untuk proses evaluasi kelayakan beasiswa semester.' }}">
@@ -294,6 +294,7 @@
                     <th style="text-align: center;">Status Mahasiswa</th>
                     <th style="text-align: center;">Beasiswa (%)</th>
                     <th style="text-align: center; min-width: 175px;">Tindakan / Rekomendasi</th>
+                    <th style="text-align: center; min-width: 135px;">Status SIAKAD</th>
                     @endif
                     <th style="text-align: center;">Pengajuan</th>
                     <th style="text-align: center; width: 140px;">Aksi</th>
@@ -400,8 +401,12 @@
                                 $eval = $student->pokema_evaluation; 
                                 $recPercent = $eval['recommended_beasiswa'] ?? ($eval['qualified_beasiswa'] ?? '0%');
                                 $currPercent = ($eval['current_beasiswa'] && $eval['current_beasiswa'] !== '0%') ? $eval['current_beasiswa'] : ($isAmbassador ? 'Ambassador' : 'Beasiswa');
+                                
+                                // Cek apakah mahasiswa ini memiliki usulan rekomendasi manual dari Admin
+                                $hasManualRec = !empty($student->rekomendasi_manual);
                             @endphp
                             <div class="col-recommendation-cell">
+                                {{-- 1. REKOMENDASI OTOMATIS SISTEM POKEMA (SELALU TAMPIL SEBAGAI ACUAN UTAMA) --}}
                                 @if($eval['action_type'] === 'upgrade')
                                     <span class="badge-rec badge-rec-upgrade" title="{{ $eval['reason'] }}">
                                         Rekomendasi {{ $recPercent }}
@@ -463,14 +468,59 @@
                                     </span>
                                 @endif
 
+                                {{-- 2. PENGKONDISIAN TAMBAHAN JIKA ADMIN MEMILIH PENYESUAIAN MANUAL --}}
+                                @if($hasManualRec)
+                                    <span style="font-size: 10.5px; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;" title="Penyesuaian manual Admin: {{ $student->rekomendasi_manual }} (Rekomendasi sistem: {{ $recPercent }}). Nilai ini yang akan diusulkan ke SIAKAD.">
+                                        <i class="bi bi-sliders"></i> Manual: {{ $student->rekomendasi_manual }}
+                                    </span>
+                                @endif
+
+                                {{-- 3. STATUS CAPAIAN 7 BIDANG --}}
                                 @if(isset($eval['fulfilled_fields_count']))
-                                    <span style="font-size: 10.5px; color: {{ ($eval['all_fields_met'] ?? false) ? '#059669' : '#D97706' }}; font-weight: 600; margin-top: 1px;" title="{{ ($eval['all_fields_met'] ?? false) ? 'Semua 7 bidang terpenuhi' : ($eval['unfulfilled_fields_count'] ?? 0) . ' bidang belum terpenuhi' }}">
-                                        <i class="bi bi-pie-chart-fill"></i> {{ $eval['fulfilled_fields_count'] }}/7 Bidang {{ ($eval['all_fields_met'] ?? false) ? '✓' : '' }}
+                                    @php
+                                        $fulfilledCount = $eval['fulfilled_fields_count'];
+                                        $activeCount = $eval['active_fields_count'] ?? 0;
+                                        $allMet = $eval['all_fields_met'] ?? false;
+                                    @endphp
+                                    <span style="font-size: 10.5px; color: {{ $allMet ? '#059669' : '#D97706' }}; font-weight: 600; margin-top: 2px;" title="{{ $allMet ? 'Semua 7 bidang telah memenuhi target minimal SK Rektor.' : "{$fulfilledCount} dari 7 target bidang terpenuhi penuh. " . ($activeCount > 0 ? "{$activeCount} bidang sudah ada poin/terisi. " : '') . ($eval['unfulfilled_fields_count'] ?? 0) . ' bidang belum mencapai target minimal.' }}">
+                                        <i class="bi bi-pie-chart-fill"></i> 
+                                        @if($allMet)
+                                            7/7 Bidang Terpenuhi ✓
+                                        @elseif($activeCount > $fulfilledCount)
+                                            {{ $fulfilledCount }}/7 Terpenuhi ({{ $activeCount }} Terisi)
+                                        @else
+                                            {{ $fulfilledCount }}/7 Bidang Terpenuhi
+                                        @endif
                                     </span>
                                 @endif
                             </div>
                         @else
                             <span class="text-muted" style="font-size: 12px;">-</span>
+                        @endif
+                    </td>
+                    <td style="text-align: center;">
+                        @if($isBeasiswaTarget)
+                            @if(!empty($isPortalOpen))
+                                <span class="badge-status-mhs" style="background: #F8FAFC; color: #64748B; border: 1px solid #CBD5E1; font-weight: 500; font-size: 11px; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Portal pengajuan prestasi sedang dibuka (periode berjalan). Rekomendasi beasiswa ke SIAKAD dikirimkan saat portal ditutup untuk masa evaluasi.">
+                                    <i class="bi bi-clock-history"></i> Periode Berjalan
+                                </span>
+                            @elseif(!empty($student->beasiswa_acc_keuangan))
+                                <span class="badge-status-mhs" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; font-weight: 700; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; border-radius: 6px;">
+                                    <span><i class="bi bi-check-circle-fill"></i> ACC {{ $student->beasiswa_acc_keuangan }}</span>
+                                    <small style="font-size: 9.5px; font-weight: 600; color: #059669;">Termin Generated</small>
+                                </span>
+                            @elseif($student->status_rekomendasi_siakad === 'draft')
+                                <span class="badge-status-mhs" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; font-weight: 600; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; border-radius: 6px;" title="Rekomendasi sudah terkirim ke SIAKAD, menunggu persetujuan dan generate termin oleh Keuangan.">
+                                    <span><i class="bi bi-hourglass-split"></i> Menunggu ACC</span>
+                                    <small style="font-size: 9.5px; font-weight: 500; color: #92400E;">Review Keuangan</small>
+                                </span>
+                            @else
+                                <span class="badge-status-mhs" style="background: #F8FAFC; color: #94A3B8; border: 1px dashed #CBD5E1; font-weight: 500; font-size: 11px; padding: 3px 8px; border-radius: 6px;" title="Rekomendasi belum dikirimkan ke menu rekomendasi beasiswa SIAKAD.">
+                                    <i class="bi bi-dash-circle"></i> Belum Dikirim
+                                </span>
+                            @endif
+                        @else
+                            <span class="text-muted" style="font-size: 11px;">-</span>
                         @endif
                     </td>
                     @endif
@@ -506,42 +556,24 @@
                                     <i class="bi bi-speedometer2"></i> Evaluasi & Prestasi
                                 </button>
                                 @if(empty($isPortalOpen))
-                                    @if(isset($student->pokema_evaluation))
-                                        @php 
-                                            $evalRow = $student->pokema_evaluation; 
-                                            $encodedUnfulfilled = base64_encode(json_encode($evalRow['unfulfilled_fields_list'] ?? []));
-                                            $fulfilledCount = (int) ($evalRow['fulfilled_fields_count'] ?? 0);
-                                            $allFieldsMet = !empty($evalRow['all_fields_met']) ? 1 : 0;
-                                            $targetBeasiswa = $evalRow['recommended_beasiswa'] ?? ($evalRow['qualified_beasiswa'] ?? '0%');
-                                            $evalBase64 = base64_encode(json_encode($evalRow));
-                                        @endphp
-                                        @if($evalRow['action_type'] === 'upgrade')
-                                            <button type="button" class="btn-quick-upgrade"
-                                                title="{{ $evalRow['reason'] }}"
-                                                data-evaluation="{{ $evalBase64 }}"
-                                                onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $targetBeasiswa }}', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}', {{ $fulfilledCount }}, {{ $allFieldsMet }}, '{{ $encodedUnfulfilled }}')">
-                                                Naikkan Beasiswa
-                                            </button>
-                                        @elseif($evalRow['action_type'] === 'downgrade')
-                                            <button type="button" class="btn-quick-downgrade"
-                                                title="{{ $evalRow['reason'] }}"
-                                                data-evaluation="{{ $evalBase64 }}"
-                                                onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '{{ $targetBeasiswa }}', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}', {{ $fulfilledCount }}, {{ $allFieldsMet }}, '{{ $encodedUnfulfilled }}')">
-                                                Sesuaikan Beasiswa
-                                            </button>
-                                        @elseif($evalRow['action_type'] === 'revoke')
-                                            <button type="button" class="btn-quick-downgrade" style="background: #DC2626;"
-                                                title="{{ $evalRow['reason'] }}"
-                                                data-evaluation="{{ $evalBase64 }}"
-                                                onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] }}', '0%', '{{ addslashes($evalRow['reason']) }}', false, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}', {{ $fulfilledCount }}, {{ $allFieldsMet }}, '{{ $encodedUnfulfilled }}')">
-                                                Cabut Beasiswa
-                                            </button>
-                                        @endif
-                                    @endif
+                                    @php 
+                                        $evalRow = $student->pokema_evaluation ?? []; 
+                                        $encodedUnfulfilled = base64_encode(json_encode($evalRow['unfulfilled_fields_list'] ?? []));
+                                        $fulfilledCount = (int) ($evalRow['fulfilled_fields_count'] ?? 0);
+                                        $allFieldsMet = !empty($evalRow['all_fields_met']) ? 1 : 0;
+                                        $targetBeasiswa = $evalRow['recommended_beasiswa'] ?? ($evalRow['qualified_beasiswa'] ?? '0%');
+                                        $evalBase64 = base64_encode(json_encode($evalRow));
+                                    @endphp
+                                    <button type="button" class="btn-quick-downgrade" style="background: #475569;"
+                                        title="Sesuaikan beasiswa secara manual untuk {{ $student->nama_lengkap }}"
+                                        data-evaluation="{{ $evalBase64 }}"
+                                        onclick="openAdjustBeasiswaModal('{{ $student->id }}', '{{ addslashes($student->nama_lengkap) }}', '{{ $student->nim }}', '{{ $evalRow['current_beasiswa'] ?? $student->beasiswa }}', '{{ $targetBeasiswa }}', '{{ addslashes($evalRow['reason'] ?? '') }}', true, '{{ $evalRow['ipk'] ?? '-' }}', '{{ $evalRow['total_approved_points'] ?? 0 }}', '{{ addslashes($evalRow['study_year_label'] ?? '') }}', '{{ $evalRow['target_current'] ?? ($evalRow['total_target_points'] ?? 0) }}', {{ $fulfilledCount }}, {{ $allFieldsMet }}, '{{ $encodedUnfulfilled }}')">
+                                        <i class="bi bi-pencil-square"></i> Sesuaikan Beasiswa
+                                    </button>
                                     @if($student->nim && $student->nim !== '-')
-                                        <form action="{{ route('kemahasiswaan.verifikasi-prestasi.send-siakad', $student->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Kirim rekomendasi beasiswa hasil evaluasi POKEMA untuk {{ addslashes($student->nama_lengkap) }} ke kolom Rekomendasi di SIAKAD?')">
+                                        <form action="{{ route('kemahasiswaan.verifikasi-prestasi.send-siakad', $student->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Kirim rekomendasi beasiswa untuk {{ addslashes($student->nama_lengkap) }} ke kolom Rekomendasi di SIAKAD?')">
                                             @csrf
-                                            <button type="submit" class="btn-send-single-siakad" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Kirim rekomendasi beasiswa hasil evaluasi POKEMA ke SIAKAD" onmouseover="this.style.background='#047857'; this.style.color='#fff';" onmouseout="this.style.background='#ECFDF5'; this.style.color='#047857';">
+                                            <button type="submit" class="btn-send-single-siakad" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Kirim rekomendasi beasiswa ke SIAKAD" onmouseover="this.style.background='#047857'; this.style.color='#fff';" onmouseout="this.style.background='#ECFDF5'; this.style.color='#047857';">
                                                 <i class="bi bi-send-check"></i>
                                             </button>
                                         </form>

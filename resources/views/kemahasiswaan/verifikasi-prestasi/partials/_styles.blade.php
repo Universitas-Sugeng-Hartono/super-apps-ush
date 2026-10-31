@@ -861,6 +861,216 @@
         border: 1px solid #FDE68A;
     }
 
+    /* Year Period Container & 3-Semester Cards */
+    .year-period-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        transition: all 0.2s ease;
+    }
+    .year-period-card:last-child {
+        margin-bottom: 0;
+    }
+    .year-period-card.current-year {
+        border-color: #BAE6FD;
+        background: #FAFCFF;
+        box-shadow: 0 2px 10px rgba(2, 132, 199, 0.06);
+    }
+    .year-period-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #F1F5F9;
+        margin-bottom: 12px;
+    }
+    .year-period-title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .year-period-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .year-pill {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0F172A;
+    }
+    .year-sem-range {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748B;
+        background: #F1F5F9;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+    .badge-year-current {
+        font-size: 10px;
+        font-weight: 700;
+        background: #0284C7;
+        color: #FFFFFF;
+        padding: 2px 8px;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .year-period-target-sub {
+        font-size: 12px;
+        color: #64748B;
+    }
+    .year-period-status-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+    .year-period-accum {
+        font-size: 13px;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .year-accum-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+    }
+    .year-accum-badge.badge-met {
+        background: #ECFDF5;
+        color: #059669;
+        border: 1px solid #A7F3D0;
+    }
+    .year-accum-badge.badge-progress {
+        background: #FFFBEB;
+        color: #B45309;
+        border: 1px solid #FDE68A;
+    }
+    .year-period-notice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: #475569;
+        margin-bottom: 12px;
+    }
+    .year-period-notice.notice-warning {
+        background: #FFFBEB;
+        border-color: #FDE68A;
+        color: #92400E;
+    }
+    .year-period-notice.notice-success {
+        background: #F0FDF4;
+        border-color: #BBF7D0;
+        color: #166534;
+    }
+    .year-semesters-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    @media (max-width: 860px) {
+        .year-semesters-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .sem-grid-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 10px;
+        transition: all 0.2s ease;
+    }
+    .sem-grid-card:hover {
+        border-color: #CBD5E1;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+    .sem-grid-card.active {
+        background: #FFFFFF;
+        border-color: #38BDF8;
+        box-shadow: 0 0 0 1px #0284C7, 0 2px 8px rgba(2, 132, 199, 0.08);
+    }
+    .sem-grid-card.milestone {
+        border-color: #CBD5E1;
+        background: #FAFBFD;
+    }
+    .sem-grid-card.milestone.active {
+        border-color: #F59E0B;
+        box-shadow: 0 0 0 1px #D97706, 0 2px 8px rgba(217, 119, 6, 0.08);
+    }
+    .badge-milestone-sem {
+        font-size: 10px;
+        font-weight: 700;
+        background: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+        padding: 2px 8px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .sem-card-points-label {
+        font-size: 12px;
+        color: #64748B;
+        margin-bottom: 2px;
+    }
+    .sem-card-points-val {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0284C7;
+    }
+    .sem-card-points-val.zero {
+        color: #94A3B8;
+        font-weight: 700;
+        font-size: 16px;
+    }
+    .sem-card-target-text {
+        font-size: 11px;
+        color: #64748B;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    .sem-milestone-box {
+        margin-top: 4px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .sem-milestone-box.milestone-ok {
+        background: #ECFDF5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+    .sem-milestone-box.milestone-pending {
+        background: #FFFBEB;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+    }
+
     /* 7 POKEMA Bars Section */
     .pokema-fields-container {
         background: #FFFFFF;

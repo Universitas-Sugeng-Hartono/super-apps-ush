@@ -161,6 +161,7 @@
             <div class="form-group" style="margin-bottom: 10px;">
                 <label for="adjust_target_beasiswa" style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 5px;">Pilihan Kategori Beasiswa *</label>
                 <select id="adjust_target_beasiswa" name="beasiswa" class="form-control" required style="font-weight: 600;" onchange="onAdjustSelectChange()">
+                    <option value="auto" style="color: #4F46E5; font-weight: 700;">🔄 Gunakan Rekomendasi Otomatis POKEMA (Reset Manual)</option>
                     <option value="100%">Beasiswa 100% (Sangat Baik - Min. IPK 3.75, POKEMA > 450 Poin)</option>
                     <option value="75%">Beasiswa 75% (Baik Sekali - Min. IPK 3.50, POKEMA 351–450 Poin)</option>
                     <option value="50%">Beasiswa 50% (Baik - Min. IPK 3.25, POKEMA 301–350 Poin)</option>

@@ -9,22 +9,22 @@
     <thead>
         {{-- Baris Judul Laporan --}}
         <tr>
-            <th colspan="17" style="font-size: 15px; font-weight: bold; text-align: left; color: #1E293B;">
+            <th colspan="18" style="font-size: 15px; font-weight: bold; text-align: left; color: #1E293B;">
                 LAPORAN EVALUASI CAPAIAN BEASISWA &amp; STUDENT AMBASSADOR
             </th>
         </tr>
         <tr>
-            <th colspan="17" style="font-size: 12px; font-weight: bold; text-align: left; color: #334155;">
+            <th colspan="18" style="font-size: 12px; font-weight: bold; text-align: left; color: #334155;">
                 UNIVERSITAS SUGENG HARTONO (POKEMA &amp; SIAKAD INTEGRATION)
             </th>
         </tr>
         <tr>
-            <th colspan="17" style="font-size: 10px; font-style: italic; text-align: left; color: #64748B;">
+            <th colspan="18" style="font-size: 10px; font-style: italic; text-align: left; color: #64748B;">
                 Tanggal Ekspor: {{ $exportDate }} | Filter: {{ $filterDescription }} | Status Portal: {{ $isPortalOpen ? 'Dibuka (Aktif)' : 'Ditutup (Periode Evaluasi)' }}
             </th>
         </tr>
         <tr>
-            <th colspan="17"></th>
+            <th colspan="18"></th>
         </tr>
 
         {{-- Baris Header Kelompok (Group Header) --}}
@@ -38,8 +38,8 @@
             <th colspan="4" style="background-color: #B45309; color: #FFFFFF; font-weight: bold; text-align: center; border: 1px solid #0F172A; font-size: 11px;">
                 POIN POKEMA &amp; SKP
             </th>
-            <th colspan="4" style="background-color: #047857; color: #FFFFFF; font-weight: bold; text-align: center; border: 1px solid #0F172A; font-size: 11px;">
-                EVALUASI &amp; REKOMENDASI BEASISWA
+            <th colspan="5" style="background-color: #047857; color: #FFFFFF; font-weight: bold; text-align: center; border: 1px solid #0F172A; font-size: 11px;">
+                EVALUASI, REKOMENDASI &amp; STATUS SIAKAD
             </th>
         </tr>
 
@@ -66,7 +66,8 @@
 
             {{-- Evaluasi / Rekomendasi --}}
             <th style="background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: center; border: 1px solid #94A3B8;">Beasiswa Saat Ini</th>
-            <th style="background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: center; border: 1px solid #94A3B8;">Rekomendasi Baru</th>
+            <th style="background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: center; border: 1px solid #94A3B8;">Rekomendasi / Penyesuaian</th>
+            <th style="background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: center; border: 1px solid #94A3B8;">Status SIAKAD (Keuangan)</th>
             <th style="background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: left; border: 1px solid #94A3B8;">Keputusan / Status Rekomendasi</th>
             <th style="background-color: #D1FAE5; color: #065F46; font-weight: bold; text-align: left; border: 1px solid #94A3B8;">Catatan &amp; Alasan Evaluasi</th>
         </tr>
@@ -156,9 +157,25 @@
                     {{ $currentBeasiswa }}
                 </td>
 
-                {{-- Rekomendasi Beasiswa Baru --}}
+                {{-- Rekomendasi / Penyesuaian Baru --}}
                 <td style="text-align: center; font-weight: bold; border: 1px solid #CBD5E1; vertical-align: middle; background-color: #ECFDF5; color: #047857;">
                     {{ $recommendedBeasiswa }}
+                    @if(!empty($student->rekomendasi_manual))
+                        <br><small style="color: #4338CA; font-weight: normal;">(Manual: {{ $student->rekomendasi_manual }})</small>
+                    @endif
+                </td>
+
+                {{-- Status SIAKAD (Keuangan) --}}
+                <td style="text-align: center; border: 1px solid #CBD5E1; vertical-align: middle; font-weight: 600; font-size: 11px;">
+                    @if(!empty($isPortalOpen))
+                        Periode Berjalan
+                    @elseif(!empty($student->beasiswa_acc_keuangan))
+                        ACC {{ $student->beasiswa_acc_keuangan }} (Termin Generated)
+                    @elseif($student->status_rekomendasi_siakad === 'draft')
+                        Menunggu ACC (Review Keuangan)
+                    @else
+                        Belum Dikirim
+                    @endif
                 </td>
 
                 {{-- Keputusan / Status Rekomendasi --}}
@@ -173,7 +190,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="17" style="text-align: center; padding: 20px; font-style: italic; color: #64748B;">
+                <td colspan="18" style="text-align: center; padding: 20px; font-style: italic; color: #64748B;">
                     Tidak ada data penerima beasiswa / student ambassador yang sesuai dengan filter.
                 </td>
             </tr>

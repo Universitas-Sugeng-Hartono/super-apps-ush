@@ -551,30 +551,211 @@
     .ak-semester-bars-grid {
         display: flex;
         flex-direction: column;
+        gap: 16px;
+    }
+    .ak-year-period-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+    }
+    .ak-year-period-card.current-year {
+        border-color: #BAE6FD;
+        background: #FAFCFF;
+        box-shadow: 0 2px 10px rgba(2, 132, 199, 0.06);
+    }
+    .ak-year-period-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
         gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #F1F5F9;
+        margin-bottom: 12px;
+    }
+    .ak-year-period-title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .ak-year-period-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .ak-year-pill {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0F172A;
+    }
+    .ak-year-sem-range {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748B;
+        background: #F1F5F9;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+    .ak-year-period-target-sub {
+        font-size: 12px;
+        color: #64748B;
+    }
+    .ak-year-period-status-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+    .ak-year-period-accum {
+        font-size: 13px;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ak-year-accum-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+    }
+    .ak-year-accum-badge.badge-met {
+        background: #ECFDF5;
+        color: #059669;
+        border: 1px solid #A7F3D0;
+    }
+    .ak-year-accum-badge.badge-progress {
+        background: #FFFBEB;
+        color: #B45309;
+        border: 1px solid #FDE68A;
+    }
+    .ak-year-period-notice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: #475569;
+        margin-bottom: 12px;
+    }
+    .ak-year-period-notice.notice-warning {
+        background: #FFFBEB;
+        border-color: #FDE68A;
+        color: #92400E;
+    }
+    .ak-year-period-notice.notice-success {
+        background: #F0FDF4;
+        border-color: #BBF7D0;
+        color: #166534;
+    }
+    .ak-year-semesters-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    @media (max-width: 860px) {
+        .ak-year-semesters-grid {
+            grid-template-columns: 1fr;
+        }
     }
     .ak-sem-card {
         background: #F8FAFC;
         border: 1px solid #E2E8F0;
         border-radius: 10px;
-        padding: 14px 16px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 10px;
         transition: all 0.2s ease;
     }
+    .ak-sem-card:hover {
+        border-color: #CBD5E1;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
     .ak-sem-card.active {
-        background: #F0F9FF;
-        border-color: #BAE6FD;
-        box-shadow: 0 0 0 1px #0284C7;
+        background: #FFFFFF;
+        border-color: #38BDF8;
+        box-shadow: 0 0 0 1px #0284C7, 0 2px 8px rgba(2, 132, 199, 0.08);
+    }
+    .ak-sem-card.milestone {
+        border-color: #CBD5E1;
+        background: #FAFBFD;
+    }
+    .ak-sem-card.milestone.active {
+        border-color: #F59E0B;
+        box-shadow: 0 0 0 1px #D97706, 0 2px 8px rgba(217, 119, 6, 0.08);
+    }
+    .ak-badge-milestone-sem {
+        font-size: 10px;
+        font-weight: 700;
+        background: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+        padding: 2px 8px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .ak-sem-points-label {
+        font-size: 12px;
+        color: #64748B;
+        margin-bottom: 2px;
+    }
+    .ak-sem-points-val {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0284C7;
+    }
+    .ak-sem-points-val.zero {
+        color: #94A3B8;
+        font-weight: 700;
+        font-size: 16px;
+    }
+    .ak-sem-target-text {
+        font-size: 11px;
+        color: #64748B;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    .ak-sem-milestone-box {
+        margin-top: 4px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ak-sem-milestone-box.milestone-ok {
+        background: #ECFDF5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+    .ak-sem-milestone-box.milestone-pending {
+        background: #FFFBEB;
+        color: #92400E;
+        border: 1px solid #FDE68A;
     }
     .ak-sem-card-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
+        gap: 6px;
         margin-bottom: 8px;
-        flex-wrap: wrap;
-        gap: 8px;
     }
     .ak-sem-title {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         color: #0F172A;
     }
@@ -928,54 +1109,190 @@
         const semContainer = document.getElementById('akademik_pokema_semester_bars_grid');
         if (semContainer) {
             let semHtml = '';
-            const breakdown = evalData.semester_breakdown || [];
-            if (breakdown.length === 0) {
+            
+            // Dapatkan year_groups (didukung langsung dari API atau fallback dari breakdown)
+            let yearGroups = evalData.year_groups;
+            if (!yearGroups || !yearGroups.length) {
+                const breakdown = evalData.semester_breakdown || [];
+                const groupsMap = {};
+                breakdown.forEach(sem => {
+                    const y = sem.study_year || 1;
+                    if (!groupsMap[y]) {
+                        groupsMap[y] = {
+                            study_year: y,
+                            study_year_label: sem.study_year_label || `Tahun ${y}`,
+                            semesters_range: y === 1 ? 'Semester 1–3' : (y === 2 ? 'Semester 4–6' : 'Semester 7–9'),
+                            year_target: sem.year_target || 0,
+                            total_points: 0,
+                            is_current_year: false,
+                            semesters: []
+                        };
+                    }
+                    groupsMap[y].total_points += (sem.semester_points || 0);
+                    if (sem.is_current) groupsMap[y].is_current_year = true;
+                    groupsMap[y].semesters.push(sem);
+                });
+                yearGroups = Object.values(groupsMap).map(g => {
+                    const yTgt = g.year_target;
+                    const yPts = g.total_points;
+                    g.progress_percent = yTgt > 0 ? Math.min(100, Math.round((yPts / yTgt) * 100)) : (yPts > 0 ? 100 : 0);
+                    g.is_target_met = yTgt > 0 ? (yPts >= yTgt) : (yPts > 0);
+                    g.points_remaining = Math.max(0, yTgt - yPts);
+                    return g;
+                });
+            }
+
+            if (!yearGroups || yearGroups.length === 0) {
                 semContainer.innerHTML = '<p style="color: #94A3B8; font-size: 13px; margin: 0; padding: 10px 0;">Belum ada riwayat semester.</p>';
             } else {
-                breakdown.forEach(sem => {
-                    const isCur = sem.is_current;
-                    const currentBadge = isCur ? '<span class="ak-badge-current-sem">Semester Aktif</span>' : '';
-                    const ipkBadge = sem.ipk 
-                        ? `<span style="font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; padding: 3px 8px; border-radius: 6px; border: 1px solid #BFDBFE;">IPK: ${sem.ipk}</span>` 
-                        : (isCur 
-                            ? '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada nilai IPK</span>' 
-                            : (sem.semester > (evalData.semester || 1) 
-                                ? '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">Semester Belum Berjalan</span>' 
-                                : '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">IPK belum tercatat</span>')
-                          );
+                yearGroups.forEach(yGroup => {
+                    const isCurYear = yGroup.is_current_year;
+                    const isTargetMet = yGroup.is_target_met;
+                    const pct = yGroup.progress_percent || 0;
                     
-                    let milestoneHtml = '';
-                    if (sem.is_period_milestone) {
-                        if (sem.is_year_target_met) {
-                            milestoneHtml = `<div style="margin-top: 8px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;"><i class="bi bi-check-circle-fill me-1"></i> Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Target Terpenuhi)</div>`;
+                    let noticeHtml = '';
+                    if (isCurYear) {
+                        if (isTargetMet) {
+                            noticeHtml = `
+                                <div class="ak-year-period-notice notice-success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span><strong>Target ${escapeHtml(yGroup.study_year_label)} Terpenuhi!</strong> Akumulasi saat ini <strong>${yGroup.total_points} Poin</strong> (Target acuan: ${yGroup.year_target} Poin).</span>
+                                </div>
+                            `;
                         } else {
-                            const kurang = Math.max(0, sem.year_target - sem.cumulative_points);
-                            milestoneHtml = `<div style="margin-top: 8px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Evaluasi Akhir ${escapeHtml(sem.study_year_label)}: Akumulasi <strong>${sem.cumulative_points} / ${sem.year_target} Poin</strong> (Kurang ${kurang} Poin menuju target beasiswa)</div>`;
+                            noticeHtml = `
+                                <div class="ak-year-period-notice notice-warning">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>Evaluasi beasiswa dinilai dari total akumulasi <strong>${escapeHtml(yGroup.semesters_range)}</strong> (Target: <strong>${yGroup.year_target} Poin</strong>). Mahasiswa butuh <strong>${yGroup.points_remaining} Poin lagi</strong> sebelum evaluasi akhir periode.</span>
+                                </div>
+                            `;
                         }
                     }
 
-                    semHtml += `
-                        <div class="ak-sem-card ${isCur ? 'active' : ''}">
-                            <div class="ak-sem-card-header">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="ak-sem-title">${escapeHtml(sem.semester_label)}</span>
-                                    <span class="ak-sem-year-badge">${escapeHtml(sem.study_year_label)}</span>
-                                    ${currentBadge}
-                                </div>
+                    let semCardsHtml = '';
+                    (yGroup.semesters || []).forEach(sem => {
+                        const isCur = sem.is_current;
+                        const isFuture = sem.semester > (evalData.semester || 1);
+                        const currentBadge = isCur ? '<span class="ak-badge-current-sem">Semester Aktif</span>' : '';
+                        const isMilestone = sem.is_period_milestone;
+                        const milestoneBadge = isMilestone ? '<span class="ak-badge-milestone-sem"><i class="bi bi-flag-fill"></i> Evaluasi Akhir</span>' : '';
+                        
+                        const ipkBadge = sem.ipk 
+                            ? `<span style="font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; padding: 3px 8px; border-radius: 6px; border: 1px solid #BFDBFE;">IPK: ${sem.ipk}</span>` 
+                            : (isCur 
+                                ? '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada nilai IPK</span>' 
+                                : (isFuture 
+                                    ? '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum Berjalan</span>' 
+                                    : '<span style="font-size: 11px; color: #94A3B8; font-style: italic;">IPK belum tercatat</span>')
+                              );
+
+                        const semProgressPct = sem.semester_progress_percent !== undefined ? sem.semester_progress_percent : 0;
+                        const isSemTargetMet = sem.is_semester_target_met;
+                        
+                        let semStatusBadge = '';
+                        if (sem.semester_points >= sem.semester_target && sem.semester_target > 0) {
+                            semStatusBadge = '<span style="color: #059669; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-check-circle-fill"></i> Target Ideal Tercapai</span>';
+                        } else if (sem.semester_points > 0) {
+                            semStatusBadge = `<span style="color: #0284C7; font-size: 11px; font-weight: 600;">+${sem.semester_points} Poin ke ${escapeHtml(yGroup.study_year_label)}</span>`;
+                        } else if (isCur) {
+                            semStatusBadge = '<span style="color: #64748B; font-size: 11px;">Sedang berjalan</span>';
+                        } else {
+                            semStatusBadge = '<span style="color: #94A3B8; font-size: 11px;">Semester belum dimulai</span>';
+                        }
+
+                        let milestoneBoxHtml = '';
+                        if (isMilestone) {
+                            if (isTargetMet) {
+                                milestoneBoxHtml = `
+                                    <div class="ak-sem-milestone-box milestone-ok">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        <span>Target Beasiswa ${escapeHtml(yGroup.study_year_label)} Aman (${yGroup.total_points}/${yGroup.year_target} Poin)</span>
+                                    </div>
+                                `;
+                            } else {
+                                milestoneBoxHtml = `
+                                    <div class="ak-sem-milestone-box milestone-pending">
+                                        <i class="bi bi-flag-fill"></i>
+                                        <span>Titik Evaluasi: Kurang ${yGroup.points_remaining} Poin menuju target</span>
+                                    </div>
+                                `;
+                            }
+                        }
+
+                        semCardsHtml += `
+                            <div class="ak-sem-card ${isCur ? 'active' : ''} ${isMilestone ? 'milestone' : ''}">
                                 <div>
-                                    ${ipkBadge}
+                                    <div class="ak-sem-card-header">
+                                        <div>
+                                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                <span class="ak-sem-title">${escapeHtml(sem.semester_label)}</span>
+                                                ${currentBadge}
+                                                ${milestoneBadge}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            ${ipkBadge}
+                                        </div>
+                                    </div>
+
+                                    <div style="margin-bottom: 8px;">
+                                        <div class="ak-sem-points-label">Perolehan Semester:</div>
+                                        <div style="display: flex; align-items: baseline; gap: 6px;">
+                                            <span class="ak-sem-points-val ${sem.semester_points === 0 ? 'zero' : ''}">${sem.semester_points} Poin</span>
+                                            <span style="font-size: 11px; color: #64748B;">(${sem.achievements_count} Prestasi Disetujui)</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div class="ak-sem-target-text">
+                                            <span>Target ideal: <strong>${sem.semester_target} Poin</strong></span>
+                                            ${semStatusBadge}
+                                        </div>
+                                        <div class="progress-track" style="height: 6px; background: #E2E8F0; border-radius: 999px;">
+                                            <div class="progress-fill ${isSemTargetMet ? 'fill-green' : 'fill-blue'}" style="width: ${Math.min(100, Math.max(0, semProgressPct))}%; height: 100%; border-radius: 999px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                ${milestoneBoxHtml}
+                            </div>
+                        `;
+                    });
+
+                    semHtml += `
+                        <div class="ak-year-period-card ${isCurYear ? 'current-year' : ''}">
+                            <div class="ak-year-period-header">
+                                <div class="ak-year-period-title-wrap">
+                                    <div class="ak-year-period-title">
+                                        <span class="ak-year-pill"><i class="bi bi-calendar3 me-1 text-primary"></i> ${escapeHtml(yGroup.study_year_label)}</span>
+                                        <span class="ak-year-sem-range">${escapeHtml(yGroup.semesters_range)}</span>
+                                        ${isCurYear ? '<span class="ak-badge-current-sem">Tahun Berjalan</span>' : ''}
+                                    </div>
+                                    <div class="ak-year-period-target-sub">
+                                        Target Acuan Evaluasi: <strong>${yGroup.year_target} Poin</strong> (SK Rektor)
+                                    </div>
+                                </div>
+                                <div class="ak-year-period-status-wrap">
+                                    <div class="ak-year-period-accum">
+                                        <span>Total Akumulasi: <strong style="color: #0F172A; font-size: 15px;">${yGroup.total_points}</strong> / ${yGroup.year_target} Poin</span>
+                                        <span class="ak-year-accum-badge ${isTargetMet ? 'badge-met' : 'badge-progress'}">
+                                            ${isTargetMet ? 'Target Terpenuhi' : `Kurang ${yGroup.points_remaining} Poin`}
+                                        </span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div class="progress-track" style="height: 8px; width: 140px; background: #E2E8F0; border-radius: 999px;">
+                                            <div class="progress-fill ${isTargetMet ? 'fill-green' : 'fill-blue'}" style="width: ${pct}%; height: 100%; border-radius: 999px;"></div>
+                                        </div>
+                                        <span style="font-size: 12px; font-weight: 700; color: #475569;">${pct}%</span>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #475569;">
-                                <span>
-                                    Perolehan ${escapeHtml(sem.semester_label)}: <strong style="color: #0284C7; font-size: 14px;">${sem.semester_points} Poin</strong> (${sem.achievements_count} Prestasi Disetujui)
-                                </span>
-                                <span>
-                                    Akumulasi Berjalan ${escapeHtml(sem.study_year_label)}: <strong style="color: #1E293B; font-size: 14px;">${sem.cumulative_points} Poin</strong> / ${sem.year_target} Poin
-                                </span>
+
+                            ${noticeHtml}
+
+                            <div class="ak-year-semesters-grid">
+                                ${semCardsHtml}
                             </div>
-                            ${milestoneHtml}
                         </div>
                     `;
                 });
