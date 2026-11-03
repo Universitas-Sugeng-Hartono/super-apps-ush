@@ -504,15 +504,19 @@
                                 <span class="badge-status-mhs" style="background: #F8FAFC; color: #64748B; border: 1px solid #CBD5E1; font-weight: 500; font-size: 11px; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Portal pengajuan prestasi sedang dibuka (periode berjalan). Rekomendasi beasiswa ke SIAKAD dikirimkan saat portal ditutup untuk masa evaluasi.">
                                     <i class="bi bi-clock-history"></i> Periode Berjalan
                                 </span>
+                            @elseif($student->status_rekomendasi_siakad === 'draft' || $student->status_rekomendasi_siakad === 'assigned')
+                                <span class="badge-status-mhs" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; font-weight: 600; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; border-radius: 6px;" title="Rekomendasi sudah terkirim ke SIAKAD, menunggu persetujuan dan generate termin oleh Keuangan.">
+                                    <span><i class="bi bi-hourglass-split"></i> Menunggu ACC</span>
+                                    <small style="font-size: 9.5px; font-weight: 500; color: #92400E;">Review Keuangan</small>
+                                </span>
                             @elseif(!empty($student->beasiswa_acc_keuangan))
                                 <span class="badge-status-mhs" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; font-weight: 700; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; border-radius: 6px;">
                                     <span><i class="bi bi-check-circle-fill"></i> ACC {{ $student->beasiswa_acc_keuangan }}</span>
                                     <small style="font-size: 9.5px; font-weight: 600; color: #059669;">Termin Generated</small>
                                 </span>
-                            @elseif($student->status_rekomendasi_siakad === 'draft')
-                                <span class="badge-status-mhs" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; font-weight: 600; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; border-radius: 6px;" title="Rekomendasi sudah terkirim ke SIAKAD, menunggu persetujuan dan generate termin oleh Keuangan.">
-                                    <span><i class="bi bi-hourglass-split"></i> Menunggu ACC</span>
-                                    <small style="font-size: 9.5px; font-weight: 500; color: #92400E;">Review Keuangan</small>
+                            @elseif($student->status_rekomendasi_siakad === 'rejected')
+                                <span class="badge-status-mhs" style="background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; font-weight: 600; font-size: 11px; padding: 4px 8px; border-radius: 6px;">
+                                    <i class="bi bi-x-circle-fill"></i> Ditolak Keuangan
                                 </span>
                             @else
                                 <span class="badge-status-mhs" style="background: #F8FAFC; color: #94A3B8; border: 1px dashed #CBD5E1; font-weight: 500; font-size: 11px; padding: 3px 8px; border-radius: 6px;" title="Rekomendasi belum dikirimkan ke menu rekomendasi beasiswa SIAKAD.">

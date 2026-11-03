@@ -513,7 +513,10 @@ class AchievementVerificationController extends Controller
         try {
             $res = $syncService->sendRecommendation($student, $recBeasiswa, $catatan, 'draft');
             // Tandai status rekomendasi di database SuperApps bahwa usulan telah terkirim ke SIAKAD
-            $student->update(['status_rekomendasi_siakad' => 'draft']);
+            $student->update([
+                'status_rekomendasi_siakad' => 'draft',
+                'beasiswa_acc_keuangan'     => null,
+            ]);
 
             return redirect()->back()->with('success', "Rekomendasi beasiswa ({$recBeasiswa}) untuk {$student->nama_lengkap} (NIM: {$student->nim}) berhasil dikirim ke kolom Rekomendasi di SIAKAD!");
         } catch (\Throwable $e) {
@@ -572,7 +575,10 @@ class AchievementVerificationController extends Controller
             // Tandai status bahwa rekomendasi massal telah berhasil dikirim ke SIAKAD
             $sentNims = collect($items)->pluck('nim')->filter()->values();
             if ($sentNims->isNotEmpty()) {
-                Student::whereIn('nim', $sentNims)->update(['status_rekomendasi_siakad' => 'draft']);
+                Student::whereIn('nim', $sentNims)->update([
+                    'status_rekomendasi_siakad' => 'draft',
+                    'beasiswa_acc_keuangan'     => null,
+                ]);
             }
 
             return back()->with('success', "Berhasil mengirim {$successCount} rekomendasi beasiswa hasil evaluasi POKEMA ke SIAKAD (Menu Rekomendasi Beasiswa Termin). Data kini dapat ditinjau oleh Bagian Akademik & Keuangan di Siakad.");

@@ -550,6 +550,10 @@ class StudentAmbassadorController extends Controller
 
         try {
             $res = $syncService->sendRecommendation($student, $persentase, $catatan, 'draft');
+            $student->update([
+                'status_rekomendasi_siakad' => 'draft',
+                'beasiswa_acc_keuangan'     => null,
+            ]);
             return back()->with('success', "Rekomendasi beasiswa ({$persentase}) untuk {$student->nama_lengkap} (NIM: {$student->nim}) berhasil dikirim ke kolom Rekomendasi di SIAKAD!");
         } catch (\Throwable $e) {
             return back()->with('error', "Gagal mengirim rekomendasi ke SIAKAD: " . $e->getMessage());
@@ -597,6 +601,15 @@ class StudentAmbassadorController extends Controller
         try {
             $res = $syncService->sendBulkRecommendations($items);
             $successCount = $res['success_count'] ?? count($items);
+
+            $sentNims = collect($items)->pluck('nim')->filter()->values();
+            if ($sentNims->isNotEmpty()) {
+                Student::whereIn('nim', $sentNims)->update([
+                    'status_rekomendasi_siakad' => 'draft',
+                    'beasiswa_acc_keuangan'     => null,
+                ]);
+            }
+
             return back()->with('success', "Berhasil mengirim {$successCount} rekomendasi beasiswa ke SIAKAD (Menu Rekomendasi Beasiswa Termin). Rekomendasi kini dapat ditinjau oleh Bagian Akademik & Keuangan di Siakad.");
         } catch (\Throwable $e) {
             return back()->with('error', "Gagal mengirim rekomendasi massal ke SIAKAD: " . $e->getMessage());

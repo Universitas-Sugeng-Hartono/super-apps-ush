@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Services\SkpPointCalculator;
+use App\Services\PokemaEvaluatorService;
 
 class StudentsController extends Controller
 {
@@ -240,6 +241,9 @@ class StudentsController extends Controller
         $isPortalOpen = AppSetting::isBeasiswaUploadOpen();
         $isUploadLocked = ($isBeasiswaTarget && !$isPortalOpen);
 
+        // Evaluasi capaian POKEMA & target pemenuhan beasiswa mahasiswa
+        $pokemaEvaluation = PokemaEvaluatorService::evaluate($student);
+
         return view('students.personal.achievements', compact(
             'student',
             'categoryOptions',
@@ -252,7 +256,8 @@ class StudentsController extends Controller
             'currentSemester',
             'isPortalOpen',
             'isBeasiswaTarget',
-            'isUploadLocked'
+            'isUploadLocked',
+            'pokemaEvaluation'
         ));
     }
 
