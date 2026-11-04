@@ -121,6 +121,15 @@ class SiakadSyncService
                 ]);
 
             if ($response->successful()) {
+                // Tandai di SuperApps bahwa usulan rekomendasi telah terkirim sebagai draft (menunggu ACC)
+                // dan bersihkan status ACC Keuangan lama
+                $sentNims = collect($items)->pluck('nim')->filter()->values();
+                if ($sentNims->isNotEmpty()) {
+                    Student::whereIn('nim', $sentNims)->update([
+                        'status_rekomendasi_siakad' => 'draft',
+                        'beasiswa_acc_keuangan'     => null,
+                    ]);
+                }
                 return $response->json();
             }
 
@@ -171,10 +180,16 @@ class SiakadSyncService
                     continue;
                 }
 
-                $exists = Student::where('nim', $nim)->exists();
-                if ($exists) {
+                $student = Student::where('nim', $nim)->first();
+                if ($student) {
+                    // Mahasiswa sudah terdaftar (misal telah diinput manual oleh Superuser):
+                    // Tidak dibuat dobel, namun data akademik (Semester, IPK, & status Ambassador) ikut diperbarui dari Siakad
+                    $updateData = $this->extractUpdateData($student, $row);
+                    if (!empty($updateData)) {
+                        $student->update($updateData);
+                    }
                     $skippedExisting++;
-                    continue; // PENTING: Tombol ini hanya menarik data baru, tidak menimpa yang sudah ada!
+                    continue;
                 }
 
                 $createData = $this->extractCreateData($row, $defaultLecturerId, $defaultPasswordHash);
@@ -215,7 +230,8 @@ class SiakadSyncService
 
         if ($onlyScholarship) {
             $query->where(function ($q) {
-                $q->where('status', 'studentambassador')
+                $q->where('angkatan', '>=', 2026)
+                  ->orWhere('status', 'studentambassador')
                   ->orWhere(function ($sub) {
                       $sub->whereNotNull('beasiswa')
                           ->where('beasiswa', '!=', '0%')
@@ -343,8 +359,13 @@ class SiakadSyncService
         $newCandidates = $candidates->filter(fn ($c) => !in_array($c->nim, $existingNims, true));
         $newCount = $newCandidates->count();
 
-        // Hitung mahasiswa beasiswa dari rekomendasi beasiswa termin di Siakad (114 mahasiswa)
+        // Seluruh mahasiswa angkatan >= 2026 (termasuk yang 0%) atau yang memiliki beasiswa aktif di Siakad
+        // dikelompokkan ke Beasiswa & Student Ambassador
         $isBeasiswaFn = function ($c) {
+            $angkatan = (int) (!empty($c->tahun_masuk) ? $c->tahun_masuk : 2026);
+            if ($angkatan >= 2026) {
+                return true;
+            }
             return !empty($c->fase_terakhir) && ((int) $c->fase_terakhir % 3 === 0) && ($c->beasiswa_sekarang > 0);
         };
 
@@ -407,19 +428,30 @@ class SiakadSyncService
         $updateData['semester_ipk_history'] = $history;
 
         // Catat status ACC & persentase beasiswa resmi dari Keuangan di SIAKAD
-        // Di SIAKAD: ketika Keuangan menekan ACC dan generate termin, record rekomendasi termin ditutup
-        // dan beasiswa aktif termin mahasiswa resmi terupdate di kolom `beasiswa_sekarang`.
-        if ($row->persentase_final !== null && is_numeric($row->persentase_final)) {
-            $finalPct = (float) $row->persentase_final;
-            $updateData['beasiswa_acc_keuangan'] = rtrim(rtrim(number_format($finalPct, 2), '0'), '.') . '%';
-            $updateData['status_rekomendasi_siakad'] = 'approved';
-        } elseif (empty($row->id_rekomendasi) && !empty($row->beasiswa_sekarang) && is_numeric($row->beasiswa_sekarang)) {
-            // Termin sudah resmi digenerate Keuangan di SIAKAD (rekomendasi termin sudah selesai/diproses)
-            $bsNow = (float) $row->beasiswa_sekarang;
-            $updateData['beasiswa_acc_keuangan'] = rtrim(rtrim(number_format($bsNow, 2), '0'), '.') . '%';
-            $updateData['status_rekomendasi_siakad'] = 'approved';
-        } elseif (!empty($row->status_rekomendasi)) {
-            $updateData['status_rekomendasi_siakad'] = $row->status_rekomendasi;
+        // Di SIAKAD: status rekomendasi termin: draft/assigned (menunggu ACC), confirmed/generated (resmi di-ACC Keuangan/Tagihan Terbit), rejected.
+        if (!empty($row->status_rekomendasi)) {
+            $siakadStatus = strtolower(trim((string) $row->status_rekomendasi));
+            if (in_array($siakadStatus, ['confirmed', 'generated'], true) || ($row->persentase_final !== null && is_numeric($row->persentase_final))) {
+                $finalPct = ($row->persentase_final !== null && is_numeric($row->persentase_final))
+                    ? (float) $row->persentase_final
+                    : (float) ($row->persentase_rekomendasi ?? 0);
+                $updateData['beasiswa_acc_keuangan'] = rtrim(rtrim(number_format($finalPct, 2), '0'), '.') . '%';
+                $updateData['status_rekomendasi_siakad'] = 'approved';
+            } elseif (in_array($siakadStatus, ['draft', 'assigned'], true)) {
+                $updateData['status_rekomendasi_siakad'] = 'draft';
+                $updateData['beasiswa_acc_keuangan'] = null;
+            } elseif ($siakadStatus === 'rejected') {
+                $updateData['status_rekomendasi_siakad'] = 'rejected';
+                $updateData['beasiswa_acc_keuangan'] = null;
+            } else {
+                $updateData['status_rekomendasi_siakad'] = $siakadStatus;
+            }
+        } elseif (empty($row->id_rekomendasi)) {
+            // Belum ada usulan rekomendasi termin di SIAKAD untuk periode evaluasi ini
+            if ($student->status_rekomendasi_siakad !== 'draft') {
+                $updateData['status_rekomendasi_siakad'] = null;
+            }
+            $updateData['beasiswa_acc_keuangan'] = null;
         }
 
         // Lengkapi tanggal_masuk dan periode_masuk jika belum terisi pada data sebelumnya
@@ -437,6 +469,17 @@ class SiakadSyncService
                 $term = ($month >= 1 && $month <= 6) ? 'Genap' : 'Ganjil';
             }
             $updateData['periode_masuk'] = "{$academicYear} {$term}";
+        }
+
+        // Seluruh mahasiswa angkatan >= 2026 otomatis berstatus studentambassador (termasuk yang 0%)
+        $angkatanCheck = (int) (!empty($row->tahun_masuk) ? $row->tahun_masuk : ($student->angkatan ?: 2026));
+        if ($angkatanCheck >= 2026) {
+            if ($student->status !== 'studentambassador') {
+                $updateData['status'] = 'studentambassador';
+            }
+            if (empty($student->beasiswa)) {
+                $updateData['beasiswa'] = '0%';
+            }
         }
 
         return $updateData;
@@ -462,9 +505,21 @@ class SiakadSyncService
 
         $semester = $this->resolveSemester($row);
         $ipk = $this->resolveIpk($row);
-        $isBeasiswa = !empty($row->fase_terakhir) && ((int) $row->fase_terakhir % 3 === 0) && ($this->resolveBeasiswa($row) !== null);
-        $beasiswa = $isBeasiswa ? $this->resolveBeasiswa($row) : null;
-        $status = $isBeasiswa ? 'studentambassador' : 'mahasiswa';
+        $beasiswaPct = $this->resolveBeasiswa($row);
+        $isAngkatan2026Plus = ($angkatan >= 2026);
+
+        if ($isAngkatan2026Plus) {
+            // Seluruh mahasiswa angkatan 2026 ke atas (2026, 2027, dst.) otomatis masuk ke studentambassador,
+            // termasuk jika beasiswanya 0% / belum ada beasiswa.
+            $status = 'studentambassador';
+            $beasiswa = $beasiswaPct ?: '0%';
+        } else {
+            // Untuk angkatan lama sebelum 2026 (2025 ke bawah):
+            // Hanya mahasiswa dengan beasiswa aktif (> 0%) yang berstatus studentambassador
+            $isBeasiswa = !empty($row->fase_terakhir) && ((int) $row->fase_terakhir % 3 === 0) && ($beasiswaPct !== null);
+            $beasiswa = $isBeasiswa ? $beasiswaPct : null;
+            $status = $isBeasiswa ? 'studentambassador' : 'mahasiswa';
+        }
         $gender = in_array(strtoupper(trim((string) $row->gender)), ['P', 'PEREMPUAN', 'WANITA'], true) ? 'P' : 'L';
         $tanggalMasuk = $row->tgl_masuk ?: "{$angkatan}-09-01";
 

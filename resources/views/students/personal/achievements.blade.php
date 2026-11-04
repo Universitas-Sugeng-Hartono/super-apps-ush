@@ -2,6 +2,7 @@
 
 @section('content')
 @php
+if (!function_exists('prepareJsOptions')) {
 function prepareJsOptions() {
 $dict = \App\Services\SkpPointCalculator::getDictionary();
 $activityTypes = [];
@@ -22,6 +23,7 @@ $buktiTable[$typeKey] = $typeData['bukti'] ?? 'Sertifikat';
 }
 }
 return compact('activityTypes', 'levelOptions', 'roleOptions', 'typeCategoryMap', 'pointsTable', 'buktiTable');
+}
 }
 extract(prepareJsOptions());
 $selectedActivityType = old('activity_type');
@@ -78,6 +80,38 @@ break;
         </div>
     </div>
 
+    @php
+        $eval = $pokemaEvaluation ?? \App\Services\PokemaEvaluatorService::evaluate($student);
+        $currentTierKey = $eval['current_beasiswa'] ?? ($student->beasiswa ?: '0%');
+        $isBeasiswa = ($currentTierKey !== '0%' && $currentTierKey !== 'Non-Beasiswa');
+        $studyYear = $eval['study_year'] ?? 1;
+        $studyYearLabel = $eval['study_year_label'] ?? "Tahun {$studyYear}";
+        $ipkVal = $eval['ipk'] ?? ($student->ipk ?? 0.00);
+
+        // Target poin periode ini
+        if ($isBeasiswa) {
+            $targetPoints = (int) ($eval['target_current'] ?? 0);
+            $approvedPointsPeriod = (int) ($eval['total_approved_points'] ?? 0);
+            $pointDeficit = max(0, (int) ($eval['points_remaining'] ?? ($targetPoints - $approvedPointsPeriod)));
+        } else {
+            // Mahasiswa 0% (misal Student Ambassador 0% atau Reguler)
+            // Menggunakan target minimal meraih beasiswa 25% (120 poin Tahun 1/2, 60 poin Tahun 3)
+            $targetPoints = (int) (\App\Services\PokemaEvaluatorService::TIERS['25%']['targets'][$studyYear]['total'] ?? 120);
+            $approvedPointsPeriod = (int) ($eval['total_approved_points'] ?? 0);
+            $pointDeficit = max(0, $targetPoints - $approvedPointsPeriod);
+        }
+
+        $totalApprovedOverall = (int) ($eval['overall_approved_points'] ?? $student->achievements->where('status', 'approved')->sum('skp_points'));
+        $fulfilledFieldsCount = (int) ($eval['fulfilled_fields_count'] ?? 0);
+        $unfulfilledFieldsCount = (int) ($eval['unfulfilled_fields_count'] ?? (7 - $fulfilledFieldsCount));
+        $allFieldsMet = (bool) ($eval['all_fields_met'] ?? ($fulfilledFieldsCount >= 7));
+        $unfulfilledList = $eval['unfulfilled_fields_list'] ?? [];
+        $fieldsProgress = $eval['fields_progress'] ?? [];
+
+        $progressPct = $targetPoints > 0 ? min(100, round(($approvedPointsPeriod / $targetPoints) * 100)) : 100;
+        $isAmbassadorMhs = ($student->status === 'studentambassador');
+    @endphp
+
     {{-- ANALYTICS GRID --}}
     <div class="analytics-grid">
         <div class="analytic-card total">
@@ -103,10 +137,234 @@ break;
         </div>
         <div class="analytic-card skp-total">
             <div class="card-label">TOTAL POIN / SKP SAAT INI</div>
-            <div class="card-value">{{ $student->achievements->where('status', 'approved')->sum('skp_points') }}</div>
-            <div class="card-footer">Hanya dari data terverifikasi</div>
+            <div class="card-value">{{ $totalApprovedOverall }}</div>
+            <div class="card-footer" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; margin-top: 4px; line-height: 1.3;">
+                @if(!empty($isBeasiswaTarget))
+                    @if($pointDeficit > 0)
+                        <span style="background: rgba(0,0,0,0.18); padding: 2px 7px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="bi bi-exclamation-circle-fill"></i> Kurang {{ $pointDeficit }} Poin (Target: {{ $targetPoints }})
+                        </span>
+                    @else
+                        <span style="background: rgba(255,255,255,0.22); padding: 2px 7px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="bi bi-check-circle-fill"></i> Target Poin Terpenuhi ✓
+                        </span>
+                    @endif
+                    <span style="opacity: 0.95; font-size: 10.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                        @if($allFieldsMet)
+                            <i class="bi bi-patch-check-fill"></i> 7/7 Bidang Terpenuhi
+                        @else
+                            <i class="bi bi-pie-chart-fill"></i> {{ $fulfilledFieldsCount }}/7 Bidang Terpenuhi (Kurang {{ $unfulfilledFieldsCount }})
+                        @endif
+                    </span>
+                @else
+                    <span style="opacity: 0.95; font-size: 11px; font-weight: 600;">
+                        Syarat SKPI Kelulusan: Min. 250 Poin
+                    </span>
+                    <span style="opacity: 0.8; font-size: 10px;">
+                        Hanya dari data terverifikasi
+                    </span>
+                @endif
+            </div>
         </div>
     </div>
+
+    @if(!empty($isBeasiswaTarget))
+    {{-- INFORMASI STATUS BEASISWA & EVALUASI CAPAIAN POKEMA (KHUSUS STUDENT AMBASSADOR & BEASISWA) --}}
+    <div class="exclusive-card scholarship-info-card" style="background: white; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: var(--exclusive-card-shadow); padding: 24px 28px; margin-bottom: 30px;">
+        {{-- Card Header --}}
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid #F1F5F9;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+               
+                <div>
+                    <h3 style="margin: 0 0 4px; font-size: 18px; font-weight: 800; color: #1E293B;">Informasi Status Beasiswa & Capaian POKEMA</h3>
+                    <p style="margin: 0; font-size: 13px; color: #64748B;">
+                        Evaluasi standar capaian poin dan pemenuhan 7 bidang kegiatan POKEMA Anda (SK Rektor No: 2638/SK/01/2026).
+                    </p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                @if($isAmbassadorMhs)
+                    <span class="badge" style="background: #FAF5FF; color: #000000ff; border: 1px solid #E9D5FF; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="bi bi-star-fill" style="color: #ff1111ff;"></i> Student Ambassador
+                    </span>
+                @else
+                    <span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="bi bi-person-fill"></i> Mahasiswa Reguler
+                    </span>
+                @endif
+
+                @if($isBeasiswa)
+                    <span class="badge" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; padding: 6px 14px; border-radius: 8px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="bi bi-check-circle-fill"></i> Beasiswa {{ $currentTierKey }}
+                    </span>
+                @else
+                    <span class="badge" style="background: #F8FAFC; color: #64748B; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                        Skema: 0% / Belum Ada Beasiswa
+                    </span>
+                @endif
+
+                <span class="badge" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="bi bi-mortarboard-fill"></i> {{ $studyYearLabel }} | IPK: {{ number_format((float)$ipkVal, 2) }}
+                </span>
+            </div>
+        </div>
+
+        {{-- BANNER PERINGATAN EVALUASI JIKA DIREKOMENDASIKAN TURUN (DOWNGRADE / REVOKE) --}}
+        @if(in_array($eval['action_type'] ?? '', ['downgrade', 'revoke'], true))
+            <div style="background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 14px; padding: 14px 18px; margin-top: 18px; display: flex; align-items: flex-start; gap: 12px;">
+                <div style="background: #FFE4E6; color: #E11D48; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                    <i class="bi bi-shield-exclamation"></i>
+                </div>
+                <div>
+                    <h5 style="margin: 0 0 4px; font-size: 13.5px; font-weight: 800; color: #9F1239;">
+                        Peringatan Evaluasi Beasiswa: {{ $eval['action_label'] ?? 'Rekomendasi Penurunan Beasiswa' }}
+                    </h5>
+                    <p style="margin: 0; font-size: 12.5px; color: #881337; line-height: 1.5;">
+                        {{ $eval['reason'] ?? 'Capaian POKEMA atau IPK Anda pada periode ini belum memenuhi standar minimal beasiswa saat ini. Sesuai SK Rektor No: 2638/SK/01/2026, status beasiswa Anda direkomendasikan turun 1 tingkat untuk periode berikutnya.' }}
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        {{-- Card Content: 2 Kolom Ringkasan --}}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px;">
+            {{-- Kolom 1: Status Target Poin --}}
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px;">
+                            <i class="bi bi-trophy-fill" style="color: #F59E0B;"></i> Target Poin Periode {{ $studyYearLabel }}
+                        </span>
+                        <span style="font-size: 11px; font-weight: 700; color: {{ $pointDeficit > 0 ? '#DC2626' : '#059669' }}; background: {{ $pointDeficit > 0 ? '#FEF2F2' : '#ECFDF5' }}; padding: 3px 8px; border-radius: 6px; border: 1px solid {{ $pointDeficit > 0 ? '#FECACA' : '#A7F3D0' }};">
+                            {{ $pointDeficit > 0 ? "Kurang {$pointDeficit} Poin" : 'Target Terpenuhi ✓' }}
+                        </span>
+                    </div>
+
+                    <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 32px; font-weight: 900; color: #1E293B;">{{ $approvedPointsPeriod }}</span>
+                        <span style="font-size: 15px; font-weight: 600; color: #64748B;">/ {{ $targetPoints }} Poin Target</span>
+                        <span style="font-size: 12px; color: #94A3B8; margin-left: auto;">(Total Kumulatif: {{ $totalApprovedOverall }} Poin)</span>
+                    </div>
+
+                    {{-- Progress Bar --}}
+                    <div style="height: 10px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-bottom: 14px;">
+                        <div style="height: 100%; width: {{ $progressPct }}%; background: {{ $pointDeficit > 0 ? 'linear-gradient(90deg, #F59E0B, #EA580C)' : 'linear-gradient(90deg, #10B981, #059669)' }}; border-radius: 999px; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>
+
+                {{-- Alert Status Poin --}}
+                @if($pointDeficit > 0)
+                    <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 10px 14px; font-size: 12.5px; color: #991B1B; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 16px; color: #DC2626; flex-shrink: 0;"></i>
+                        <span>Poin Anda masih <strong>kurang {{ $pointDeficit }} Poin</strong> untuk memenuhi target standar beasiswa periode {{ $studyYearLabel }}.</span>
+                    </div>
+                @else
+                    <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 10px 14px; font-size: 12.5px; color: #065F46; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-check-circle-fill" style="font-size: 16px; color: #059669; flex-shrink: 0;"></i>
+                        <span>Target poin terpenuhi! Perolehan poin Anda di periode ini surplus <strong>+{{ $approvedPointsPeriod - $targetPoints }} Poin</strong> dari target minimal.</span>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Kolom 2: Status Pemenuhan 7 Bidang POKEMA --}}
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px;">
+                            <i class="bi bi-grid-3x3-gap-fill" style="color: #6366F1;"></i> Standar 7 Bidang POKEMA
+                        </span>
+                        <span style="font-size: 11px; font-weight: 700; color: {{ $allFieldsMet ? '#059669' : '#D97706' }}; background: {{ $allFieldsMet ? '#ECFDF5' : '#FFFBEB' }}; padding: 3px 8px; border-radius: 6px; border: 1px solid {{ $allFieldsMet ? '#A7F3D0' : '#FDE68A' }};">
+                            {{ $allFieldsMet ? '7/7 Terpenuhi Lengkap ✓' : "Kurang {$unfulfilledFieldsCount} Bidang" }}
+                        </span>
+                    </div>
+
+                    <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;">
+                        <span style="font-size: 32px; font-weight: 900; color: #1E293B;">{{ $fulfilledFieldsCount }}</span>
+                        <span style="font-size: 15px; font-weight: 600; color: #64748B;">/ 7 Bidang Terpenuhi</span>
+                    </div>
+
+                    {{-- Alert Pemenuhan Bidang --}}
+                    @if($allFieldsMet)
+                        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 10px 14px; font-size: 12.5px; color: #065F46; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <i class="bi bi-patch-check-fill" style="font-size: 16px; color: #059669; flex-shrink: 0;"></i>
+                            <span>Luar biasa! Seluruh 7 bidang kegiatan POKEMA telah memenuhi standar minimal SK Rektor.</span>
+                        </div>
+                    @else
+                        <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 14px; font-size: 12.5px; color: #92400E; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <i class="bi bi-pie-chart-fill" style="font-size: 16px; color: #D97706; flex-shrink: 0;"></i>
+                            <span>Masih <strong>kurang {{ $unfulfilledFieldsCount }} bidang lagi</strong> yang belum mencapai target minimal poin.</span>
+                        </div>
+
+                        {{-- Chips Rincian Bidang yang Kurang --}}
+                        @if(!empty($unfulfilledList))
+                            <div style="margin-top: 8px;">
+                                <div style="font-size: 11.5px; font-weight: 700; color: #64748B; margin-bottom: 6px;">
+                                    Rincian bidang yang masih kurang poin:
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    @foreach($unfulfilledList as $missingField)
+                                        <span style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-exclamation-circle" style="color: #D97706; font-size: 11px;"></i> {{ $missingField }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+
+                {{-- Tombol Toggle Lihat Rincian 7 Bidang --}}
+                <div style="margin-top: 14px; text-align: right;">
+                    <button type="button" class="btn-toggle-pokema-detail" onclick="togglePokemaDetail()" style="background: none; border: none; color: #4F46E5; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 0;">
+                        <span id="pokemaToggleText">Lihat Rincian Seluruh 7 Bidang</span>
+                        <i id="pokemaToggleIcon" class="bi bi-chevron-down" style="transition: transform 0.3s ease;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- DETAIL RINCIAN 7 BIDANG (COLLAPSIBLE) --}}
+        <div id="pokemaDetailCollapse" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #E2E8F0;">
+            <h5 style="margin: 0 0 14px; font-size: 13.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                <i class="bi bi-list-check" style="color: #4F46E5;"></i> Rincian Standar dan Capaian 7 Bidang Kegiatan POKEMA:
+            </h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+                @foreach($fieldsProgress as $field)
+                    @php
+                        $isFieldMet = $field['is_fulfilled'] ?? false;
+                        $curPoin = $field['current'] ?? 0;
+                        $tarPoin = $field['target'] ?? 0;
+                        $defPoin = max(0, $tarPoin - $curPoin);
+                        $barPct = $tarPoin > 0 ? min(100, round(($curPoin / $tarPoin) * 100)) : 100;
+                    @endphp
+                    <div style="background: {{ $isFieldMet ? '#F0FDF4' : '#FFFDF5' }}; border: 1px solid {{ $isFieldMet ? '#BBF7D0' : '#FED7AA' }}; border-radius: 12px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                            <span style="font-size: 12.5px; font-weight: 700; color: #1E293B; line-height: 1.3;">
+                                {{ $field['label'] ?? '-' }}
+                            </span>
+                            @if($isFieldMet)
+                                <span style="background: #DCFCE7; color: #15803D; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">
+                                    ✓ Terpenuhi
+                                </span>
+                            @else
+                                <span style="background: #FEE2E2; color: #B91C1C; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">
+                                    Kurang {{ $defPoin }} Poin
+                                </span>
+                            @endif
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #64748B; margin-bottom: 6px;">
+                            <span>Capaian: <strong style="color: #1E293B;">{{ $curPoin }}</strong> Poin</span>
+                            <span>Target: <strong style="color: #1E293B;">{{ $tarPoin }}</strong> Poin</span>
+                        </div>
+                        <div style="height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ $barPct }}%; background: {{ $isFieldMet ? '#10B981' : '#F59E0B' }}; border-radius: 999px;"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- MAIN CONTENT AREA --}}
     <div class="main-content-layout">
@@ -1692,6 +1950,22 @@ break;
 
 @push('scripts')
 <script>
+    function togglePokemaDetail() {
+        const el = document.getElementById('pokemaDetailCollapse');
+        const text = document.getElementById('pokemaToggleText');
+        const icon = document.getElementById('pokemaToggleIcon');
+        if (!el) return;
+        if (el.style.display === 'none' || el.style.display === '') {
+            el.style.display = 'block';
+            if (text) text.innerText = 'Sembunyikan Rincian 7 Bidang';
+            if (icon) icon.style.transform = 'rotate(180deg)';
+        } else {
+            el.style.display = 'none';
+            if (text) text.innerText = 'Lihat Rincian Seluruh 7 Bidang';
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
     function closeToast() {
         const el = document.getElementById('toastNotification');
         if (el) {

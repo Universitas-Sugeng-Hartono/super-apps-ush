@@ -169,10 +169,12 @@
                 <td style="text-align: center; border: 1px solid #CBD5E1; vertical-align: middle; font-weight: 600; font-size: 11px;">
                     @if(!empty($isPortalOpen))
                         Periode Berjalan
+                    @elseif($student->status_rekomendasi_siakad === 'draft' || $student->status_rekomendasi_siakad === 'assigned')
+                        Menunggu ACC (Review Keuangan)
                     @elseif(!empty($student->beasiswa_acc_keuangan))
                         ACC {{ $student->beasiswa_acc_keuangan }} (Termin Generated)
-                    @elseif($student->status_rekomendasi_siakad === 'draft')
-                        Menunggu ACC (Review Keuangan)
+                    @elseif($student->status_rekomendasi_siakad === 'rejected')
+                        Ditolak Keuangan
                     @else
                         Belum Dikirim
                     @endif
