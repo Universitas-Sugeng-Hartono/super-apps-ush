@@ -81,6 +81,16 @@ class MenuItemSeeder extends Seeder
                 'badge_color' => 'active',
             ],
             [
+                'name' => 'Monitoring KIP-K',
+                'icon' => 'bi bi-mortarboard-fill',
+                'route_name' => 'kemahasiswaan.monitoring-kipk.index',
+                'roles' => 'kemahasiswaan',
+                'order' => 30,
+                'description' => 'Monitoring mahasiswa KIP-K, filter tahun & periode akademik, IPS/IPK, dan status',
+                'badge_text' => 'Baru',
+                'badge_color' => 'active',
+            ],
+            [
                 'name' => 'Direktori Mahasiswa',
                 'icon' => 'bi bi-people-fill',
                 'route_name' => 'akademik.direktori-mahasiswa.index',

@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController\DashboardController;
 use App\Http\Controllers\AdminController\SkpiController;
 use App\Http\Controllers\AdminController\StudentAmbassadorController;
 use App\Http\Controllers\AdminController\AchievementVerificationController;
+use App\Http\Controllers\AdminController\MonitoringKipkController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,15 @@ Route::middleware(['auth', 'role:masteradmin,superadmin,kemahasiswaan'])->prefix
         Route::post('/{id}/reject', 'rejectVerifikasiData')->name('reject');
         Route::post('/{id}/update', 'updateVerifikasiData')->name('update');
         Route::post('/approve-all', 'approveAllVerifikasiData')->name('approve-all');
+    });
+
+    // Monitoring KIP-K
+    Route::prefix('monitoring-kipk')->name('monitoring-kipk.')->controller(MonitoringKipkController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/data', 'getData')->name('data');
+        Route::get('/sub-by/{id}', 'getSubBy')->name('sub-by');
+        Route::get('/student-history/{id}', 'getStudentHistory')->name('student-history');
+        Route::get('/export/csv', 'exportCsv')->name('export.csv');
     });
 
     // Alur Kelulusan & SKPI
