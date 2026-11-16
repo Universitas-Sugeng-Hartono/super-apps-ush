@@ -5,6 +5,12 @@
         <div class="card-header">
             <h3>Management Mahasiswa</h3>
             <div class="header-actions">
+                @if(!empty($siakadLastSyncSummary))
+                <div class="badge-auto-sync" style="cursor: pointer;" onclick="openSiakadSyncModal()" title="Sinkronisasi otomatis berjalan setiap pukul 01:00 WIB dari database SIAKAD. Klik untuk melihat rincian pembaruan data terakhir.">
+                    <span class="pulse-dot"></span>
+                    <span>Auto-Sync: <strong>01:00 WIB</strong> <i class="bi bi-info-circle ms-1"></i></span>
+                </div>
+                @endif
                 <button type="button" class="btn-sync-siakad" id="btn-sync-siakad" onclick="handleSyncSiakad()" title="Tarik data mahasiswa baru dari SIAKAD (Beasiswa & Reguler)">
                     <i class="bi bi-cloud-arrow-down"></i> Sinkron Siakad
                 </button>
@@ -219,6 +225,8 @@
             </div>
         @endif
     </div>
+
+    @include('admin.partials.siakad-sync-modal')
 @endsection
 
 @push('css')
@@ -315,6 +323,40 @@
     }
     .btn-refresh-all-siakad:active {
         transform: translateY(0);
+    }
+
+    /* Auto-Sync Badge */
+    .badge-auto-sync {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        background: #F0FDF4;
+        color: #166534;
+        border: 1px solid #BBF7D0;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .badge-auto-sync:hover {
+        background: #DCFCE7;
+        border-color: #86EFAC;
+        transform: translateY(-1px);
+    }
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #22C55E;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
     .alert-success {

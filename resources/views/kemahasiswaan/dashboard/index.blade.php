@@ -68,7 +68,8 @@
                 @php
                     $iconColors = [
                         'bi-people-fill' => 'linear-gradient(135deg, #FF9800, #FFB347)',
-                        'bi-mortarboard' => 'linear-gradient(135deg, #FF5252, #FF8A80)',
+                        'bi-mortarboard' => 'linear-gradient(135deg, #1E88E5, #42A5F5)',
+                        'bi-mortarboard-fill' => 'linear-gradient(135deg, #1E88E5, #42A5F5)',
                         'bi-person-badge-fill' => 'linear-gradient(135deg, #5B9BD5, #7DB8E8)',
                         'bi-person-circle' => 'linear-gradient(135deg, #FFC107, #FFD54F)',
                         'bi-person-badge' => 'linear-gradient(135deg, #5B9BD5, #7DB8E8)',
@@ -133,6 +134,14 @@
                     </div>
                     <h5>Management Student Ambassador</h5>
                     <p>Kelola direktori mahasiswa dan status Student Ambassador</p>
+                    <span class="status-badge active">Aktif</span>
+                </a>
+                <a href="{{ route('kemahasiswaan.monitoring-kipk.index') }}" class="menu-card">
+                    <div class="menu-icon" style="background: linear-gradient(135deg, #1E88E5, #42A5F5);">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <h5>Monitoring KIP-K</h5>
+                    <p>Monitoring mahasiswa KIP-K, filter tahun & periode akademik, IPS/IPK, dan status</p>
                     <span class="status-badge active">Aktif</span>
                 </a>
             @endforelse

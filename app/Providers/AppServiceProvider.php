@@ -55,5 +55,12 @@ class AppServiceProvider extends ServiceProvider
         }
         $view->with('globalUnreadCount', $unreadCount);
         });
+
+        view()->composer([
+            'admin.management.students.index',
+            'kemahasiswaan.student-ambassador.index',
+        ], function ($view) {
+            $view->with('siakadLastSyncSummary', \Illuminate\Support\Facades\Cache::get('siakad_last_sync_summary'));
+        });
     }
 }
